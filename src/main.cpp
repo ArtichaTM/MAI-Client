@@ -3,29 +3,36 @@
 #include <SFML/Graphics.hpp>
 
 #include "elements/button.hpp"
+#include "elements/tabs/system.hpp"
 #include "config.hpp"
 
 
+TabSystem build_ui() {
+    TabSystem tabs(10.f);
+    return tabs;
+}
+
+
 int main() {
-    sf::RenderWindow window(sf::VideoMode(800, 600), MAICLient_NAME);
-    Button button(300, 250, 200, 50, "Click Me");
+    sf::RenderWindow window(
+        sf::VideoMode(800, 600),
+        MAICLient_NAME,
+        sf::Style::Close
+    );
+    ROOT_WINDOW = &window;
+    TabSystem sys = build_ui();
 
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed) {
                 window.close();
-            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                if (button.isMouseOver(sf::Mouse::getPosition(window))) {
-                    button.onClick();
-                }
+                break;
             }
         }
 
-        button.update(sf::Mouse::getPosition(window));
-
         window.clear();
-        button.draw(window);
+        sys.draw(window);
         window.display();
     }
 

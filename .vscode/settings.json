@@ -11,6 +11,7 @@
     },
     "files.associations": {
         "string": "cpp",
-        "*.in": "cpp"
+        "*.in": "cpp",
+        "vector": "cpp"
     }
 }

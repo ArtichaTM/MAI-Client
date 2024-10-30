@@ -14,11 +14,14 @@ include_directories(src)
 
 configure_file(src/config.hpp.in src/config.hpp @ONLY)
 
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
 # Add the source files
-set(SOURCES
-    src/main.cpp
-    src/elements/button.cpp
-)
+# set(SOURCES
+#     src/main.cpp
+#     src/elements/button.cpp
+#     src/elements/tab_system.cpp
+# )
 
 # Add the executable
 add_executable(MAIClient ${SOURCES})

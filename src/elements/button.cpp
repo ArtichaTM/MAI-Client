@@ -15,7 +15,7 @@ Button::Button(
     buttonShape.setPosition(x, y);
     buttonShape.setFillColor(sf::Color::Green);
 
-    buttonFont.loadFromFile("static/fonts/microsoftsansserif.ttf");
+    buttonFont.loadFromFile(PATH_FONT_DEFAULT);
     buttonText.setFont(buttonFont);
     buttonText.setString(text);
     buttonText.setCharacterSize(24);
