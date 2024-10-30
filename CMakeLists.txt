@@ -1,15 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
 
+# specify the C++ standard
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 # Set the project name
 project(MAIClient VERSION 0.1)
 
 # Find SFML
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
-# target_include_directories(MAIClient PUBLIC "${PROJECT_BINARY_DIR}")
-
 include_directories(src)
-include_directories(static)
+
+configure_file(src/config.hpp.in src/config.hpp @ONLY)
 
 # Add the source files
 set(SOURCES
@@ -19,6 +22,9 @@ set(SOURCES
 
 # Add the executable
 add_executable(MAIClient ${SOURCES})
+
+target_include_directories(MAIClient PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
+target_include_directories(MAIClient PRIVATE src)
 
 # Link SFML libraries
 target_link_libraries(MAIClient sfml-graphics sfml-window sfml-system)

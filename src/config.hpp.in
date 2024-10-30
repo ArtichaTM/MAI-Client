@@ -1,0 +1,7 @@
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define MAIClient_VERSION_MAJOR @MAIClient_VERSION_MAJOR@
+#define MAIClient_VERSION_MINOR @MAIClient_VERSION_MINOR@
+#define MAICLient_NAME "MAIClient " STR(MAIClient_VERSION_MAJOR) "." STR(MAIClient_VERSION_MINOR)
+#define ROOT_PATH ""

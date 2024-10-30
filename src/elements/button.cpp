@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "button.hpp"
+#include "config.hpp"
 
 Button::Button(
     float x,
@@ -14,7 +15,7 @@ Button::Button(
     buttonShape.setPosition(x, y);
     buttonShape.setFillColor(sf::Color::Green);
 
-    buttonFont.loadFromFile("../static/fonts/microsoftsansserif.ttf");
+    buttonFont.loadFromFile("static/fonts/microsoftsansserif.ttf");
     buttonText.setFont(buttonFont);
     buttonText.setString(text);
     buttonText.setCharacterSize(24);
@@ -34,7 +35,9 @@ bool Button::isMouseOver(sf::Vector2i mousePos) {
     return buttonShape.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos));
 }
 
-void Button::onClick() {}
+void Button::onClick() {
+
+}
 
 void Button::update(sf::Vector2i mousePos) {
     if (isMouseOver(mousePos)) {
