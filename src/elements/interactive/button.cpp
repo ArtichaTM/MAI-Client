@@ -67,20 +67,8 @@ bool Button::isMouseOver() {
 void Button::recalculateColor() {
     delete current_color;
     current_color = new sf::Color(255, 255, 255, 0);
-    // std::cout << "Color set (before): ["
-    //     << (int) current_color.r << ", "
-    //     << (int) current_color.g << ", "
-    //     << (int) current_color.b << ", "
-    //     << (int) current_color.a << ", "
-    //     << ']' << std::endl;
     if (hovering) *current_color += hover_color;
     if (active) *current_color += active_color;
-    // std::cout << "Color set: ["
-    //     << (int) current_color.r << ", "
-    //     << (int) current_color.g << ", "
-    //     << (int) current_color.b << ", "
-    //     << (int) current_color.a << ", "
-    //     << ']' << std::endl;
 }
 
 void Button::setActive(bool _active) {
