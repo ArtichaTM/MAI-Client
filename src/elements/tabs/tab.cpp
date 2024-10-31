@@ -11,13 +11,13 @@ Tab::~Tab() {
     }
 }
 
-void Tab::draw(sf::RenderWindow &window) const { draw(window, false); }
+void Tab::draw(sf::RenderWindow &window) { draw(window, false); }
 
-void Tab::draw(sf::RenderWindow& window, bool active) const {
+void Tab::draw(sf::RenderWindow& window, bool active) {
     tabText.draw(window);
     if (!active) return;
 
-    for (const SFBase* element : elements) {
+    for (SFBase* element : elements) {
         element->draw(window);
     }
 }
@@ -42,3 +42,8 @@ bool Tab::IsSwitcherInBounds(const sf::Vector2f& position) const {
 void Tab::AddElement(SFBase* element) { elements.emplace_back(element); }
 
 const std::string Tab::getName() { return tabText.text.getString(); }
+
+void Tab::setActive(bool _active) {
+    active = _active;
+    tabText.setActive(active);
+}

@@ -10,13 +10,16 @@ class Tab : public SFBase {
     std::vector<SFBase*> elements;
 public:
     Button tabText;
+    bool active = false;
     Tab(const std::string& title, float offset, float height, sf::Color color);
     ~Tab();
-    void draw(sf::RenderWindow& window) const override;
-    void draw(sf::RenderWindow& window, bool active = false) const;
-    void handleEvent(const sf::Event& event) override;
-    bool IsSwitcherInBounds(const sf::Vector2i& position) const;
-    bool IsSwitcherInBounds(const sf::Vector2f& position) const;
-    void AddElement(SFBase* element);
+    void draw(sf::RenderWindow&) override;
+    void draw(sf::RenderWindow&, bool active = false);
+    void handleEvent(const sf::Event&) override;
+    bool IsSwitcherInBounds(const sf::Vector2i&) const;
+    bool IsSwitcherInBounds(const sf::Vector2f&) const;
+    void AddElement(SFBase*);
     const std::string getName();
+
+    void setActive(bool);
 };

@@ -1,5 +1,4 @@
 #include <string>
-#include <iostream>
 
 #include <SFML/Graphics.hpp>
 
@@ -11,37 +10,48 @@ Button::Button(
     float y,
     const std::string& _text,
     const std::string& font_path,
-    sf::Color color
+    sf::Color main_color
 ) {
     font.loadFromFile(font_path);
     text.setPosition(x + padding, y + padding);
     text.setFont(font);
     text.setString(_text);
     text.setCharacterSize(24);
-    text.setFillColor(color);
+    text.setFillColor(main_color);
     sf::FloatRect text_bounding = text.getGlobalBounds();
 
     shape.setPosition(x, y);
-    shape.setOutlineColor(color);
+    shape.setOutlineColor(main_color);
     shape.setOutlineThickness(2);
-    shape.setFillColor(sf::Color::Transparent);
     shape.setSize(sf::Vector2f(
         text_bounding.left + text_bounding.width + padding*2,
         text_bounding.top + text_bounding.height + padding*2
     ));
+    recalculateColor();
+}
+
+Button::~Button() {
+    delete current_color;
 }
 
 void Button::handleEvent(const sf::Event& event) {
     if (event.type != sf::Event::MouseMoved) return;
-    sf::Color color(255, 255, 255, 100);
-    if (isMouseOver()) {
-        shape.setFillColor(hover_color);
-    } else {
-        shape.setFillColor(sf::Color::Transparent);
+    switch (event.type) {
+        case sf::Event::MouseMoved: {
+            hovering = isMouseOver();
+            recalculateColor();
+        }
     }
 }
 
-void Button::draw(sf::RenderWindow &window) const {
+void Button::draw(sf::RenderWindow &window) {
+    // std::cout << "Color set: ["
+    //     << (int) current_color->r << ", "
+    //     << (int) current_color->g << ", "
+    //     << (int) current_color->b << ", "
+    //     << (int) current_color->a << ", "
+    //     << "], active: " << active << std::endl;
+    shape.setFillColor(*current_color);
     window.draw(shape);
     window.draw(text);
 }
@@ -54,7 +64,37 @@ bool Button::isMouseOver() {
     );
 }
 
-const sf::Color Button::hover_color = sf::Color(255, 255, 255, 120);
+void Button::recalculateColor() {
+    delete current_color;
+    current_color = new sf::Color(255, 255, 255, 0);
+    // std::cout << "Color set (before): ["
+    //     << (int) current_color.r << ", "
+    //     << (int) current_color.g << ", "
+    //     << (int) current_color.b << ", "
+    //     << (int) current_color.a << ", "
+    //     << ']' << std::endl;
+    if (hovering) *current_color += hover_color;
+    if (active) *current_color += active_color;
+    // std::cout << "Color set: ["
+    //     << (int) current_color.r << ", "
+    //     << (int) current_color.g << ", "
+    //     << (int) current_color.b << ", "
+    //     << (int) current_color.a << ", "
+    //     << ']' << std::endl;
+}
+
+void Button::setActive(bool _active) {
+    active = _active;
+    recalculateColor();
+}
+
+void Button::setHovering(bool _hovering) {
+    hovering = _hovering;
+    recalculateColor();
+}
+
+const sf::Color Button::hover_color = sf::Color(255, 255, 255, 60);
+const sf::Color Button::active_color = sf::Color(255, 255, 255, 60);
 
 // bool Button::isMouseOver(sf::Vector2i mousePos) {
 //     return buttonShape.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos));

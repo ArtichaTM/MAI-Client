@@ -20,8 +20,10 @@ public:
     TabSystem(float height, sf::Color color);
     ~TabSystem();
     void handleEvent(const sf::Event&) override;
-    void draw(sf::RenderWindow& window) const override;
+    void draw(sf::RenderWindow& window) override;
     Tab* addTab(const std::string& title);
+    int recommendedHeight() const;
+    void firstTabInit(Tab* tab);
 
     Tab* operator[](const std::string& name);
     Tab* operator[](ushort index);

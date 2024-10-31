@@ -27,7 +27,7 @@ int main() {
     );
     ROOT_WINDOW = &window;
     TabSystem* sys = build_ui();
-    window.setFramerateLimit(60);
+    window.setFramerateLimit(6);
 
     while (window.isOpen()) {
         sf::Event event;

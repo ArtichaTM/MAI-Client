@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
 #include <cassert>
-#include <iostream>
 
 #include <SFML/Graphics.hpp>
 
@@ -28,14 +27,18 @@ void TabSystem::handleEvent(const sf::Event& event) {
             tab->IsSwitcherInBounds(sf::Mouse::getPosition(*ROOT_WINDOW))
             &&
             event.mouseButton.button == sf::Mouse::Left
+            &&
+            active_tab_index != i
         ) {
+            tabs[active_tab_index]->setActive(false);
             active_tab_index = i;
+            tabs[i]->setActive(true);
         }
         tab->handleEvent(event);
     }
 }
 
-void TabSystem::draw(sf::RenderWindow& window) const {
+void TabSystem::draw(sf::RenderWindow& window) {
     assert(!tabs.empty());
     for (size_t i = 0; i < tabs.size(); ++i) {
         Tab* tab = tabs[i];
@@ -49,7 +52,21 @@ Tab* TabSystem::addTab(const std::string& title) {
         offset += tab->tabText.shape.getGlobalBounds().width + offset;
     }
     Tab* tab = tabs.emplace_back(new Tab(title, offset, height, color));
+    if (tabs.size() == 1) {
+        firstTabInit(tab);
+    }
     return tab;
+}
+
+void TabSystem::firstTabInit(Tab* tab) {
+    tab->setActive(true);
+    tab->tabText.recalculateColor();
+}
+
+int TabSystem::recommendedHeight() const
+{
+    assert(!tabs.empty());
+    return tabs[0]->tabText.shape.getGlobalBounds().height;
 }
 
 Tab* TabSystem::operator[](const std::string &name)
