@@ -39,7 +39,9 @@ bool Tab::IsSwitcherInBounds(const sf::Vector2f& position) const {
     return tabText.shape.getGlobalBounds().contains(position);
 }
 
-void Tab::AddElement(SFBase* element) { elements.emplace_back(element); }
+void Tab::AddElement(SFBase* element) {
+    elements.emplace_back(element);
+}
 
 const std::string Tab::getName() { return tabText.text.getString(); }
 

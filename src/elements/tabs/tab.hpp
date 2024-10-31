@@ -8,9 +8,9 @@
 
 class Tab : public SFBase {
     std::vector<SFBase*> elements;
+    bool active = false;
 public:
     Button tabText;
-    bool active = false;
     Tab(const std::string& title, float offset, float height, sf::Color color);
     ~Tab();
     void draw(sf::RenderWindow&) override;

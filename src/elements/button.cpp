@@ -24,8 +24,8 @@ Button::Button(
     shape.setOutlineColor(main_color);
     shape.setOutlineThickness(2);
     shape.setSize(sf::Vector2f(
-        text_bounding.left + text_bounding.width + padding*2,
-        text_bounding.top + text_bounding.height + padding*2
+        text_bounding.width + padding*2,
+        text_bounding.height + padding*3
     ));
     recalculateColor();
 }
@@ -95,19 +95,3 @@ void Button::setHovering(bool _hovering) {
 
 const sf::Color Button::hover_color = sf::Color(255, 255, 255, 60);
 const sf::Color Button::active_color = sf::Color(255, 255, 255, 60);
-
-// bool Button::isMouseOver(sf::Vector2i mousePos) {
-//     return buttonShape.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos));
-// }
-
-// void Button::onClick() {
-
-// }
-
-// void Button::update(sf::Vector2i mousePos) {
-//     if (isMouseOver(mousePos)) {
-//         buttonShape.setFillColor(sf::Color::Yellow);
-//     } else {
-//         buttonShape.setFillColor(sf::Color::Green);
-//     }
-// }

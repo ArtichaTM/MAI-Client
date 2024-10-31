@@ -31,7 +31,7 @@ struct Button : public SFBase {
 private:
     bool active = false;
     bool hovering = false;
-    static constexpr float padding = 4.f;
+    static constexpr float padding = 6.f;
     static const sf::Color hover_color;
     static const sf::Color active_color;
 

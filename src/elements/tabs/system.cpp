@@ -79,3 +79,13 @@ Tab* TabSystem::operator[](const std::string &name)
 }
 
 Tab* TabSystem::operator[](ushort index) { return tabs[index]; }
+
+float TabSystem::getHeight() {
+    sf::FloatRect rect = tabs[tabs.size()-1]->tabText.shape.getGlobalBounds();
+    return rect.top + rect.height;
+}
+
+float TabSystem::getWidth() {
+    sf::FloatRect rect = tabs[tabs.size()-1]->tabText.shape.getGlobalBounds();
+    return rect.left + rect.width;
+}

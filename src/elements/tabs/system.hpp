@@ -19,11 +19,15 @@ class TabSystem : public SFBase {
 public:
     TabSystem(float height, sf::Color color);
     ~TabSystem();
+
     void handleEvent(const sf::Event&) override;
     void draw(sf::RenderWindow& window) override;
+
     Tab* addTab(const std::string& title);
     int recommendedHeight() const;
     void firstTabInit(Tab* tab);
+    float getHeight();
+    float getWidth();
 
     Tab* operator[](const std::string& name);
     Tab* operator[](ushort index);

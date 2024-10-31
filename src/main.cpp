@@ -8,14 +8,14 @@
 
 
 TabSystem* build_ui() {
-    TabSystem* tabs = new TabSystem(10.f, sf::Color::Green);
-    Tab* tab = tabs->addTab("Overview");
-    tab = tabs->addTab("AI modules influences");
-    // tab->AddElement(new Button(
-    //     100, 100, "Help!",
-    //     PATH_FONT_DEFAULT, sf::Color::Green
-    // ));
-    return tabs;
+    TabSystem* tabsys = new TabSystem(10.f, sf::Color::Green);
+    Tab* tab1 = tabsys->addTab("Overview");
+    Tab* tab2 = tabsys->addTab("AI modules influences");
+    tab1->AddElement(new Button(
+        10, tabsys->getHeight()+10, "Run",
+        PATH_FONT_DEFAULT, sf::Color::Yellow
+    ));
+    return tabsys;
 }
 
 int main() {
@@ -26,7 +26,7 @@ int main() {
         sf::Style::Close
     );
     ROOT_WINDOW = &window;
-    TabSystem* sys = build_ui();
+    TabSystem* tabsys = build_ui();
     window.setFramerateLimit(6);
 
     while (window.isOpen()) {
@@ -36,14 +36,14 @@ int main() {
                 window.close();
                 break;
             }
-            sys->handleEvent(event);
+            tabsys->handleEvent(event);
         }
 
         window.clear();
-        sys->draw(window);
+        tabsys->draw(window);
         window.display();
     }
 
-    delete sys;
+    delete tabsys;
     return 0;
 }
