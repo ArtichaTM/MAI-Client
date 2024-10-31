@@ -4,7 +4,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "../base.hpp"
-#include "../button.hpp"
+#include "../interactive/button.hpp"
 
 class Tab : public SFBase {
     std::vector<SFBase*> elements;

@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "elements/button.hpp"
+#include "elements/interactive/button.hpp"
 #include "elements/tabs/system.hpp"
 #include "config.hpp"
 

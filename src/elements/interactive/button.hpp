@@ -2,7 +2,7 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 
-#include "base.hpp"
+#include "../base.hpp"
 
 struct Button : public SFBase {
     sf::RectangleShape shape;
