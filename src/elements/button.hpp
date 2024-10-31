@@ -2,24 +2,26 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 
+#include "base.hpp"
 
-class Button {
-public:
+struct Button : public SFBase {
+    sf::RectangleShape shape;
+    sf::Font font;
+    sf::Text text;
+
     Button(
         float x,
         float y,
-        float width,
-        float height,
-        const std::string& text
+        const std::string& text,
+        const std::string& font_path,
+        sf::Color color
     );
 
-    void draw(sf::RenderWindow&);
-    bool isMouseOver(sf::Vector2i);
-    void onClick();
-    void update(sf::Vector2i);
+    void handleEvent(const sf::Event&);
+    void draw(sf::RenderWindow& window) const;
+    bool isMouseOver();
 
 private:
-    sf::RectangleShape buttonShape;
-    sf::Font buttonFont;
-    sf::Text buttonText;
+    static constexpr float padding = 4.f;
+    static const sf::Color hover_color;
 };

@@ -9,4 +9,5 @@ class SFBase
 public:
     virtual void handleEvent(const sf::Event&) = 0;
     virtual void draw(sf::RenderWindow& window) const = 0;
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 };

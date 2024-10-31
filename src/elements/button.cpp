@@ -1,4 +1,6 @@
 #include <string>
+#include <iostream>
+
 #include <SFML/Graphics.hpp>
 
 #include "button.hpp"
@@ -7,42 +9,65 @@
 Button::Button(
     float x,
     float y,
-    float width,
-    float height,
-    const std::string& text
+    const std::string& _text,
+    const std::string& font_path,
+    sf::Color color
 ) {
-    buttonShape.setSize(sf::Vector2f(width, height));
-    buttonShape.setPosition(x, y);
-    buttonShape.setFillColor(sf::Color::Green);
+    font.loadFromFile(font_path);
+    text.setPosition(x + padding, y + padding);
+    text.setFont(font);
+    text.setString(_text);
+    text.setCharacterSize(24);
+    text.setFillColor(color);
+    sf::FloatRect text_bounding = text.getGlobalBounds();
 
-    buttonFont.loadFromFile(PATH_FONT_DEFAULT);
-    buttonText.setFont(buttonFont);
-    buttonText.setString(text);
-    buttonText.setCharacterSize(24);
-    buttonText.setFillColor(sf::Color::White);
-    buttonText.setPosition(
-        x + (width - buttonText.getGlobalBounds().width) / 2,
-        y + (height - buttonText.getGlobalBounds().height) / 2
+    shape.setPosition(x, y);
+    shape.setOutlineColor(color);
+    shape.setOutlineThickness(2);
+    shape.setFillColor(sf::Color::Transparent);
+    shape.setSize(sf::Vector2f(
+        text_bounding.left + text_bounding.width + padding*2,
+        text_bounding.top + text_bounding.height + padding*2
+    ));
+}
+
+void Button::handleEvent(const sf::Event& event) {
+    if (event.type != sf::Event::MouseMoved) return;
+    sf::Color color(255, 255, 255, 100);
+    if (isMouseOver()) {
+        shape.setFillColor(hover_color);
+    } else {
+        shape.setFillColor(sf::Color::Transparent);
+    }
+}
+
+void Button::draw(sf::RenderWindow &window) const {
+    window.draw(shape);
+    window.draw(text);
+}
+
+bool Button::isMouseOver() {
+    return shape.getGlobalBounds().contains(
+        ROOT_WINDOW->mapPixelToCoords(
+            (sf::Mouse::getPosition(*ROOT_WINDOW))
+        )
     );
 }
 
-void Button::draw(sf::RenderWindow& window) {
-    window.draw(buttonShape);
-    window.draw(buttonText);
-}
+const sf::Color Button::hover_color = sf::Color(255, 255, 255, 120);
 
-bool Button::isMouseOver(sf::Vector2i mousePos) {
-    return buttonShape.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos));
-}
+// bool Button::isMouseOver(sf::Vector2i mousePos) {
+//     return buttonShape.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos));
+// }
 
-void Button::onClick() {
+// void Button::onClick() {
 
-}
+// }
 
-void Button::update(sf::Vector2i mousePos) {
-    if (isMouseOver(mousePos)) {
-        buttonShape.setFillColor(sf::Color::Yellow);
-    } else {
-        buttonShape.setFillColor(sf::Color::Green);
-    }
-}
+// void Button::update(sf::Vector2i mousePos) {
+//     if (isMouseOver(mousePos)) {
+//         buttonShape.setFillColor(sf::Color::Yellow);
+//     } else {
+//         buttonShape.setFillColor(sf::Color::Green);
+//     }
+// }

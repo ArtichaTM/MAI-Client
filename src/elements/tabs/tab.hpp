@@ -4,18 +4,19 @@
 #include <SFML/Graphics.hpp>
 
 #include "../base.hpp"
+#include "../button.hpp"
 
 class Tab : public SFBase {
-    sf::Text tabText;
     std::vector<SFBase*> elements;
 public:
-    Tab(const std::string& title, float offset, float height);
+    Button tabText;
+    Tab(const std::string& title, float offset, float height, sf::Color color);
+    ~Tab();
     void draw(sf::RenderWindow& window) const override;
     void draw(sf::RenderWindow& window, bool active = false) const;
-    void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     void handleEvent(const sf::Event& event) override;
-    void setTabTextFont(const sf::Font& font);
-    bool IsInBounds(const sf::Vector2i& position) const;
-    bool IsInBounds(const sf::Vector2f& position) const;
+    bool IsSwitcherInBounds(const sf::Vector2i& position) const;
+    bool IsSwitcherInBounds(const sf::Vector2f& position) const;
     void AddElement(SFBase* element);
+    const std::string getName();
 };
