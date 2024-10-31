@@ -29,9 +29,6 @@ void TabSystem::handleEvent(const sf::Event& event) {
             &&
             event.mouseButton.button == sf::Mouse::Left
         ) {
-            std::cout << "Active changed to "
-                << (std::string)(tabs[i]->tabText.text.getString())
-                << std::endl;
             active_tab_index = i;
         }
         tab->handleEvent(event);
