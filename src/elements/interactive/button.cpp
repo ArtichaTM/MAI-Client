@@ -24,8 +24,8 @@ Button::Button(
     shape.setOutlineColor(main_color);
     shape.setOutlineThickness(2);
     shape.setSize(sf::Vector2f(
-        text_bounding.width + padding*2,
-        text_bounding.height + padding*3
+        text_bounding.width + padding*2 + 2.f,
+        text_bounding.height + padding*3 + 3.f
     ));
     recalculateColor();
 }
