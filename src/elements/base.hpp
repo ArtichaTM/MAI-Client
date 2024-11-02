@@ -12,4 +12,6 @@ protected:
     virtual void mouseMoved(const sf::Vector2f&);
     virtual void keyPressed(const sf::Mouse::Button&);
     virtual void keyReleased(const sf::Mouse::Button&);
+    virtual void keyPressed(const sf::Event::KeyEvent&);
+    virtual void keyReleased(const sf::Event::KeyEvent&);
 };

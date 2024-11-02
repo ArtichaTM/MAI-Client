@@ -31,6 +31,14 @@ void SFBase::handleEvent(const sf::Event& event) {
             );
             break;
         }
+        case sf::Event::KeyPressed: {
+            keyPressed(event.key);
+            break;
+        }
+        case sf::Event::KeyReleased: {
+            keyReleased(event.key);
+            break;
+        }
     }
 }
 
@@ -41,3 +49,5 @@ void SFBase::draw(sf::RenderTarget &target, sf::RenderStates states) const {
 void SFBase::mouseMoved(const sf::Vector2f&) {}
 void SFBase::keyPressed(const sf::Mouse::Button&) {}
 void SFBase::keyReleased(const sf::Mouse::Button&) {}
+void SFBase::keyPressed(const sf::Event::KeyEvent&) {}
+void SFBase::keyReleased(const sf::Event::KeyEvent&) {}
