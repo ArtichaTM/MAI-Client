@@ -22,5 +22,5 @@ public:
     const std::string getName();
     void setActive(bool);
 
-    bool isVectorInBounds(const sf::Vector2f&) override;
+    sf::FloatRect getGlobalBounds() const override;
 };

@@ -23,10 +23,9 @@ public:
 
     void handleEvent(const sf::Event&) override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
-    bool isVectorInBounds(const sf::Vector2f&);
+    sf::FloatRect getGlobalBounds() const override;
 
     Tab* addTab(const std::string& title);
-    int recommendedHeight() const;
     void firstTabInit(Tab* tab);
     float getHeight();
     float getWidth();

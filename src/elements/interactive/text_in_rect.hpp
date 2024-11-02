@@ -21,7 +21,7 @@ struct TextInRect : public SFBase {
     ~TextInRect();
     operator std::string() const;
 
-    bool isVectorInBounds(const sf::Vector2f&) override;
+    sf::FloatRect getGlobalBounds() const override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     void recalculateColor();
 

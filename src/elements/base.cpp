@@ -2,6 +2,7 @@
 
 #include "config.hpp"
 #include "./base.hpp"
+#include "base.hpp"
 
 void SFBase::handleEvent(const sf::Event& event) {
     switch (event.type) {
@@ -42,11 +43,11 @@ void SFBase::handleEvent(const sf::Event& event) {
     }
 }
 
-void SFBase::draw(sf::RenderTarget &target, sf::RenderStates states) const {
-    throw std::logic_error("U can't call this method");
+bool SFBase::isVectorInBounds(const sf::Vector2f& vector) const {
+    return getGlobalBounds().contains(vector);
 }
 
-void SFBase::mouseMoved(const sf::Vector2f&) {}
+void SFBase::mouseMoved(const sf::Vector2f &) {}
 void SFBase::keyPressed(const sf::Mouse::Button&) {}
 void SFBase::keyReleased(const sf::Mouse::Button&) {}
 void SFBase::keyPressed(const sf::Event::KeyEvent&) {}

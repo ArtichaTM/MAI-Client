@@ -50,4 +50,4 @@ void Tab::setActive(bool _active) {
     tabText.setActive(active);
 }
 
-bool Tab::isVectorInBounds(const sf::Vector2f& vec) { return tabText.isVectorInBounds(vec); }
+sf::FloatRect Tab::getGlobalBounds() const { return tabText.getGlobalBounds(); }

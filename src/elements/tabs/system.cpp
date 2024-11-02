@@ -8,6 +8,7 @@
 
 #include "config.hpp"
 #include "./system.hpp"
+#include "system.hpp"
 
 
 TabSystem::TabSystem(float height, sf::Color color) : height(height), color(color) {
@@ -40,12 +41,13 @@ void TabSystem::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     }
 }
 
-bool TabSystem::isVectorInBounds(const sf::Vector2f& position)
+sf::FloatRect TabSystem::getGlobalBounds() const
 {
-    for (Tab*& tab : tabs) {
-        if (tab->isVectorInBounds(position)) return true;
-    }
-    return false;
+    if (tabs.empty()) return sf::FloatRect();
+    sf::FloatRect left_bounds = tabs[0]->getGlobalBounds();
+    sf::FloatRect right_bounds = tabs[tabs.size()-1]->getGlobalBounds();
+    left_bounds.width = right_bounds.left + right_bounds.width;
+    return left_bounds;
 }
 
 Tab* TabSystem::addTab(const std::string& title) {
@@ -66,12 +68,6 @@ Tab* TabSystem::addTab(const std::string& title) {
 void TabSystem::firstTabInit(Tab* tab) {
     tab->setActive(true);
     active_tab = tab;
-}
-
-int TabSystem::recommendedHeight() const
-{
-    assert(!tabs.empty());
-    return tabs[0]->tabText.shape.getGlobalBounds().height;
 }
 
 Tab* TabSystem::operator[](const std::string &name)

@@ -79,8 +79,8 @@ void TextInRect::mouseMoved(const sf::Vector2f& vector) {
     setHovering(isVectorInBounds(vector));
 }
 
-bool TextInRect::isVectorInBounds(const sf::Vector2f& pos) {
-    return shape.getGlobalBounds().contains(pos);
+sf::FloatRect TextInRect::getGlobalBounds() const {
+    return shape.getGlobalBounds();
 }
 
 const sf::Color TextInRect::hover_color = sf::Color(255, 255, 255, 60);
