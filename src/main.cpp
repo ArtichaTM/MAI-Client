@@ -1,4 +1,5 @@
 #include <string>
+#include <iostream>
 
 #include <SFML/Graphics.hpp>
 
@@ -11,10 +12,14 @@ TabSystem* build_ui() {
     TabSystem* tabsys = new TabSystem(10.f, sf::Color::Green);
     Tab* tab1 = tabsys->addTab("Overview");
     Tab* tab2 = tabsys->addTab("AI modules influences");
-    tab1->AddElement(new Button(
-        10, tabsys->getHeight()+10, "Run",
-        PATH_FONT_DEFAULT, sf::Color::Yellow
-    ));
+    // Button* button = new Button(
+    //     10, tabsys->getHeight()+10, "Run",
+    //     PATH_FONT_DEFAULT, sf::Color::Yellow
+    //     // , []() {
+    //     //     std::cout << "Button clicked";
+    //     // }
+    // );
+    // tab1->AddElement(button);
     return tabsys;
 }
 
@@ -40,7 +45,7 @@ int main() {
         }
 
         window.clear();
-        tabsys->draw(window);
+        window.draw(*tabsys);
         window.display();
     }
 

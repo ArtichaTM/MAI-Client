@@ -1,6 +1,8 @@
 #include <vector>
 #include <string>
+#include <sstream>
 #include <cassert>
+#include <iostream>
 
 #include <SFML/Graphics.hpp>
 
@@ -18,32 +20,32 @@ TabSystem::~TabSystem() {
     }
 }
 
+TabSystem::operator std::string() const {
+    std::stringstream ss;
+    ss << "<TabSystem with " << tabs.size() << " tabs>";
+    return ss.str();
+}
+
 void TabSystem::handleEvent(const sf::Event& event) {
     for (size_t i = 0; i < tabs.size(); ++i) {
-        Tab* tab = tabs[i];
-        if (
-            event.type == sf::Event::MouseButtonPressed
-            &&
-            tab->IsSwitcherInBounds(sf::Mouse::getPosition(*ROOT_WINDOW))
-            &&
-            event.mouseButton.button == sf::Mouse::Left
-            &&
-            active_tab_index != i
-        ) {
-            tabs[active_tab_index]->setActive(false);
-            active_tab_index = i;
-            tabs[i]->setActive(true);
-        }
-        tab->handleEvent(event);
+        tabs[i]->handleEvent(event);
     }
 }
 
-void TabSystem::draw(sf::RenderWindow& window) {
+void TabSystem::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     assert(!tabs.empty());
     for (size_t i = 0; i < tabs.size(); ++i) {
         Tab* tab = tabs[i];
-        tab->draw(window, i == active_tab_index);
+        target.draw(*tab);
     }
+}
+
+bool TabSystem::isVectorInBounds(const sf::Vector2f& position)
+{
+    for (Tab*& tab : tabs) {
+        if (tab->isVectorInBounds(position)) return true;
+    }
+    return false;
 }
 
 Tab* TabSystem::addTab(const std::string& title) {
@@ -52,6 +54,13 @@ Tab* TabSystem::addTab(const std::string& title) {
         offset += tab->tabText.shape.getGlobalBounds().width + offset;
     }
     Tab* tab = tabs.emplace_back(new Tab(title, offset, height, color));
+    tab->tabText.setOnClick([this, tab]() {
+        std::cout << "Setting "
+            << "active tab=" << (std::string) *tab
+            << ", while active is " << (std::string) *active_tab
+            << std::endl;
+        setActiveTab(tab);
+    });
     if (tabs.size() == 1) {
         firstTabInit(tab);
     }
@@ -60,7 +69,7 @@ Tab* TabSystem::addTab(const std::string& title) {
 
 void TabSystem::firstTabInit(Tab* tab) {
     tab->setActive(true);
-    tab->tabText.recalculateColor();
+    active_tab = tab;
 }
 
 int TabSystem::recommendedHeight() const
@@ -88,4 +97,11 @@ float TabSystem::getHeight() {
 float TabSystem::getWidth() {
     sf::FloatRect rect = tabs[tabs.size()-1]->tabText.shape.getGlobalBounds();
     return rect.left + rect.width;
+}
+
+void TabSystem::setActiveTab(Tab *tab) {
+    assert(active_tab);
+    active_tab->setActive(false);
+    active_tab = tab;
+    tab->setActive(true);
 }

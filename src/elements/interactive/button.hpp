@@ -2,15 +2,11 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 
-#include "../base.hpp"
+#include "text_in_rect.hpp"
 
-struct Button : public SFBase {
-    sf::RectangleShape shape;
-    sf::Font font;
-    sf::Text text;
-    sf::Color* current_color = nullptr;
-    sf::Color start_color;
-
+class Button : public TextInRect {
+    std::function<void()> on_click;
+public:
     Button(
         float x,
         float y,
@@ -18,21 +14,8 @@ struct Button : public SFBase {
         const std::string& font_path,
         sf::Color main_color
     );
-    ~Button();
+    operator std::string() const;
+    void setOnClick(std::function<void()>);
 
-    void handleEvent(const sf::Event&);
-    void draw(sf::RenderWindow& window) override;
-    bool isMouseOver();
-    void recalculateColor();
-
-    void setActive(bool);
-    void setHovering(bool);
-
-private:
-    bool active = false;
-    bool hovering = false;
-    static constexpr float padding = 6.f;
-    static const sf::Color hover_color;
-    static const sf::Color active_color;
-
+    void keyPressed(const sf::Mouse::Button&) override;
 };

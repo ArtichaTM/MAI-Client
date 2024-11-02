@@ -1,13 +1,15 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
-class SFBase
-    :
+struct SFBase :
     public sf::Drawable,
     public sf::Transformable
 {
-public:
-    virtual void handleEvent(const sf::Event&) = 0;
-    virtual void draw(sf::RenderWindow& window) = 0;
+    virtual void handleEvent(const sf::Event&);
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+    virtual bool isVectorInBounds(const sf::Vector2f&) = 0;
+protected:
+    virtual void mouseMoved(const sf::Vector2f&);
+    virtual void keyPressed(const sf::Mouse::Button&);
+    virtual void keyReleased(const sf::Mouse::Button&);
 };

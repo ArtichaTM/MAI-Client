@@ -1,9 +1,18 @@
+#include <sstream>
+#include <iostream>
+
 #include "tab.hpp"
 
 #include "config.hpp"
 
-Tab::Tab(const std::string& title, float offset, float height, sf::Color color)
-    : tabText(offset, 0, title, PATH_FONT_DEFAULT, color) {}
+Tab::Tab(
+    const std::string& title,
+    float offset,
+    float height,
+    sf::Color color
+)
+: tabText(offset, 0, title, PATH_FONT_DEFAULT, color)
+{}
 
 Tab::~Tab() {
     for (SFBase*& element : elements) {
@@ -11,14 +20,18 @@ Tab::~Tab() {
     }
 }
 
-void Tab::draw(sf::RenderWindow &window) { draw(window, false); }
+Tab::operator std::string() const {
+    std::stringstream ss;
+    ss << "<Tab with switcher " << (std::string) tabText << " and " << elements.size() << " elements>";
+    return ss.str();
+}
 
-void Tab::draw(sf::RenderWindow& window, bool active) {
-    tabText.draw(window);
+void Tab::draw(sf::RenderTarget& target, sf::RenderStates states) const {
+    target.draw(tabText, states);
     if (!active) return;
 
     for (SFBase* element : elements) {
-        element->draw(window);
+        target.draw(*element, states);
     }
 }
 
@@ -29,23 +42,14 @@ void Tab::handleEvent(const sf::Event& event) {
     }
 }
 
-bool Tab::IsSwitcherInBounds(const sf::Vector2i& position) const {
-    return tabText.shape.getGlobalBounds().contains(
-        ROOT_WINDOW->mapPixelToCoords(position)
-    );
-}
-
-bool Tab::IsSwitcherInBounds(const sf::Vector2f& position) const {
-    return tabText.shape.getGlobalBounds().contains(position);
-}
-
-void Tab::AddElement(SFBase* element) {
-    elements.emplace_back(element);
-}
+void Tab::AddElement(SFBase* element) { elements.emplace_back(element); }
 
 const std::string Tab::getName() { return tabText.text.getString(); }
 
 void Tab::setActive(bool _active) {
+    std::cout << "Tab " << (std::string) tabText.text.getString() << " is set to " << _active << std::endl;
     active = _active;
     tabText.setActive(active);
 }
+
+bool Tab::isVectorInBounds(const sf::Vector2f& vec) { return tabText.isVectorInBounds(vec); }
