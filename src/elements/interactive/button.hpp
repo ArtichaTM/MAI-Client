@@ -15,7 +15,7 @@ public:
         sf::Color main_color
     );
     operator std::string() const;
-    void setOnClick(std::function<void()>);
+    Button* setOnClick(std::function<void()>);
 
     void keyPressed(const sf::Mouse::Button&) override;
 };

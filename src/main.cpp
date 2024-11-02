@@ -3,17 +3,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "elements/interactive/button.hpp"
-#include "elements/tabs/system.hpp"
+#include "./builders/header.hpp"
 #include "config.hpp"
-
-
-TabSystem* build_ui() {
-    TabSystem* tabsys = new TabSystem(10.f, sf::Color::Green);
-    Tab* tab1 = tabsys->addTab("Overview");
-    Tab* tab2 = tabsys->addTab("AI modules influences");
-    return tabsys;
-}
 
 int main() {
     sf::RenderWindow window(

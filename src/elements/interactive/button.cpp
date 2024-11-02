@@ -15,8 +15,9 @@ Button::Button(
 ) : TextInRect(x, y, _text, font_path, main_color)
 {}
 
-void Button::setOnClick(std::function<void()> _on_click) {
+Button* Button::setOnClick(std::function<void()> _on_click) {
     on_click = _on_click;
+    return this;
 }
 
 Button::operator std::string() const {
