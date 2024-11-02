@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "config.hpp"
-#include "base.hpp"
+#include "./base.hpp"
 
 void SFBase::handleEvent(const sf::Event& event) {
     switch (event.type) {

@@ -4,8 +4,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "text_in_rect.hpp"
 #include "config.hpp"
+#include "./text_in_rect.hpp"
 
 TextInRect::TextInRect(
     float x,

@@ -3,8 +3,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "../base.hpp"
-#include "../interactive/button.hpp"
+#include "elements/base.hpp"
+#include "elements/interactive/button.hpp"
 
 class Tab : public SFBase {
     std::vector<SFBase*> elements;

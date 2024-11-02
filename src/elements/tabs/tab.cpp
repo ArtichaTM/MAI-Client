@@ -1,9 +1,8 @@
 #include <sstream>
 #include <iostream>
 
-#include "tab.hpp"
-
 #include "config.hpp"
+#include "./tab.hpp"
 
 Tab::Tab(
     const std::string& title,

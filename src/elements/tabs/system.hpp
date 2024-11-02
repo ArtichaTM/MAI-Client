@@ -5,8 +5,8 @@
 #include <SFML/Graphics.hpp>
 
 #include "config.hpp"
-#include "tab.hpp"
-#include "../base.hpp"
+#include "elements/base.hpp"
+#include "./tab.hpp"
 
 
 class TabSystem : public SFBase {

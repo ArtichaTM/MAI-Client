@@ -2,7 +2,7 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 
-#include "../base.hpp"
+#include "elements/base.hpp"
 
 struct TextInRect : public SFBase {
     sf::RectangleShape shape;

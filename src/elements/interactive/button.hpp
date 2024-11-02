@@ -2,7 +2,7 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 
-#include "text_in_rect.hpp"
+#include "./text_in_rect.hpp"
 
 class Button : public TextInRect {
     std::function<void()> on_click;

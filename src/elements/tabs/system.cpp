@@ -7,7 +7,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "config.hpp"
-#include "system.hpp"
+#include "./system.hpp"
 
 
 TabSystem::TabSystem(float height, sf::Color color) : height(height), color(color) {

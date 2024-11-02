@@ -3,8 +3,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "button.hpp"
 #include "config.hpp"
+#include "./button.hpp"
 
 Button::Button(
     float x,
