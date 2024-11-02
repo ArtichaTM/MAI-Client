@@ -15,7 +15,7 @@ Button::Button(
 ) : TextInRect(x, y, _text, font_path, main_color)
 {}
 
-Button* Button::setOnClick(std::function<void()> _on_click) {
+Button* Button::setOnClick(std::function<void(Button*)> _on_click) {
     on_click = _on_click;
     return this;
 }
@@ -28,5 +28,5 @@ Button::operator std::string() const {
 
 void Button::keyPressed(const sf::Mouse::Button& button) {
     TextInRect::keyPressed(button);
-    on_click();
+    on_click(this);
 }
