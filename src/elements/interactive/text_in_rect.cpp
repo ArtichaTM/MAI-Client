@@ -44,12 +44,6 @@ TextInRect::operator std::string() const {
 
 void TextInRect::draw(sf::RenderTarget &target, sf::RenderStates states) const
 {
-    // std::cout << "Color set: ["
-    //     << (int) current_color->r << ", "
-    //     << (int) current_color->g << ", "
-    //     << (int) current_color->b << ", "
-    //     << (int) current_color->a << ", "
-    //     << "], active: " << active << std::endl;
     target.draw(shape);
     target.draw(text);
 }

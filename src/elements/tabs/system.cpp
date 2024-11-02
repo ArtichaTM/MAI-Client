@@ -55,10 +55,6 @@ Tab* TabSystem::addTab(const std::string& title) {
     }
     Tab* tab = tabs.emplace_back(new Tab(title, offset, height, color));
     tab->tabText.setOnClick([this, tab]() {
-        std::cout << "Setting "
-            << "active tab=" << (std::string) *tab
-            << ", while active is " << (std::string) *active_tab
-            << std::endl;
         setActiveTab(tab);
     });
     if (tabs.size() == 1) {

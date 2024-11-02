@@ -12,14 +12,6 @@ TabSystem* build_ui() {
     TabSystem* tabsys = new TabSystem(10.f, sf::Color::Green);
     Tab* tab1 = tabsys->addTab("Overview");
     Tab* tab2 = tabsys->addTab("AI modules influences");
-    // Button* button = new Button(
-    //     10, tabsys->getHeight()+10, "Run",
-    //     PATH_FONT_DEFAULT, sf::Color::Yellow
-    //     // , []() {
-    //     //     std::cout << "Button clicked";
-    //     // }
-    // );
-    // tab1->AddElement(button);
     return tabsys;
 }
 

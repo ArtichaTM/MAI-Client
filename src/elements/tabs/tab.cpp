@@ -47,7 +47,6 @@ void Tab::AddElement(SFBase* element) { elements.emplace_back(element); }
 const std::string Tab::getName() { return tabText.text.getString(); }
 
 void Tab::setActive(bool _active) {
-    std::cout << "Tab " << (std::string) tabText.text.getString() << " is set to " << _active << std::endl;
     active = _active;
     tabText.setActive(active);
 }
