@@ -4,7 +4,15 @@
 #include "./base.hpp"
 #include "base.hpp"
 
-void SFBase::handleEvent(const sf::Event& event) {
+sf::FloatRect SFBase::getGlobalBounds() const {
+    return sf::FloatRect(
+        getLeft(), getTop(),
+        getWidth(), getHeight()
+    );
+}
+
+void SFBase::handleEvent(const sf::Event &event)
+{
     switch (event.type) {
         case sf::Event::MouseButtonPressed: {
             if (!isVectorInBounds(

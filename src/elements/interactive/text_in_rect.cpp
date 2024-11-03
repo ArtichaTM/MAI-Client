@@ -15,7 +15,6 @@ TextInRect::TextInRect(
     sf::Color main_color
 ) {
     font.loadFromFile(font_path);
-    text.setPosition(x + padding, y + padding);
     text.setFont(font);
     text.setString(_text);
     text.setCharacterSize(24);
@@ -25,16 +24,11 @@ TextInRect::TextInRect(
     shape.setPosition(x, y);
     shape.setOutlineColor(main_color);
     shape.setOutlineThickness(2);
-    shape.setSize(sf::Vector2f(
-        text_bounding.width + padding*2 + 2.f,
-        text_bounding.height + padding*3 + 3.f
-    ));
+    fit();
     recalculateColor();
 }
 
-TextInRect::~TextInRect() {
-    delete current_color;
-}
+TextInRect::~TextInRect() { delete current_color; }
 
 TextInRect::operator std::string() const {
     std::stringstream ss;
@@ -42,10 +36,54 @@ TextInRect::operator std::string() const {
     return ss.str();
 }
 
-void TextInRect::draw(sf::RenderTarget &target, sf::RenderStates states) const
-{
+void TextInRect::draw(sf::RenderTarget &target, sf::RenderStates states) const {
     target.draw(shape);
     target.draw(text);
+}
+
+TextInRect* TextInRect::setLeft(float value) {
+    shape.setPosition(value, getTop());
+    text.setPosition(value, getTop());
+    return this;
+}
+TextInRect* TextInRect::setTop(float value) {
+    shape.setPosition(getLeft(), value);
+    text.setPosition(getLeft(), value);
+    return this;
+}
+TextInRect* TextInRect::setWidth(float value) {
+    shape.setSize(sf::Vector2f(
+        value, getHeight()
+    ));
+    return this;
+}
+TextInRect* TextInRect::setHeight(float value) {
+    shape.setSize(sf::Vector2f(
+        getWidth(), value
+    ));
+    return this;
+}
+float TextInRect::getLeft() const { return shape.getPosition().x; }
+float TextInRect::getTop() const { return shape.getPosition().y; }
+float TextInRect::getWidth() const { return shape.getSize().x; }
+float TextInRect::getHeight() const { return shape.getSize().y; }
+
+TextInRect* TextInRect::fit() {
+    sf::FloatRect text_bounding = text.getGlobalBounds();
+    text.setPosition(
+        getLeft() + padding,
+        getTop() + padding
+    );
+    shape.setSize(sf::Vector2f(
+        text_bounding.width + padding*2 + 2.f,
+        text_bounding.height + padding*3 + 3.f
+    ));
+    return this;
+}
+
+TextInRect* TextInRect::setPadding(float padding) {
+    this->padding = padding;
+    return this;
 }
 
 void TextInRect::recalculateColor() {

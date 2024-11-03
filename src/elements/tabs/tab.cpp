@@ -51,3 +51,23 @@ void Tab::setActive(bool _active) {
 }
 
 sf::FloatRect Tab::getGlobalBounds() const { return tabText.getGlobalBounds(); }
+Tab* Tab::setLeft(float value) {
+    tabText.setLeft(value);
+    return this;
+}
+Tab* Tab::setTop(float value) {
+    tabText.setTop(value);
+    return this;
+}
+Tab* Tab::setWidth(float value) {
+    tabText.setWidth(value);
+    return this;
+}
+Tab* Tab::setHeight(float value) {
+    tabText.setHeight(value);
+    return this;
+}
+float Tab::getLeft() const { return tabText.getLeft(); }
+float Tab::getTop() const { return tabText.getTop(); }
+float Tab::getWidth() const { return tabText.getWidth(); }
+float Tab::getHeight() const { return tabText.getHeight(); }

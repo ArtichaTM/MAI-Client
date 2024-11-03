@@ -41,13 +41,39 @@ void TabSystem::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     }
 }
 
-sf::FloatRect TabSystem::getGlobalBounds() const
-{
+sf::FloatRect TabSystem::getGlobalBounds() const {
     if (tabs.empty()) return sf::FloatRect();
     sf::FloatRect left_bounds = tabs[0]->getGlobalBounds();
     sf::FloatRect right_bounds = tabs[tabs.size()-1]->getGlobalBounds();
     left_bounds.width = right_bounds.left + right_bounds.width;
     return left_bounds;
+}
+TabSystem* TabSystem::setLeft(float value) {
+    throw std::logic_error("TabSystem is absolute");
+}
+TabSystem* TabSystem::setTop(float value) {
+    throw std::logic_error("TabSystem is absolute");
+}
+TabSystem* TabSystem::setWidth(float value) {
+    throw std::logic_error("TabSystem is absolute");
+}
+TabSystem* TabSystem::setHeight(float value) {
+    throw std::logic_error("TabSystem is absolute");
+}
+float TabSystem::getLeft() const {
+    return tabs[0]->getLeft();
+}
+float TabSystem::getTop() const {
+    return tabs[0]->getTop();
+}
+float TabSystem::getWidth() const {
+    Tab* left_tab = tabs[tabs.size()-1];
+    return getLeft() - (
+        left_tab->getLeft() + left_tab->getWidth()
+    );
+}
+float TabSystem::getHeight() const {
+    return height;
 }
 
 Tab* TabSystem::addTab(const std::string& title) {
@@ -56,7 +82,7 @@ Tab* TabSystem::addTab(const std::string& title) {
         offset += tab->tabText.shape.getGlobalBounds().width + offset;
     }
     Tab* tab = tabs.emplace_back(new Tab(title, offset, height, color));
-    tab->tabText.setOnClick([this, tab]() {
+    tab->tabText.setOnClick([this, tab](Button* button) {
         setActiveTab(tab);
     });
     if (tabs.size() == 1) {
@@ -80,16 +106,6 @@ Tab* TabSystem::operator[](const std::string &name)
 }
 
 Tab* TabSystem::operator[](ushort index) { return tabs[index]; }
-
-float TabSystem::getHeight() {
-    sf::FloatRect rect = tabs[tabs.size()-1]->tabText.shape.getGlobalBounds();
-    return rect.top + rect.height;
-}
-
-float TabSystem::getWidth() {
-    sf::FloatRect rect = tabs[tabs.size()-1]->tabText.shape.getGlobalBounds();
-    return rect.left + rect.width;
-}
 
 void TabSystem::setActiveTab(Tab *tab) {
     assert(active_tab);

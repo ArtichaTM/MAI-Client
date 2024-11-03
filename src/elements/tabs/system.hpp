@@ -24,11 +24,17 @@ public:
     void handleEvent(const sf::Event&) override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     sf::FloatRect getGlobalBounds() const override;
+    virtual TabSystem* setLeft(float);
+    virtual TabSystem* setTop(float);
+    virtual TabSystem* setWidth(float);
+    virtual TabSystem* setHeight(float);
+    virtual float getLeft() const;
+    virtual float getTop() const;
+    virtual float getWidth() const;
+    virtual float getHeight() const;
 
     Tab* addTab(const std::string& title);
     void firstTabInit(Tab* tab);
-    float getHeight();
-    float getWidth();
 
     void setActiveTab(Tab* tab);
 

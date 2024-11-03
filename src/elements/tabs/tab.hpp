@@ -23,4 +23,12 @@ public:
     void setActive(bool);
 
     sf::FloatRect getGlobalBounds() const override;
+    virtual Tab* setLeft(float);
+    virtual Tab* setTop(float);
+    virtual Tab* setWidth(float);
+    virtual Tab* setHeight(float);
+    virtual float getLeft() const;
+    virtual float getTop() const;
+    virtual float getWidth() const;
+    virtual float getHeight() const;
 };
