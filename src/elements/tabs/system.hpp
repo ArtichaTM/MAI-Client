@@ -32,6 +32,7 @@ public:
     virtual float getTop() const;
     virtual float getWidth() const;
     virtual float getHeight() const;
+    TabSystem* fit_tab();
 
     Tab* addTab(const std::string& title);
     void firstTabInit(Tab* tab);

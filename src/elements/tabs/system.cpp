@@ -113,3 +113,8 @@ void TabSystem::setActiveTab(Tab *tab) {
     active_tab = tab;
     tab->setActive(true);
 }
+
+TabSystem* TabSystem::fit_tab() {
+    for (Tab*& tab : tabs) tab->tabText.fit();
+    return this;
+}

@@ -3,6 +3,7 @@
 
 #include "config.hpp"
 #include "./tab.hpp"
+#include "tab.hpp"
 
 Tab::Tab(
     const std::string& title,
