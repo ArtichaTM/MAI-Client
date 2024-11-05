@@ -4,7 +4,8 @@
 #include "./base.hpp"
 #include "base.hpp"
 
-sf::FloatRect SFBase::getGlobalBounds() const {
+sf::FloatRect SFBase::getGlobalBounds() const
+{
     return sf::FloatRect(
         getLeft(), getTop(),
         getWidth(), getHeight()
@@ -60,3 +61,6 @@ void SFBase::keyPressed(const sf::Mouse::Button&) {}
 void SFBase::keyReleased(const sf::Mouse::Button&) {}
 void SFBase::keyPressed(const sf::Event::KeyEvent&) {}
 void SFBase::keyReleased(const sf::Event::KeyEvent&) {}
+
+inline float SFBase::getRight() const { return getLeft() + getWidth(); }
+inline float SFBase::getBottom() const { return getTop() + getHeight(); }

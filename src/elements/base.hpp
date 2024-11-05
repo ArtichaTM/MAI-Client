@@ -14,6 +14,8 @@ struct SFBase :
     virtual float getTop() const = 0;
     virtual float getWidth() const = 0;
     virtual float getHeight() const = 0;
+    inline float getRight() const;
+    inline float getBottom() const;
 
     virtual sf::FloatRect getGlobalBounds() const;
 
