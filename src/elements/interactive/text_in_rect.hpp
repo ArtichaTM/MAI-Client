@@ -17,6 +17,7 @@ struct TextInRect : public SFBase {
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     sf::FloatRect getGlobalBounds() const override;
+    void move(const float left, const float top) override;
 
     void fit() override;
     TextInRect* setPadding(float);

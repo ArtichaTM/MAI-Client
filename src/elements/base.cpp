@@ -8,6 +8,11 @@ bool SFBase::isVectorInBounds(const sf::Vector2f& vec) const {
     return getGlobalBounds().contains(vec);
 }
 
+void SFBase::move(const sf::FloatRect& rect)
+{
+    move(rect.left, rect.top);
+}
+
 void SFBase::handleEvent(const sf::Event &event)
 {
     switch (event.type) {

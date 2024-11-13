@@ -44,6 +44,20 @@ void TextInRect::draw(sf::RenderTarget &target, sf::RenderStates states) const {
 
 sf::FloatRect TextInRect::getGlobalBounds() const { return shape.getGlobalBounds(); }
 
+void TextInRect::move(const float left, const float top)
+{
+    sf::Vector2f shape_position(shape.getPosition());
+    sf::Vector2f text_position(text.getPosition()); 
+    shape.setPosition(
+        shape_position.x + left,
+        shape_position.y + top
+    );
+    text.setPosition(
+        text_position.x + left,
+        text_position.y + top
+    );
+}
+
 void TextInRect::fit() {
     sf::FloatRect text_bounding = text.getGlobalBounds();
     sf::FloatRect shape_bounding = shape.getGlobalBounds();

@@ -50,6 +50,10 @@ sf::FloatRect TabSystem::getGlobalBounds() const
     return rect;
 }
 
+void TabSystem::move(const float left, const float top) {
+    for (Tab*& tab : tabs) tab->move(left, top);
+}
+
 Tab* TabSystem::addTab(const std::string& title) {
     float offset = 0;
     for (Tab*& tab : tabs) {

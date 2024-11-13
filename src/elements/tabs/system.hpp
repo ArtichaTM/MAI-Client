@@ -27,6 +27,7 @@ public:
     void handleEvent(const sf::Event&) override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     sf::FloatRect getGlobalBounds() const override;
+    void move(const float left, const float top) override;
     void fit() override;
 
     Tab* addTab(const std::string& title);

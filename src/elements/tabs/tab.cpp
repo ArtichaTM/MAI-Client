@@ -35,10 +35,9 @@ void Tab::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     }
 }
 
-sf::FloatRect Tab::getGlobalBounds() const
-{
-    return tabText.getGlobalBounds();
-}
+sf::FloatRect Tab::getGlobalBounds() const { return tabText.getGlobalBounds(); }
+
+void Tab::move(const float left, const float top) { tabText.move(left, top); }
 
 void Tab::fit() { tabText.fit(); }
 

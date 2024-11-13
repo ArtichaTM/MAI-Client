@@ -9,6 +9,8 @@ public:
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const = 0;
     virtual sf::FloatRect getGlobalBounds() const = 0;
     bool isVectorInBounds(const sf::Vector2f&) const;
+    virtual void move(const float left, const float top) = 0;
+    void move(const sf::FloatRect&);
     virtual void handleEvent(const sf::Event&);
     virtual void fit() = 0;
 protected:
