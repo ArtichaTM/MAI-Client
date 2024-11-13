@@ -42,7 +42,15 @@ void TextInRect::draw(sf::RenderTarget &target, sf::RenderStates states) const {
     target.draw(text);
 }
 
-sf::FloatRect TextInRect::getGlobalBounds() const { return shape.getGlobalBounds(); }
+sf::FloatRect TextInRect::getGlobalBounds() const {
+    sf::FloatRect rect(shape.getGlobalBounds());
+    float thickness(shape.getOutlineThickness());
+    rect.left -= thickness;
+    rect.top -= thickness;
+    rect.width += thickness;
+    rect.height += thickness;
+    return rect;
+}
 
 void TextInRect::move(const float left, const float top)
 {

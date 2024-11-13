@@ -21,6 +21,11 @@ Button* Button::setOnClick(std::function<void(Button*)> _on_click) {
     return this;
 }
 
+Button* Button::toggleActivatable() {
+    activatingDisabled = !activatingDisabled;
+    return this;
+}
+
 Button::operator std::string() const {
     std::stringstream ss;
     ss << "<Button with text \"" << (std::string) text.getString() << "\">";
@@ -30,4 +35,5 @@ Button::operator std::string() const {
 void Button::keyPressed(const sf::Mouse::Button& button) {
     TextInRect::keyPressed(button);
     on_click(this);
+    if (activatingDisabled) setActive(false);
 }

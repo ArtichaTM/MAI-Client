@@ -6,6 +6,7 @@
 
 class Button : public TextInRect {
     std::function<void(Button*)> on_click;
+    bool activatingDisabled = false;
 public:
     Button(
         float x,
@@ -16,6 +17,7 @@ public:
     );
     operator std::string() const;
     Button* setOnClick(std::function<void(Button*)>);
+    Button* toggleActivatable();
 
     void keyPressed(const sf::Mouse::Button&) override;
 };

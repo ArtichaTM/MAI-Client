@@ -13,7 +13,7 @@
 
 TabSystem::TabSystem(float height, sf::Color color) : height(height), color(color) {
     font.loadFromFile(PATH_FONT_DEFAULT); // Ensure you have this font file
-    tabs = new HorizontalList(0., 0.);
+    tabs = new HorizontalList(2., 2.);
 }
 
 TabSystem::~TabSystem() {
