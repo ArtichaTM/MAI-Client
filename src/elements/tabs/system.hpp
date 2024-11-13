@@ -4,13 +4,14 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "./tab.hpp"
 #include "config.hpp"
 #include "elements/base.hpp"
-#include "./tab.hpp"
-
+#include "elements/list/horizontal.hpp"
 
 class TabSystem : public SFBase {
-    std::vector<Tab*> tabs;
+    HorizontalList* tabs;
+    // std::vector<Tab*> tabs;
     Tab* active_tab;
     sf::Font font;
     const float height;

@@ -13,57 +13,45 @@
 
 TabSystem::TabSystem(float height, sf::Color color) : height(height), color(color) {
     font.loadFromFile(PATH_FONT_DEFAULT); // Ensure you have this font file
+    tabs = new HorizontalList(0., 0.);
 }
 
 TabSystem::~TabSystem() {
-    for (Tab*& tab : tabs) {
-        delete tab;
-    }
+    // for (Tab*& tab : tabs) {
+    //     delete tab;
+    // }
+    delete tabs;
 }
 
 TabSystem::operator std::string() const {
     std::stringstream ss;
-    ss << "<TabSystem with " << tabs.size() << " tabs>";
+    ss << "<TabSystem with " << tabs->getElements().size() << " tabs>";
     return ss.str();
 }
 
 void TabSystem::handleEvent(const sf::Event& event) {
-    for (size_t i = 0; i < tabs.size(); ++i) {
-        tabs[i]->handleEvent(event);
-    }
+    tabs->handleEvent(event);
 }
 
 void TabSystem::draw(sf::RenderTarget& target, sf::RenderStates states) const {
-    assert(!tabs.empty());
-    for (size_t i = 0; i < tabs.size(); ++i) {
-        Tab* tab = tabs[i];
-        target.draw(*tab);
-    }
+    tabs->draw(target, states);
 }
 
-sf::FloatRect TabSystem::getGlobalBounds() const
-{
-    sf::FloatRect rect(tabs[0]->getGlobalBounds());
-    for (ushort i = 1; i < tabs.size(); i++) {
-        rect.width += tabs[i]->getGlobalBounds().width;
-    }
-    return rect;
-}
+sf::FloatRect TabSystem::getGlobalBounds() const { return tabs->getGlobalBounds(); }
 
-void TabSystem::move(const float left, const float top) {
-    for (Tab*& tab : tabs) tab->move(left, top);
-}
+void TabSystem::move(const float left, const float top) { tabs->move(left, top); }
 
 Tab* TabSystem::addTab(const std::string& title) {
-    float offset = 0;
-    for (Tab*& tab : tabs) {
-        offset += tab->getGlobalBounds().width + offset;
-    }
-    Tab* tab = tabs.emplace_back(new Tab(title, offset, height, color));
+    // float offset = 0;
+    // for (Tab*& tab : tabs) {
+    //     offset += tab->getGlobalBounds().width + offset;
+    // }
+    Tab* tab(new Tab(title, 0, 0, color));
+    tabs->addElement(tab);
     tab->tabText.setOnClick([this, tab](Button* button) {
         setActiveTab(tab);
     });
-    if (tabs.size() == 1) {
+    if (tabs->getElements().size() == 1) {
         firstTabInit(tab);
     }
     return tab;
@@ -74,16 +62,17 @@ void TabSystem::firstTabInit(Tab* tab) {
     active_tab = tab;
 }
 
-Tab* TabSystem::operator[](const std::string &name)
+Tab* TabSystem::operator[](const std::string& name)
 {
-    for (Tab*& tab : tabs) {
+    for (const SFBase* _tab : tabs->getElements()) {
+        Tab* tab((Tab*) _tab);
         if (tab->getName() == name)
             return tab;
     }
     throw std::range_error("Can't find this tab");
 }
 
-Tab* TabSystem::operator[](ushort index) { return tabs[index]; }
+Tab* TabSystem::operator[](ushort index) { return (Tab*) tabs->getElements()[index]; }
 
 void TabSystem::setActiveTab(Tab *tab) {
     assert(active_tab);
@@ -93,5 +82,5 @@ void TabSystem::setActiveTab(Tab *tab) {
 }
 
 void TabSystem::fit() {
-    for (Tab*& tab : tabs) tab->tabText.fit();
+    tabs->fit();
 }
