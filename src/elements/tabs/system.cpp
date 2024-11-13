@@ -17,9 +17,6 @@ TabSystem::TabSystem(float height, sf::Color color) : height(height), color(colo
 }
 
 TabSystem::~TabSystem() {
-    // for (Tab*& tab : tabs) {
-    //     delete tab;
-    // }
     delete tabs;
 }
 
@@ -42,24 +39,16 @@ sf::FloatRect TabSystem::getGlobalBounds() const { return tabs->getGlobalBounds(
 void TabSystem::move(const float left, const float top) { tabs->move(left, top); }
 
 Tab* TabSystem::addTab(const std::string& title) {
-    // float offset = 0;
-    // for (Tab*& tab : tabs) {
-    //     offset += tab->getGlobalBounds().width + offset;
-    // }
     Tab* tab(new Tab(title, 0, 0, color));
     tabs->addElement(tab);
     tab->tabText.setOnClick([this, tab](Button* button) {
         setActiveTab(tab);
     });
     if (tabs->getElements().size() == 1) {
-        firstTabInit(tab);
+        tab->setActive(true);
+        active_tab = tab;
     }
     return tab;
-}
-
-void TabSystem::firstTabInit(Tab* tab) {
-    tab->setActive(true);
-    active_tab = tab;
 }
 
 Tab* TabSystem::operator[](const std::string& name)

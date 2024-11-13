@@ -18,8 +18,6 @@ class TabSystem : public SFBase {
     const sf::Color color;
     static constexpr float offset = 50.f;
 
-    void firstTabInit(Tab* tab);
-
 public:
     TabSystem(float height, sf::Color color);
     ~TabSystem();
