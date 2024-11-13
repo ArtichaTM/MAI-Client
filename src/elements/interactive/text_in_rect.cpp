@@ -6,6 +6,7 @@
 
 #include "config.hpp"
 #include "./text_in_rect.hpp"
+#include "text_in_rect.hpp"
 
 TextInRect::TextInRect(
     float x,
@@ -41,44 +42,19 @@ void TextInRect::draw(sf::RenderTarget &target, sf::RenderStates states) const {
     target.draw(text);
 }
 
-TextInRect* TextInRect::setLeft(float value) {
-    shape.setPosition(value, getTop());
-    text.setPosition(value, getTop());
-    return this;
-}
-TextInRect* TextInRect::setTop(float value) {
-    shape.setPosition(getLeft(), value);
-    text.setPosition(getLeft(), value);
-    return this;
-}
-TextInRect* TextInRect::setWidth(float value) {
-    shape.setSize(sf::Vector2f(
-        value, getHeight()
-    ));
-    return this;
-}
-TextInRect* TextInRect::setHeight(float value) {
-    shape.setSize(sf::Vector2f(
-        getWidth(), value
-    ));
-    return this;
-}
-float TextInRect::getLeft() const { return shape.getPosition().x; }
-float TextInRect::getTop() const { return shape.getPosition().y; }
-float TextInRect::getWidth() const { return shape.getSize().x; }
-float TextInRect::getHeight() const { return shape.getSize().y; }
+sf::FloatRect TextInRect::getGlobalBounds() const { return shape.getGlobalBounds(); }
 
-TextInRect* TextInRect::fit() {
+void TextInRect::fit() {
     sf::FloatRect text_bounding = text.getGlobalBounds();
+    sf::FloatRect shape_bounding = shape.getGlobalBounds();
     text.setPosition(
-        getLeft() + padding,
-        getTop() + padding
+        shape_bounding.left + padding,
+        shape_bounding.top + padding
     );
     shape.setSize(sf::Vector2f(
         text_bounding.width + padding*2 + 2.f,
         text_bounding.height + padding*3 + 3.f
     ));
-    return this;
 }
 
 TextInRect* TextInRect::setPadding(float padding) {
@@ -115,10 +91,6 @@ void TextInRect::keyPressed(const sf::Mouse::Button& button) {
 
 void TextInRect::mouseMoved(const sf::Vector2f& vector) {
     setHovering(isVectorInBounds(vector));
-}
-
-sf::FloatRect TextInRect::getGlobalBounds() const {
-    return shape.getGlobalBounds();
 }
 
 const sf::Color TextInRect::hover_color = sf::Color(255, 255, 255, 60);

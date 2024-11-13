@@ -35,6 +35,13 @@ void Tab::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     }
 }
 
+sf::FloatRect Tab::getGlobalBounds() const
+{
+    return tabText.getGlobalBounds();
+}
+
+void Tab::fit() { tabText.fit(); }
+
 void Tab::handleEvent(const sf::Event& event) {
     tabText.handleEvent(event);
     for (SFBase* element : elements) {
@@ -44,31 +51,9 @@ void Tab::handleEvent(const sf::Event& event) {
 
 void Tab::AddElement(SFBase* element) { elements.emplace_back(element); }
 
-const std::string Tab::getName() { return tabText.text.getString(); }
+const std::string Tab::getName() { return (std::string) tabText; }
 
 void Tab::setActive(bool _active) {
     active = _active;
     tabText.setActive(active);
 }
-
-sf::FloatRect Tab::getGlobalBounds() const { return tabText.getGlobalBounds(); }
-Tab* Tab::setLeft(float value) {
-    tabText.setLeft(value);
-    return this;
-}
-Tab* Tab::setTop(float value) {
-    tabText.setTop(value);
-    return this;
-}
-Tab* Tab::setWidth(float value) {
-    tabText.setWidth(value);
-    return this;
-}
-Tab* Tab::setHeight(float value) {
-    tabText.setHeight(value);
-    return this;
-}
-float Tab::getLeft() const { return tabText.getLeft(); }
-float Tab::getTop() const { return tabText.getTop(); }
-float Tab::getWidth() const { return tabText.getWidth(); }
-float Tab::getHeight() const { return tabText.getHeight(); }

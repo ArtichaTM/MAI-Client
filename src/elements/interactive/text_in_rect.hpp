@@ -5,13 +5,6 @@
 #include "elements/base.hpp"
 
 struct TextInRect : public SFBase {
-    sf::RectangleShape shape;
-    sf::Font font;
-    sf::Text text;
-    sf::Color* current_color = nullptr;
-    sf::Color start_color;
-    float padding = 6.f;
-
     TextInRect(
         float x,
         float y,
@@ -22,18 +15,10 @@ struct TextInRect : public SFBase {
     ~TextInRect();
     operator std::string() const;
 
-    sf::FloatRect getGlobalBounds() const override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
-    TextInRect* setLeft(float) override;
-    TextInRect* setTop(float) override;
-    TextInRect* setWidth(float) override;
-    TextInRect* setHeight(float) override;
-    float getLeft() const override;
-    float getTop() const override;
-    float getWidth() const override;
-    float getHeight() const override;
+    sf::FloatRect getGlobalBounds() const override;
 
-    TextInRect* fit();
+    void fit() override;
     TextInRect* setPadding(float);
     void recalculateColor();
 
@@ -49,6 +34,13 @@ private:
     static const sf::Color active_color;
 
 protected:
+    sf::RectangleShape shape;
+    sf::Font font;
+    sf::Text text;
+    sf::Color* current_color = nullptr;
+    sf::Color start_color;
+    float padding = 6.f;
+
     void keyPressed(const sf::Mouse::Button&) override;
     void mouseMoved(const sf::Vector2f&) override;
 };

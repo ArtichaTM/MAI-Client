@@ -41,45 +41,19 @@ void TabSystem::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     }
 }
 
-sf::FloatRect TabSystem::getGlobalBounds() const {
-    if (tabs.empty()) return sf::FloatRect();
-    sf::FloatRect left_bounds = tabs[0]->getGlobalBounds();
-    sf::FloatRect right_bounds = tabs[tabs.size()-1]->getGlobalBounds();
-    left_bounds.width = right_bounds.left + right_bounds.width;
-    return left_bounds;
-}
-TabSystem* TabSystem::setLeft(float value) {
-    throw std::logic_error("TabSystem is absolute");
-}
-TabSystem* TabSystem::setTop(float value) {
-    throw std::logic_error("TabSystem is absolute");
-}
-TabSystem* TabSystem::setWidth(float value) {
-    throw std::logic_error("TabSystem is absolute");
-}
-TabSystem* TabSystem::setHeight(float value) {
-    throw std::logic_error("TabSystem is absolute");
-}
-float TabSystem::getLeft() const {
-    return tabs[0]->getLeft();
-}
-float TabSystem::getTop() const {
-    return tabs[0]->getTop();
-}
-float TabSystem::getWidth() const {
-    Tab* left_tab = tabs[tabs.size()-1];
-    return getLeft() - (
-        left_tab->getLeft() + left_tab->getWidth()
-    );
-}
-float TabSystem::getHeight() const {
-    return height;
+sf::FloatRect TabSystem::getGlobalBounds() const
+{
+    sf::FloatRect rect(tabs[0]->getGlobalBounds());
+    for (ushort i = 1; i < tabs.size(); i++) {
+        rect.width += tabs[i]->getGlobalBounds().width;
+    }
+    return rect;
 }
 
 Tab* TabSystem::addTab(const std::string& title) {
     float offset = 0;
     for (Tab*& tab : tabs) {
-        offset += tab->tabText.shape.getGlobalBounds().width + offset;
+        offset += tab->getGlobalBounds().width + offset;
     }
     Tab* tab = tabs.emplace_back(new Tab(title, offset, height, color));
     tab->tabText.setOnClick([this, tab](Button* button) {
@@ -114,7 +88,6 @@ void TabSystem::setActiveTab(Tab *tab) {
     tab->setActive(true);
 }
 
-TabSystem* TabSystem::fit_tab() {
+void TabSystem::fit() {
     for (Tab*& tab : tabs) tab->tabText.fit();
-    return this;
 }

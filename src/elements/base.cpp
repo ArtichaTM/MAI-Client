@@ -4,12 +4,8 @@
 #include "./base.hpp"
 #include "base.hpp"
 
-sf::FloatRect SFBase::getGlobalBounds() const
-{
-    return sf::FloatRect(
-        getLeft(), getTop(),
-        getWidth(), getHeight()
-    );
+bool SFBase::isVectorInBounds(const sf::Vector2f& vec) const {
+    return getGlobalBounds().contains(vec);
 }
 
 void SFBase::handleEvent(const sf::Event &event)
@@ -52,15 +48,8 @@ void SFBase::handleEvent(const sf::Event &event)
     }
 }
 
-bool SFBase::isVectorInBounds(const sf::Vector2f& vector) const {
-    return getGlobalBounds().contains(vector);
-}
-
 void SFBase::mouseMoved(const sf::Vector2f &) {}
 void SFBase::keyPressed(const sf::Mouse::Button&) {}
 void SFBase::keyReleased(const sf::Mouse::Button&) {}
 void SFBase::keyPressed(const sf::Event::KeyEvent&) {}
 void SFBase::keyReleased(const sf::Event::KeyEvent&) {}
-
-inline float SFBase::getRight() const { return getLeft() + getWidth(); }
-inline float SFBase::getBottom() const { return getTop() + getHeight(); }

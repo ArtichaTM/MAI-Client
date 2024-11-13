@@ -18,17 +18,9 @@ public:
 
     void handleEvent(const sf::Event&) override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+    sf::FloatRect getGlobalBounds() const override;
+    void fit() override;
     void AddElement(SFBase*);
     const std::string getName();
     void setActive(bool);
-
-    sf::FloatRect getGlobalBounds() const override;
-    virtual Tab* setLeft(float);
-    virtual Tab* setTop(float);
-    virtual Tab* setWidth(float);
-    virtual Tab* setHeight(float);
-    virtual float getLeft() const;
-    virtual float getTop() const;
-    virtual float getWidth() const;
-    virtual float getHeight() const;
 };

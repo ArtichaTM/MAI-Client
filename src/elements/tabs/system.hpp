@@ -16,6 +16,9 @@ class TabSystem : public SFBase {
     const float height;
     const sf::Color color;
     static constexpr float offset = 50.f;
+
+    void firstTabInit(Tab* tab);
+
 public:
     TabSystem(float height, sf::Color color);
     ~TabSystem();
@@ -24,18 +27,9 @@ public:
     void handleEvent(const sf::Event&) override;
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     sf::FloatRect getGlobalBounds() const override;
-    virtual TabSystem* setLeft(float);
-    virtual TabSystem* setTop(float);
-    virtual TabSystem* setWidth(float);
-    virtual TabSystem* setHeight(float);
-    virtual float getLeft() const;
-    virtual float getTop() const;
-    virtual float getWidth() const;
-    virtual float getHeight() const;
-    TabSystem* fit_tab();
+    void fit() override;
 
     Tab* addTab(const std::string& title);
-    void firstTabInit(Tab* tab);
 
     void setActiveTab(Tab* tab);
 

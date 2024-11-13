@@ -5,6 +5,7 @@
 
 #include "config.hpp"
 #include "./button.hpp"
+#include "button.hpp"
 
 Button::Button(
     float x,
