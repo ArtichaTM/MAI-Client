@@ -1,14 +1,19 @@
 #include "./vertical.hpp"
+#include "vertical.hpp"
 
-template <typename T>
-inline VerticalList<T>::~VerticalList()
-{
-    for (SFBase*& el : elements) delete el;
+void VerticalList::updateCurrentPosition(SFBase* element) {
+    current_top += element->getGlobalBounds().height;
 }
 
-template <typename T>
-inline VerticalList<T> VerticalList<T>::addElement(T *element)
+VerticalList::VerticalList(float left, float top) : BaseList(left, top) {}
+
+sf::FloatRect VerticalList::getGlobalBounds() const
 {
-    elements.push_back(element);
-    return this;
+    sf::FloatRect rect(left, top, 0, 0);
+    for (SFBase* el : elements) {
+        const sf::FloatRect el_bounds(el->getGlobalBounds());
+        rect.height += el_bounds.height;
+        if (rect.width < el_bounds.width) rect.width = el_bounds.width;
+    }
+    return rect;
 }
