@@ -2,38 +2,38 @@ import PySimpleGUI as sg
 
 from mai.functions import popup
 
-__all__ = ('AddressPort',)
+__all__ = ('HostPort',)
 
-class AddressPort:
+class HostPort:
     __slots__ = (
         '_window',
-        '_default_address', 'address',
+        '_default_host', 'host',
         '_default_port', 'port'
     )
     _window: sg.Window
-    _default_address: str
+    _default_host: str
     _default_port: int
 
     def __init__(
         self,
-        default_address: str = 'localhost',
+        default_host: str = 'localhost',
         default_port: int = 11545
     ):
-        assert isinstance(default_address, str)
+        assert isinstance(default_host, str)
         assert isinstance(default_port, int)
         assert default_port > 0
-        self._default_address = default_address
+        self._default_host = default_host
         self._default_port = default_port
-        self.address = None
+        self.host = None
         self.port = None
 
     def _build_window(self) -> None:
-        address = self._default_address if self.address is None else self.address
+        host = self._default_host if self.host is None else self.host
         port = self._default_port if self.port is None else self.port
         self._window = sg.Window('MAI', [
-            [sg.Text('Enter Rocket League address:port', pad=(0, 0, 0, 5), font=('Comic Sans', 10))],
+            [sg.Text('Enter Rocket League host:port', pad=(0, 0, 0, 5), font=('Comic Sans', 10))],
             [
-                sg.InputText(default_text=address, focus=True, size=(25, 10), pad=0, border_width=0),
+                sg.InputText(default_text=host, focus=True, size=(25, 10), pad=0, border_width=0),
                 sg.Text(':', pad=0),
                 sg.InputText(default_text=str(port), size=(5, 10), pad=0, border_width=0)
             ],
@@ -50,8 +50,8 @@ class AddressPort:
                 break
 
             if event == 'Submit':
-                address, port = values.values()
-                self.address = address
+                host, port = values.values()
+                self.host = host
                 try:
                     self.port = int(port)
                 except ValueError:
