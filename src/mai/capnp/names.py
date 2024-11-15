@@ -2,6 +2,13 @@ import capnp  # type: ignore
 
 from mai.settings import Settings
 
+__all__ = (
+    'Vector',
+    'Quaternion',
+    'RLObjectState',
+    'GameState',
+    'Controls'
+)
 
 capnp.remove_import_hook()  # type: ignore
 module = capnp.load(str(  # type: ignore
