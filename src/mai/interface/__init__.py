@@ -1,1 +1,1 @@
-from .main import main as run_interface
+from .functions import *

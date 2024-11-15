@@ -1,5 +1,7 @@
 import PySimpleGUI as sg
 
+from mai.functions import popup
+
 __all__ = ('AddressPort',)
 
 class AddressPort:
@@ -38,16 +40,6 @@ class AddressPort:
             [sg.Submit()]
         ])
 
-    def _error_popup(self, title: str, text: str) -> None:
-        assert isinstance(title, str)
-        assert isinstance(text, str)
-        window = sg.Window(title, [
-            [sg.Text(text)],
-            [sg.Button('Oк')]
-        ])
-        window.read()
-        window.close()
-
     def run(self):
         self._build_window()
         while True:
@@ -63,7 +55,7 @@ class AddressPort:
                 try:
                     self.port = int(port)
                 except ValueError:
-                    self._error_popup(
+                    popup(
                         'Ошибка',
                         'Порт должен быть целым положительным числом'
                     )
