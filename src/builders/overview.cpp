@@ -1,5 +1,6 @@
 #include <iostream>
 // #include <torch/torch.h>
+// #include <ATen/ATen.h>
 
 #include "./header.hpp"
 #include "config.hpp"
@@ -14,7 +15,9 @@ void add_overview(TabSystem* sys) {
             ->addElement(
                 (new Button(2., 2., "Run", PATH_FONT_DEFAULT, sf::Color::Magenta))
                     ->setOnClick([](Button* button) {
-                        std::cout << "Running!" << std::endl;
+                        // std::cout << "Running!" << std::endl;
+                        // torch::Tensor tensor = torch::rand({2, 3});
+                        // std::cout << tensor << std::endl;
                     })
                     ->toggleActivatable()
             )
