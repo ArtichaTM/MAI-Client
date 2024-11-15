@@ -4,9 +4,9 @@ from mai.settings import Settings
 from .names import GameState, Controls
 
 
-__all__ = ('CapnPBroker',)
+__all__ = ('CapnPClient',)
 
-class CapnPBroker:
+class CapnPClient:
     __slots__ = (
         'socket',
     )
@@ -14,7 +14,7 @@ class CapnPBroker:
     def __init__(self) -> None:
         self.socket: socket.socket | None = None
 
-    def __enter__(self) -> 'CapnPBroker':
+    def __enter__(self) -> 'CapnPClient':
         self.open()
         return self
 

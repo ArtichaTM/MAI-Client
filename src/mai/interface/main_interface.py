@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from mai.capnp import CapnPBroker
+from mai.capnp import CapnPClient
 
 __all__ = ('MainInterface',)
 
@@ -24,7 +24,7 @@ class MainInterface:
             ])
         ]], expand_x=True, expand_y=True)]], margins=(0, 0))
 
-    def run(self, broker: CapnPBroker):
+    def run(self, broker: CapnPClient):
         while True:
             event, values = self._window.read()
             values: dict

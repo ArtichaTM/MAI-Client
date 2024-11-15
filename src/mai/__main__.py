@@ -2,10 +2,10 @@ from functools import partial
 
 from mai.functions import popup
 from .interface import getAddressPort
-from .capnp.broker import CapnPBroker
+from .capnp.client import CapnPClient
 
 
-def check_socket(address: str, port: int, broker: CapnPBroker) -> bool:
+def check_socket(address: str, port: int, broker: CapnPClient) -> bool:
     try:
         broker.connect(address, port)
     except ConnectionRefusedError as e:
@@ -18,10 +18,10 @@ def check_socket(address: str, port: int, broker: CapnPBroker) -> bool:
 
 
 def main():
-    broker = CapnPBroker()
+    broker = CapnPClient()
     checker = partial(check_socket, broker=broker)
     with broker:
-        broker: CapnPBroker
+        broker: CapnPClient
         address, port = getAddressPort(checker)
         if address is None:
             return

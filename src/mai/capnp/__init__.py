@@ -1,1 +1,1 @@
-from .broker import CapnPBroker
+from .client import CapnPClient
