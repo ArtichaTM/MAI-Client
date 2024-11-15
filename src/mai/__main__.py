@@ -25,7 +25,6 @@ def main():
         address, port = getAddressPort(checker)
         if address is None:
             return
-        
 
 
 if __name__ == '__main__':

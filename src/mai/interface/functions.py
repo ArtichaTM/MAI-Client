@@ -24,3 +24,7 @@ def getAddressPort(checker: Callable[[str, int], bool]) -> tuple[str, int] | tup
         output = checker(address, port)
         if output:
             return (address, port)
+
+def run_main_interface(broker) -> None:
+    interface = MainInterface()
+    interface.run(broker)

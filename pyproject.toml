@@ -15,8 +15,9 @@ authors = [
 ]
 description = "Module AI network client"
 dependencies = [
-  'pycapnp>=2.0.0',
-  'pysimplegui>=5.0.7'
+  'torch~=2.5.1',
+  'pycapnp~=2.0.0',
+  'pysimplegui~=5.0.7'
 ]
 classifiers = [
   "Development Status :: 4 - Beta"
@@ -28,4 +29,9 @@ classifiers = [
   , "Programming Language :: Python :: 3.12"
   , "Natural Language :: English"
 ]
-requires-python = "> 3.12"
+requires-python = ">= 3.12"
+
+[project.optional-dependencies]
+cuda = [
+  "torch['cuda']"
+]

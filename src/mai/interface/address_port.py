@@ -31,13 +31,13 @@ class AddressPort:
         address = self._default_address if self.address is None else self.address
         port = self._default_port if self.port is None else self.port
         self._window = sg.Window('MAI', [
-            [sg.Text('Enter RocketLeague address:port')],
+            [sg.Text('Enter Rocket League address:port', pad=(0, 0, 0, 5), font=('Comic Sans', 10))],
             [
-                sg.InputText(default_text=address, focus=True),
-                sg.Text(':'),
-                sg.InputText(default_text=str(port))
+                sg.InputText(default_text=address, focus=True, size=(25, 10), pad=0, border_width=0),
+                sg.Text(':', pad=0),
+                sg.InputText(default_text=str(port), size=(5, 10), pad=0, border_width=0)
             ],
-            [sg.Submit()]
+            [sg.Submit(pad=(0, 5, 0, 0), font=('Comic Sans', 10))]
         ])
 
     def run(self):
@@ -61,3 +61,4 @@ class AddressPort:
                     )
                 else:
                     self._window.close()
+                    return
