@@ -1,5 +1,6 @@
-from .address_port import AddressPort
 from mai.settings import Settings
+from .address_port import AddressPort
+from .main_interface import MainInterface
 
 def main():
     init_window = AddressPort()
@@ -10,3 +11,5 @@ def main():
     assert isinstance(address, str)
     assert isinstance(port, int)
     Settings.server_address = (address, port)
+    main_interface = MainInterface()
+    main_interface.run()
