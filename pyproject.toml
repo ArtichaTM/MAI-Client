@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "src/mai"
+]
+
+[project]
+name="mai"
+version="0.1"
+authors = [
+  {name="Геворкян Артём", email="tima-1324@mail.ru"}
+]
+description = "Module AI network client"
+dependencies = [
+  'pycapnp>=2.0.0',
+  'pysimplegui>=5.0.7'
+]
+classifiers = [
+  "Development Status :: 4 - Beta"
+  , "Operating System :: POSIX :: Linux"
+  , "Operating System :: Microsoft :: Windows"
+  , "Programming Language :: Python"
+  , "Programming Language :: Python :: 3"
+  , "Programming Language :: Python :: 3 :: Only"
+  , "Programming Language :: Python :: 3.12"
+  , "Natural Language :: English"
+]
+requires-python = "> 3.12"
