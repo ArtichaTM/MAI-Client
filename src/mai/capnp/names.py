@@ -2,40 +2,22 @@ import capnp  # type: ignore
 
 from mai.settings import Settings
 
-__all__ = (
-    'Vector',
-    'VectorBuilder',
-    'VectorReader',
-    'Quaternion',
-    'QuaternionBuilder',
-    'QuaternionReader',
-    'RLObjectState',
-    'RLObjectStateBuilder',
-    'RLObjectStateReader',
-    'GameState',
-    'GameStateBuilder',
-    'GameStateReader',
-    'Controls',
-    'ControlsBuilder',
-    'ControlsReader'
-)
-
 capnp.remove_import_hook()  # type: ignore
 module = capnp.load(str(  # type: ignore
-    Settings.path_to_capnp_schemes.joinpath('data.capnp')
+    Settings.path_to_capnp_schemes / 'data.capnp'
 ))
-Vector = module.Vector
-VectorBuilder = Vector
-VectorReader = Vector
-Quaternion = module.Quaternion
-QuaternionBuilder = Quaternion
-QuaternionReader = Quaternion
-RLObjectState = module.RLObjectState
-RLObjectStateBuilder = RLObjectState
-RLObjectStateReader = RLObjectState
-GameState = module.GameState
-GameStateBuilder = GameState
-GameStateReader = GameState
-Controls = module.Controls
-ControlsBuilder = Controls
-ControlsReader = Controls
+MAIVector = module.MAIVector
+MAIVectorBuilder = MAIVector
+MAIVectorReader = MAIVector
+MAIRotator = module.MAIRotator
+MAIRotatorBuilder = MAIRotator
+MAIRotatorReader = MAIRotator
+MAIRLObjectState = module.MAIRLObjectState
+MAIRLObjectStateBuilder = MAIRLObjectState
+MAIRLObjectStateReader = MAIRLObjectState
+MAIGameState = module.MAIGameState
+MAIGameStateBuilder = MAIGameState
+MAIGameStateReader = MAIGameState
+MAIControls = module.MAIControls
+MAIControlsBuilder = MAIControls
+MAIControlsReader = MAIControls
