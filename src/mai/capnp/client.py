@@ -1,6 +1,5 @@
 import socket
 
-from mai.settings import Settings
 from .names import GameState, Controls
 
 
@@ -21,18 +20,15 @@ class CapnPClient:
     def __exit__(self, *_) -> None:
         self.close()
 
-    def _receive(self) -> GameState:
+    def receive(self) -> GameState:
         assert isinstance(self.socket, socket.socket)
         b = self.socket.recv(1024)
+        print(b)
         data = GameState.from_bytes_packed(b)
         return data
 
-    def _send(self, controls: Controls) -> None:
+    def send(self, controls: Controls) -> None:
         self.socket.sendall(controls.to_bytes())  # type: ignore
-
-    def exchange(self, controls: Controls) -> GameState:
-        self._send(controls)
-        return self._receive()
 
     def open(self) -> None:
         assert self.socket is None
@@ -43,5 +39,5 @@ class CapnPClient:
         self.socket.close()
 
     def connect(self, address: str, port: int):
-        assert isinstance(self.socket, socket.socket)
+        assert isinstance(self.socket, socket.socket), 'Initialize client with open()'
         self.socket.connect((address, port))
