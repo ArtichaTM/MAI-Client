@@ -4,10 +4,20 @@ from mai.settings import Settings
 
 __all__ = (
     'Vector',
+    'VectorBuilder',
+    'VectorReader',
     'Quaternion',
+    'QuaternionBuilder',
+    'QuaternionReader',
     'RLObjectState',
+    'RLObjectStateBuilder',
+    'RLObjectStateReader',
     'GameState',
-    'Controls'
+    'GameStateBuilder',
+    'GameStateReader',
+    'Controls',
+    'ControlsBuilder',
+    'ControlsReader'
 )
 
 capnp.remove_import_hook()  # type: ignore
