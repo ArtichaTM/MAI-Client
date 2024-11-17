@@ -1,9 +1,8 @@
-import capnp  # type: ignore
+import capnp
 
 from mai.settings import Settings
 
-capnp.remove_import_hook()
-module = capnp.load(str(  # type: ignore
+module = capnp.load(str(
     Settings.path_to_capnp_schemes / 'data.capnp'
 ))
 MAIVector = module.MAIVector

@@ -28,6 +28,7 @@ class Exchanger:
     @staticmethod
     def create_dummy_controls() -> MAIControls:
         message = MAIControls.new_message()
+        message.skip = True
         return message
 
     def exchange(self, state: MAIGameState) -> MAIControls:
@@ -75,7 +76,7 @@ class Exchanger:
     def join(self) -> None:
         self.stop = True
         assert self._thread is not None
-        self._thread.join(self.sleep_time+0.01)
+        self._thread.join(self.sleep_time+0.1)
 
 
 def register_for_exchange(function: Callable[[MAIGameState], MAIControls]):

@@ -173,8 +173,9 @@ class MAIControls:
     boost: bool
     jump: bool
     handbrake: bool
-    dodgeForward: int
-    dodgeStrafe: int
+    dodgeForward: float
+    dodgeStrafe: float
+    skip: bool
     @staticmethod
     @contextmanager
     def from_bytes(
