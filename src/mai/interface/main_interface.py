@@ -214,21 +214,24 @@ class MainInterface:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(jump=True),
                         NormalControls(jump=True, pitch=-1),
-                        NormalControls(jump=True, pitch=1),
+                        NormalControls(jump=True, pitch= 0),
+                        NormalControls(jump=True, pitch= 1),
                         *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_YAW:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(jump=True),
                         NormalControls(jump=True, yaw=-1),
-                        NormalControls(jump=True, yaw=1),
+                        NormalControls(jump=True, yaw= 0),
+                        NormalControls(jump=True, yaw= 1),
                         *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_ROLL:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(jump=True),
                         NormalControls(jump=True, roll=-1),
-                        NormalControls(jump=True, roll=1),
+                        NormalControls(jump=True, roll= 0),
+                        NormalControls(jump=True, roll= 1),
                         *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_JUMP_D_L:
