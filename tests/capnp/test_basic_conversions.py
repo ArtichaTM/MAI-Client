@@ -13,12 +13,12 @@ class Convert(TestCase):
             'boost': True,
             'jump': False
         }
-        c: ControlsBuilder = Controls.new_message()
+        c: MAIControls = MAIControls.new_message()
         for key, value in values.items():
             setattr(c, key, value)
         c_bytes = c.to_bytes()
 
-        with Controls.from_bytes(c_bytes) as output:
+        with MAIControls.from_bytes(c_bytes) as output:
             for key, value in values.items():
                 if isinstance(value, float):
                     self.assertAlmostEqual(getattr(output, key), value)
@@ -28,35 +28,35 @@ class Convert(TestCase):
                     self.fail(f"Unknown type {type(value)} in values")
 
     def test_game_state(self):
-        ball_rotation = -7.5
+        ball_rotation_pitch = 7
         ball_position = 5.3
-        car_angular_z = -13.65
-        state: GameStateBuilder = GameState.new_message(
-            car=RLObjectState.new_message(
-                position=Vector.new_message(
+        car_angular_z = 13.65
+        state: MAIGameStateBuilder = MAIGameState.new_message(
+            car=MAIRLObjectState.new_message(
+                position=MAIVector.new_message(
                     x=0, y=0, z=0
                 ),
-                speed=Vector.new_message(
+                velocity=MAIVector.new_message(
                     x=0, y=0, z=0
                 ),
-                rotation=Vector.new_message(
-                    x=0, y=0, z=0
+                rotation=MAIRotator.new_message(
+                    pitch=0, roll=0, yaw=0
                 ),
-                angularSpeed=Vector.new_message(
+                angularVelocity=MAIVector.new_message(
                     x=0, y=0, z=car_angular_z
                 )
             ),
-            ball=RLObjectState.new_message(
-                position=Vector.new_message(
+            ball=MAIRLObjectState.new_message(
+                position=MAIVector.new_message(
                     x=0, y=ball_position, z=0
                 ),
-                speed=Vector.new_message(
+                velocity=MAIVector.new_message(
                     x=0, y=0, z=0
                 ),
-                rotation=Vector.new_message(
-                    x=ball_rotation, y=0, z=0
+                rotation=MAIRotator.new_message(
+                    pitch=ball_rotation_pitch, roll=0, yaw=0
                 ),
-                angularSpeed=Vector.new_message(
+                angularVelocity=MAIVector.new_message(
                     x=0, y=0, z=0
                 )
             ),
@@ -65,8 +65,8 @@ class Convert(TestCase):
         )
         state_bytes = state.to_bytes()
 
-        with GameState.from_bytes(state_bytes) as output:
+        with MAIGameState.from_bytes(state_bytes) as output:
             self.assertAlmostEqual(state.ball.position.y, ball_position, 6)
             self.assertAlmostEqual(state.boostAmount, output.boostAmount, 6)
-            self.assertAlmostEqual(state.ball.rotation.x, ball_rotation, 6)
-            self.assertAlmostEqual(state.car.angularSpeed.z, car_angular_z, 6)
+            self.assertAlmostEqual(state.ball.rotation.pitch, ball_rotation_pitch, 6)
+            self.assertAlmostEqual(state.car.angularVelocity.z, car_angular_z, 6)
