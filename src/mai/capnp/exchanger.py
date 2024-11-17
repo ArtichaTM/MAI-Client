@@ -8,14 +8,6 @@ from .client import CapnPClient
 
 __all__ = ('Exchanger', 'register_for_exchange')
 
-class TimeCall:
-    __slots__ = ('prefix', 'start')
-    def __init__(self, prefix: str) -> None:
-        self.prefix = prefix
-    def __enter__(self) -> None:
-        self.start = perf_counter()
-    def __exit__(self, *_) -> None:
-        print(f"{self.prefix}: {perf_counter() - self.start:.4f}")
 
 class Exchanger:
     __slots__ = (
@@ -67,8 +59,7 @@ class Exchanger:
         while not self.stop:
             if self._client.socket is None:
                 return
-            with TimeCall("Receive time"):
-                state = self._client.receive()
+            state = self._client.receive()
             if state is None:
                 print('Received None, closing')
                 return

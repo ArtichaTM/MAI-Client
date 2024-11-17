@@ -53,7 +53,7 @@ class MainInterface:
     def exchange(self, state: MAIGameState) -> Optional[MAIControls]:
         assert Exchanger._instance is not None
         tps_counter: sg.StatusBar = self._window[Constants.TPS_COUNTER]
-        tps_counter.update(f"Calls: {Exchanger._instance._exchanges_done}")
+        tps_counter.update(f"TPS: {' ':>2}, calls: {Exchanger._instance._exchanges_done}")
         return None
 
     def run(self):
