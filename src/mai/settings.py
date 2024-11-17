@@ -9,8 +9,9 @@ class _Settings(dict):
         .parent.parent.parent.parent
         .joinpath('capnp').absolute()
     )
+    server_address: tuple[str, int]
 
     def __init__(self) -> None:
-        self.server_address = None
+        self.server_address = ('localhost', 11545)
 
 Settings = _Settings()

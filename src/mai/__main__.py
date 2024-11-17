@@ -1,19 +1,23 @@
 from functools import partial
-from time import sleep
+import socket
 
 from mai.functions import popup
 from .interface import getAddressPort, runMainInterface
 from .capnp.client import CapnPClient
 from .capnp.exchanger import Exchanger
 
-def check_socket(address: str, port: int, client: CapnPClient) -> bool:
+def check_socket(address: str, port: int, client: CapnPClient, no_popup: bool = False) -> bool:
     try:
         client.connect(address, port)
-    except ConnectionRefusedError as e:
-        popup(
-            'Error',
-            f"Error {e.args[0]}: {e.args[1]}"
-        )
+    except (
+        ConnectionRefusedError,
+        socket.gaierror
+    ) as e:
+        if not no_popup:
+            popup(
+                'Error',
+                f"Error {e.args[0]}: {e.args[1]}"
+            )
         return False
     return True
 

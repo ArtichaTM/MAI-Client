@@ -176,6 +176,7 @@ class MAIControls:
     dodgeForward: float
     dodgeStrafe: float
     skip: bool
+    reset: bool
     @staticmethod
     @contextmanager
     def from_bytes(

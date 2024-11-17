@@ -38,6 +38,7 @@ class Constants:
     DEBUG_BOOST_INPUT = ''
     DEBUG_JUMP_BUTTON = ''
     DEBUG_JUMP_INPUT = ''
+    DEBUG_RESET_TRAINING = ''
 
 
 i = ''
@@ -126,6 +127,7 @@ class MainInterface:
                             sg.T('ticks')
                         ],
                         [
+                            sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING)
                         ]
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
@@ -213,25 +215,25 @@ class MainInterface:
                 case Constants.DEBUG_PITCH:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(jump=True),
-                        NormalControls(jump=True, pitch=-1),
-                        NormalControls(jump=True, pitch= 0),
-                        NormalControls(jump=True, pitch= 1),
+                        NormalControls(jump=True, pitch=-1.),
+                        NormalControls(jump=True, pitch= 0.),
+                        NormalControls(jump=True, pitch= 1.),
                         *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_YAW:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(jump=True),
-                        NormalControls(jump=True, yaw=-1),
-                        NormalControls(jump=True, yaw= 0),
-                        NormalControls(jump=True, yaw= 1),
+                        NormalControls(jump=True, yaw=-1.),
+                        NormalControls(jump=True, yaw= 0.),
+                        NormalControls(jump=True, yaw= 1.),
                         *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_ROLL:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(jump=True),
-                        NormalControls(jump=True, roll=-1),
-                        NormalControls(jump=True, roll= 0),
-                        NormalControls(jump=True, roll= 1),
+                        NormalControls(jump=True, roll=-1.),
+                        NormalControls(jump=True, roll= 0.),
+                        NormalControls(jump=True, roll= 1.),
                         *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_JUMP_D_L:
@@ -295,4 +297,8 @@ class MainInterface:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         *([NormalControls(jump=True)]*jump_tick_amount),
                         NormalControls(jump=False)
+                    ))
+                case Constants.DEBUG_RESET_TRAINING:
+                    self._controller.add_reaction_tactic(SequencedCommands(
+                        NormalControls(reset=True)
                     ))

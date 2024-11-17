@@ -9,11 +9,11 @@ __all__ = ('getAddressPort', 'runMainInterface')
 
 
 def getAddressPort(checker: Callable[[str, int], bool]) -> tuple[str, int] | tuple[None, None]:
+    output = checker(*Settings.server_address, no_popup=True)
+    if output:
+        return Settings.server_address
     while True:
-        if Settings.server_address is None:
-            init_window = HostPort()
-        else:
-            init_window = HostPort(*Settings.server_address)
+        init_window = HostPort()
         init_window.run()
         host, port = init_window.host, init_window.port
         if host is None:

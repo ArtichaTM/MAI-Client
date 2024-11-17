@@ -1,7 +1,6 @@
 from typing import Callable, Optional
 from time import sleep
 from threading import Thread
-from time import perf_counter
 
 from .names import MAIControls, MAIGameState
 from .client import CapnPClient
@@ -22,7 +21,7 @@ class Exchanger:
         self._listener = None
         self._thread: Thread | None = None
         self.sleep_time: float = 0.3
-        self.stop: bool = False
+        self.stop = False
         self._exchanges_done = 1
 
     @staticmethod
@@ -51,16 +50,16 @@ class Exchanger:
 
     def _run(self) -> None:
         while not self.stop:
-            if self._client.socket is None:
-                return
+            if self.stop: return
             state = self._client.receive()
+            if self.stop: return
             if state is None:
                 print('Received None, closing')
                 return
             controls = self.exchange(state)
+            if self.stop: return
             sleep(self.sleep_time)
-            if self._client.socket is None:
-                return
+            if self.stop: return
             self._client.send(controls)
             self._exchanges_done += 1
 
@@ -74,6 +73,7 @@ class Exchanger:
         self._thread.start()
 
     def join(self) -> None:
+        self._client.socket = None
         self.stop = True
         assert self._thread is not None
         self._thread.join(self.sleep_time+0.1)
