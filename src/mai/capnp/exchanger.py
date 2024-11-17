@@ -69,7 +69,6 @@ class Exchanger:
                 return
             self._client.send(controls)
             self._exchanges_done += 1
-            print()
 
     def run_forever_threaded(self) -> None:
         assert self._thread is None
