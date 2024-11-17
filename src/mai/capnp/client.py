@@ -37,7 +37,6 @@ class CapnPClient:
                 return None
             else:
                 break
-        assert b is not None
         if not b:
             return None
         with MAIGameState.from_bytes(b) as data:

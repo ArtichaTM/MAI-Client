@@ -193,7 +193,7 @@ class MainInterface:
         exchanger = Exchanger._instance
         Exchanger.register_for_exchange(self.exchange)
         assert exchanger is not None
-        while True:
+        while not exchanger.stop:
             assert self._window is not None
             event, values = self._window.read()
             values: dict

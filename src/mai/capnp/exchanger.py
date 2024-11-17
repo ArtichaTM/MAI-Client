@@ -54,7 +54,6 @@ class Exchanger:
             state = self._client.receive()
             if self.stop: return
             if state is None:
-                print('Received None, closing')
                 return
             controls = self.exchange(state)
             if self.stop: return
