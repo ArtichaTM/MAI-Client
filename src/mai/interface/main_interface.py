@@ -239,7 +239,8 @@ class MainInterface:
                         NormalControls(jump=True),
                         NormalControls(jump=True),
                         NormalControls(jump=False),
-                        NormalControls(jump=True, dodgeStrafe=DodgeStrafeType.LEFT),
+                        NormalControls(jump=True,
+                                       dodgeStrafe=DodgeStrafeType.LEFT),
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_JUMP_D_F:
@@ -247,7 +248,8 @@ class MainInterface:
                         NormalControls(jump=True),
                         NormalControls(jump=True),
                         NormalControls(jump=False),
-                        NormalControls(jump=True, dodgeForward=DodgeForwardType.FORWARD),
+                        NormalControls(jump=True,
+                                       dodgeForward=DodgeForwardType.FORWARD),
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_JUMP_D_R:
@@ -255,7 +257,8 @@ class MainInterface:
                         NormalControls(jump=True),
                         NormalControls(jump=True),
                         NormalControls(jump=False),
-                        NormalControls(jump=True, dodgeStrafe=DodgeStrafeType.RIGHT),
+                        NormalControls(jump=True,
+                                       dodgeStrafe=DodgeStrafeType.RIGHT),
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_JUMP_D_B:
@@ -263,11 +266,14 @@ class MainInterface:
                         NormalControls(jump=True),
                         NormalControls(jump=True),
                         NormalControls(jump=False),
-                        NormalControls(jump=True, dodgeForward=DodgeForwardType.BACKWARD),
+                        NormalControls(jump=True,
+                                       dodgeForward=DodgeForwardType.BACKWARD),
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_BOOST_BUTTON:
-                    boost_input: sg.Input = self._window[Constants.DEBUG_BOOST_INPUT]
+                    boost_input: sg.Input = self._window[
+                        Constants.DEBUG_BOOST_INPUT
+                    ]  # type: ignore
                     try:
                         boost_tick_amount = int(boost_input.get().strip())
                     except ValueError:
@@ -278,7 +284,9 @@ class MainInterface:
                         NormalControls(jump=False)
                     ))
                 case Constants.DEBUG_JUMP_BUTTON:
-                    jump_input: sg.Input = self._window[Constants.DEBUG_JUMP_INPUT]
+                    jump_input: sg.Input = self._window[
+                        Constants.DEBUG_JUMP_INPUT
+                    ]  # type: ignore
                     try:
                         jump_tick_amount = int(jump_input.get().strip())
                     except ValueError:
