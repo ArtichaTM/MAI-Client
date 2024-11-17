@@ -21,9 +21,9 @@ class Exchanger:
         self._client = client
         self._listener = None
         self._thread: Thread | None = None
-        self.sleep_time: float = 2.
+        self.sleep_time: float = 1.5
         self.stop: bool = False
-        self._exchanges_done = 0
+        self._exchanges_done = 1
 
     @staticmethod
     def create_dummy_controls() -> MAIControls:
@@ -72,13 +72,17 @@ class Exchanger:
 
     def run_forever_threaded(self) -> None:
         assert self._thread is None
-        self._thread = Thread(target=self._run, name='Exchanger thread')
+        self._thread = Thread(
+            target=self._run,
+            name='Exchanger thread',
+            daemon=True
+        )
         self._thread.start()
 
     def join(self) -> None:
         self.stop = True
         assert self._thread is not None
-        self._thread.join(1.)
+        self._thread.join(self.sleep_time+0.01)
 
 
 def register_for_exchange(function: Callable[[MAIGameState], MAIControls]):

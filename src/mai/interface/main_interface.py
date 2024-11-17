@@ -1,4 +1,5 @@
 from typing import Optional
+from time import perf_counter
 
 import PySimpleGUI as sg
 
@@ -10,17 +11,19 @@ __all__ = ('MainInterface',)
 
 class Constants:
     SLEEP_TIME = '-SLEEP-TIME-'
-    TPS_COUNTER = '-TPS-COUNTER-'
+    EPS_COUNTER = '-EPS-COUNTER-'
+    CALLS_COUNTER = '-CALLS-COUNTER-'
 
 
 class MainInterface:
     __slots__ = (
-        '_window',
+        '_window', '_latest_exchange'
     )
-    _window: sg.Window
+    _window: sg.Window | None
 
     def __init__(self):
         self._build_window()
+        self._latest_exchange = perf_counter()
 
     def _build_window(self) -> None:
         self._window = sg.Window('MAI', [
@@ -38,22 +41,36 @@ class MainInterface:
                             sg.T("Sleep time"),
                             sg.Slider(
                                 range=(0, 2),
-                                default_value=2,
+                                default_value=1.5,
                                 resolution=0.01,
                                 orientation='horizontal',
                                 enable_events=True,
                                 k=Constants.SLEEP_TIME
                             )
                         ],
-                    ]),
-                sg.StatusBar(text="TPS: ", k=Constants.TPS_COUNTER)
+                    ])
+                ]], expand_x=True, expand_y=True)
+            ], [
+                sg.StatusBar(text='EPS: 0', k=Constants.EPS_COUNTER),
+                sg.StatusBar(text='Calls: 0', k=Constants.CALLS_COUNTER)
             ]
-        ], expand_x=True, expand_y=True)]], margins=(0, 0))
+        ], margins=(0, 0))
 
     def exchange(self, state: MAIGameState) -> Optional[MAIControls]:
         assert Exchanger._instance is not None
-        tps_counter: sg.StatusBar = self._window[Constants.TPS_COUNTER]
-        tps_counter.update(f"TPS: {' ':>2}, calls: {Exchanger._instance._exchanges_done}")
+        assert self._window is not None
+        (
+            self
+            ._window[Constants.CALLS_COUNTER]
+            .update(f"Calls: {Exchanger._instance._exchanges_done}")  # type: ignore
+        )
+        current_time = perf_counter()
+        (
+            self
+            ._window[Constants.EPS_COUNTER]
+            .update(f"EPS: {1/(current_time - self._latest_exchange):.2f}")  # type: ignore
+        )
+        self._latest_exchange = current_time
         return None
 
     def run(self):
@@ -61,12 +78,12 @@ class MainInterface:
         Exchanger.register_for_exchange(self.exchange)
         assert exchanger is not None
         while True:
+            assert self._window is not None
             event, values = self._window.read()
             values: dict
 
-            if event == sg.WIN_CLOSED:
-                break
-
-            if event == Constants.SLEEP_TIME:
-                exchanger.sleep_time = values[Constants.SLEEP_TIME]
-
+            match (event):
+                case sg.WIN_CLOSED:
+                    return
+                case Constants.SLEEP_TIME:
+                    exchanger.sleep_time = values[Constants.SLEEP_TIME]

@@ -5,7 +5,6 @@ from mai.functions import popup
 from .interface import getAddressPort, runMainInterface
 from .capnp.client import CapnPClient
 from .capnp.exchanger import Exchanger
-from .capnp.names import MAIControls
 
 def check_socket(address: str, port: int, client: CapnPClient) -> bool:
     try:
@@ -16,7 +15,6 @@ def check_socket(address: str, port: int, client: CapnPClient) -> bool:
             f"Error {e.args[0]}: {e.args[1]}"
         )
         return False
-    print('Connected!')
     return True
 
 
@@ -31,7 +29,7 @@ def main():
         exchanger = Exchanger(client)
         exchanger.run_forever_threaded()
         runMainInterface()
-
+        exchanger.join()
 
 if __name__ == '__main__':
     main()
