@@ -2,7 +2,7 @@ import capnp  # type: ignore
 
 from mai.settings import Settings
 
-capnp.remove_import_hook()  # type: ignore
+capnp.remove_import_hook()
 module = capnp.load(str(  # type: ignore
     Settings.path_to_capnp_schemes / 'data.capnp'
 ))

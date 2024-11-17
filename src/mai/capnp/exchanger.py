@@ -21,20 +21,13 @@ class Exchanger:
         self._client = client
         self._listener = None
         self._thread: Thread | None = None
-        self.sleep_time: float = 1.5
+        self.sleep_time: float = 0.3
         self.stop: bool = False
         self._exchanges_done = 1
 
     @staticmethod
     def create_dummy_controls() -> MAIControls:
         message = MAIControls.new_message()
-        message.throttle=0
-        message.steer=0
-        message.pitch=0
-        message.yaw=0
-        message.roll=0
-        message.boost=False
-        message.jump=False
         return message
 
     def exchange(self, state: MAIGameState) -> MAIControls:
