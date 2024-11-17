@@ -5,7 +5,7 @@ from .host_port import HostPort
 from .main_interface import MainInterface
 
 
-__all__ = ('getAddressPort',)
+__all__ = ('getAddressPort', 'runMainInterface')
 
 
 def getAddressPort(checker: Callable[[str, int], bool]) -> tuple[str, int] | tuple[None, None]:
@@ -25,6 +25,6 @@ def getAddressPort(checker: Callable[[str, int], bool]) -> tuple[str, int] | tup
         if output:
             return (host, port)
 
-def run_main_interface(broker) -> None:
+def runMainInterface() -> None:
     interface = MainInterface()
-    interface.run(broker)
+    interface.run()
