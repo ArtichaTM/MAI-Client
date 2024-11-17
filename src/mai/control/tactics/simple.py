@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from .bases import BaseTactic
-from ..data_classes import NormalControls
+from ...capnp.data_classes import NormalControls
 
 
 

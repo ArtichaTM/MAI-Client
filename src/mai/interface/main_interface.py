@@ -6,7 +6,7 @@ import PySimpleGUI as sg
 from mai.capnp.exchanger import Exchanger
 from mai.capnp.names import MAIControls, MAIGameState
 from mai.control import MainController
-from mai.control.data_classes import NormalControls, DodgeForwardType, DodgeStrafeType
+from mai.capnp.data_classes import NormalControls, DodgeForwardType, DodgeStrafeType
 from mai.control.tactics.simple import SequencedCommands
 
 __all__ = ('MainInterface',)
