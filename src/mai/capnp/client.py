@@ -1,6 +1,6 @@
 from typing import Optional
 import socket
-from time import sleep, perf_counter
+from time import sleep
 
 from .names import MAIGameState, MAIControls
 
