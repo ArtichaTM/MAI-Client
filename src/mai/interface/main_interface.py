@@ -14,6 +14,7 @@ from mai.control.tactics.simple import SequencedCommands
 
 __all__ = ('MainInterface',)
 
+FLOAT_MAX_SIZE = 6
 
 class Constants:
     TABS = ''
@@ -101,54 +102,54 @@ class MainInterface:
                         [
                             [
                                 sg.Text('Car'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Ball'),
-                                sg.StatusBar('', k=Constants.STATS_BALL_P_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_BALL_P_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_BALL_P_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_BALL_P_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_BALL_P_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_BALL_P_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Boost'),
-                                sg.StatusBar('', k=Constants.STATS_BOOST),
+                                sg.StatusBar('', k=Constants.STATS_BOOST, size=(6, 1)),
                                 sg.Text('Dead?'),
-                                sg.StatusBar('', k=Constants.STATS_DEAD)
+                                sg.StatusBar('', k=Constants.STATS_DEAD, size=(5, 1))
                             ], [
                                 sg.Text('Ally1'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A0_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A0_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A0_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_A0_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A0_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A0_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Ally2'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A1_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A1_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A1_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_A1_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A1_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A1_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Ally3'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A2_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A2_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A2_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_A2_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A2_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A2_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Enemy1'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E0_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E0_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E0_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_E0_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E0_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E0_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Enemy2'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E1_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E1_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E1_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_E1_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E1_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E1_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Enemy3'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E2_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E2_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E2_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_E2_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E2_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E2_Z, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Enemy4'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E3_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E3_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_E3_Z, size=(5,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_E3_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E3_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E3_Z, size=(FLOAT_MAX_SIZE,1))
                             ]
                         ]
                     )),
@@ -225,41 +226,46 @@ class MainInterface:
             self.call_functions.put(partial(self._status_bars_update, state, controls))
         return controls
 
-    def _update(self, name: str, value) -> None:
-        self._window[name].update(str(value))  # type: ignore
+    def _fmt(self, value: float) -> str:
+        return format(value, " > 1.3f")
+
+    def _update(self, name: str, value: str) -> None:
+        assert isinstance(name, str)
+        assert isinstance(value ,str)
+        self._window[name].update(value)  # type: ignore
 
     def _status_bars_update(self, state: MAIGameState, controls: MAIControls) -> None:
         assert Exchanger._instance is not None
         self._update(
             Constants.CALLS_COUNTER,
-            Exchanger._instance._exchanges_done
+            str(Exchanger._instance._exchanges_done)
         )
         current_time = perf_counter()
         self._update(
             Constants.EPS_COUNTER,
             f"{1/(current_time - self._latest_exchange):.2f}"
         )
-        self._update(Constants.LOCKED_STATUS, not controls.skip)
+        self._update(Constants.LOCKED_STATUS, str(not controls.skip))
         if state.message != 'none':
             self._update(Constants.LATEST_MESSAGE, state.message)
         self._latest_exchange = current_time
         if self._stats_update_enabled: self._stats_update(state)
 
     def _stats_update(self, state: MAIGameState) -> None:
-        self._update(Constants.STATS_CAR_P_X , state.car.position.x)
-        self._update(Constants.STATS_CAR_P_Y , state.car.position.y)
-        self._update(Constants.STATS_CAR_P_Z , state.car.position.z)
-        self._update(Constants.STATS_BALL_P_X, state.ball.position.x)
-        self._update(Constants.STATS_BALL_P_Y, state.ball.position.y)
-        self._update(Constants.STATS_BALL_P_Z, state.ball.position.z)
-        self._update(Constants.STATS_BOOST, state.boostAmount)
-        self._update(Constants.STATS_DEAD, state.dead)
+        self._update(Constants.STATS_CAR_P_X , self._fmt(state.car.rotation.pitch))
+        self._update(Constants.STATS_CAR_P_Y , self._fmt(state.car.rotation.yaw))
+        self._update(Constants.STATS_CAR_P_Z , self._fmt(state.car.rotation.roll))
+        self._update(Constants.STATS_BALL_P_X, self._fmt(state.ball.position.x))
+        self._update(Constants.STATS_BALL_P_Y, self._fmt(state.ball.position.y))
+        self._update(Constants.STATS_BALL_P_Z, self._fmt(state.ball.position.z))
+        self._update(Constants.STATS_BOOST, str(state.boostAmount))
+        self._update(Constants.STATS_DEAD, str(state.dead))
         for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
             for i in range(len(array)):
                 car = array[i]
-                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_X'), round(car.position.x, 3))
-                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Y'), round(car.position.y, 3))
-                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), round(car.position.z, 3))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_X'), self._fmt(car.position.x))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Y'), self._fmt(car.position.y))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), self._fmt(car.position.z))
 
     def run(self) -> int:
         self._controller = MainController()
@@ -283,14 +289,13 @@ class MainInterface:
                     except Empty:
                         pass
                 values: dict | None
-            if values is not None:
+            if event == sg.WIN_CLOSED:
+                return 0
+            if values is None:
                 continue
-            assert values is not None
             assert self._window is not None
 
             match (event):
-                case sg.WIN_CLOSED:
-                    return 0
                 case Constants.SLEEP_TIME:
                     exchanger.sleep_time = values[Constants.SLEEP_TIME]
                 case Constants.TABS:
