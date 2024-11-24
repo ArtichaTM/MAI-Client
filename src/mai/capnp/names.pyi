@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from io import BufferedWriter
-from typing import Iterator, Literal, overload
+from typing import Iterator, Literal, Sequence, overload
 
 class MAIVector:
     x: float
@@ -123,14 +123,57 @@ class MAIRLObjectStateBuilder(MAIRLObjectState):
     def write_packed(file: BufferedWriter) -> None: ...
 
 class MAIGameState:
+    class OtherCars:
+        allies: Sequence[MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader]
+        enemies: Sequence[MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader]
+        @staticmethod
+        @contextmanager
+        def from_bytes(
+            data: bytes, traversal_limit_in_words: int | None = ..., nesting_limit: int | None = ...
+        ) -> Iterator[MAIGameState.OtherCarsReader]: ...
+        @staticmethod
+        def from_bytes_packed(
+            data: bytes, traversal_limit_in_words: int | None = ..., nesting_limit: int | None = ...
+        ) -> MAIGameState.OtherCarsReader: ...
+        @staticmethod
+        def new_message() -> MAIGameState.OtherCarsBuilder: ...
+        def to_dict(self) -> dict: ...
+
+    class OtherCarsReader(MAIGameState.OtherCars):
+        allies: Sequence[MAIRLObjectStateReader]
+        enemies: Sequence[MAIRLObjectStateReader]
+        def as_builder(self) -> MAIGameState.OtherCarsBuilder: ...
+
+    class OtherCarsBuilder(MAIGameState.OtherCars):
+        allies: Sequence[MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader]
+        enemies: Sequence[MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader]
+        @staticmethod
+        def from_dict(dictionary: dict) -> MAIGameState.OtherCarsBuilder: ...
+        def copy(self) -> MAIGameState.OtherCarsBuilder: ...
+        def to_bytes(self) -> bytes: ...
+        def to_bytes_packed(self) -> bytes: ...
+        def to_segments(self) -> list[bytes]: ...
+        def as_reader(self) -> MAIGameState.OtherCarsReader: ...
+        @staticmethod
+        def write(file: BufferedWriter) -> None: ...
+        @staticmethod
+        def write_packed(file: BufferedWriter) -> None: ...
+
+    MessageType = Literal[
+        "none", "ballExplode", "gameExit", "kickoffTimerStarted", "kickoffTimerEnded", "replayStarted"
+    ]
     car: MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader
     ball: MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader
     boostAmount: float
     dead: bool
+    otherCars: MAIGameState.OtherCars | MAIGameState.OtherCarsBuilder | MAIGameState.OtherCarsReader
+    message: MAIGameState.MessageType
     @overload
     def init(self, name: Literal["car"]) -> MAIRLObjectState: ...
     @overload
     def init(self, name: Literal["ball"]) -> MAIRLObjectState: ...
+    @overload
+    def init(self, name: Literal["otherCars"]) -> OtherCars: ...
     @staticmethod
     @contextmanager
     def from_bytes(
@@ -147,11 +190,13 @@ class MAIGameState:
 class MAIGameStateReader(MAIGameState):
     car: MAIRLObjectStateReader
     ball: MAIRLObjectStateReader
+    otherCars: MAIGameState.OtherCarsReader
     def as_builder(self) -> MAIGameStateBuilder: ...
 
 class MAIGameStateBuilder(MAIGameState):
     car: MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader
     ball: MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader
+    otherCars: MAIGameState.OtherCars | MAIGameState.OtherCarsBuilder | MAIGameState.OtherCarsReader
     @staticmethod
     def from_dict(dictionary: dict) -> MAIGameStateBuilder: ...
     def copy(self) -> MAIGameStateBuilder: ...

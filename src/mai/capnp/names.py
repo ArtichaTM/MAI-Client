@@ -1,7 +1,6 @@
-import capnp
+import capnp # type: ignore
 
 from mai.settings import Settings
-
 module = capnp.load(str(
     Settings.path_to_capnp_schemes / 'data.capnp'
 ))

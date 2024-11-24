@@ -18,12 +18,7 @@ class Constants:
     EPS_COUNTER = ''
     CALLS_COUNTER = ''
     LOCKED_STATUS = ''
-    STATS_CAR_P_X = ''
-    STATS_CAR_P_Y = ''
-    STATS_CAR_P_Z = ''
-    STATS_BALL_P_X = ''
-    STATS_BALL_P_Y = ''
-    STATS_BALL_P_Z = ''
+    LATEST_MESSAGE = ''
     STATS_BOOST = ''
     STATS_DEAD = ''
     DEBUG_CLEAR = ''
@@ -39,6 +34,36 @@ class Constants:
     DEBUG_JUMP_BUTTON = ''
     DEBUG_JUMP_INPUT = ''
     DEBUG_RESET_TRAINING = ''
+    STATS_CAR_P_X = ''
+    STATS_CAR_P_Y = ''
+    STATS_CAR_P_Z = ''
+    STATS_BALL_P_X = ''
+    STATS_BALL_P_Y = ''
+    STATS_BALL_P_Z = ''
+    STATS_CAR_A0_X = ''
+    STATS_CAR_A0_Y = ''
+    STATS_CAR_A0_Z = ''
+    STATS_CAR_A1_X = ''
+    STATS_CAR_A1_Y = ''
+    STATS_CAR_A1_Z = ''
+    STATS_CAR_A2_X = ''
+    STATS_CAR_A2_Y = ''
+    STATS_CAR_A2_Z = ''
+    STATS_CAR_A3_X = ''
+    STATS_CAR_A3_Y = ''
+    STATS_CAR_A3_Z = ''
+    STATS_CAR_E0_X = ''
+    STATS_CAR_E0_Y = ''
+    STATS_CAR_E0_Z = ''
+    STATS_CAR_E1_X = ''
+    STATS_CAR_E1_Y = ''
+    STATS_CAR_E1_Z = ''
+    STATS_CAR_E2_X = ''
+    STATS_CAR_E2_Y = ''
+    STATS_CAR_E2_Z = ''
+    STATS_CAR_E3_X = ''
+    STATS_CAR_E3_Y = ''
+    STATS_CAR_E3_Z = ''
 
 
 i = ''
@@ -51,7 +76,7 @@ del i
 class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
-        '_stats_update_enabled', '_controller'
+        '_stats_update_enabled', '_controller', '_latest_message'
     )
     _window: sg.Window | None
     _exchange_func: Callable[[MAIGameState], Optional[MAIControls]] | None
@@ -74,19 +99,59 @@ class MainInterface:
                         [
                             [
                                 sg.Text('Car'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_X),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_Y),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_Z)
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(5,1))
                             ], [
                                 sg.Text('Ball'),
-                                sg.StatusBar('', k=Constants.STATS_BALL_P_X),
-                                sg.StatusBar('', k=Constants.STATS_BALL_P_Y),
-                                sg.StatusBar('', k=Constants.STATS_BALL_P_Z)
+                                sg.StatusBar('', k=Constants.STATS_BALL_P_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_BALL_P_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_BALL_P_Z, size=(5,1))
                             ], [
                                 sg.Text('Boost'),
                                 sg.StatusBar('', k=Constants.STATS_BOOST),
                                 sg.Text('Dead?'),
                                 sg.StatusBar('', k=Constants.STATS_DEAD)
+                            ], [
+                                sg.Text('Ally1'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A0_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A0_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A0_Z, size=(5,1))
+                            ], [
+                                sg.Text('Ally2'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A1_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A1_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A1_Z, size=(5,1))
+                            ], [
+                                sg.Text('Ally3'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A2_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A2_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A2_Z, size=(5,1))
+                            ], [
+                                sg.Text('Ally4'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A3_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A3_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_A3_Z, size=(5,1))
+                            ], [
+                                sg.Text('Enemy1'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E0_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E0_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E0_Z, size=(5,1))
+                            ], [
+                                sg.Text('Enemy2'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E1_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E1_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E1_Z, size=(5,1))
+                            ], [
+                                sg.Text('Enemy3'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E2_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E2_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E2_Z, size=(5,1))
+                            ], [
+                                sg.Text('Enemy4'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E3_X, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E3_Y, size=(5,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_E3_Z, size=(5,1))
                             ]
                         ]
                     )),
@@ -146,6 +211,11 @@ class MainInterface:
                 sg.StatusBar(
                     text='', size=(5, 1),
                     justification='right', k=Constants.LOCKED_STATUS
+                ),
+                sg.T("Latest message:"),
+                sg.StatusBar(
+                    text='none', size=(12, 1),
+                    justification='right', k=Constants.LATEST_MESSAGE
                 )
             ]
         ], margins=(0, 0))
@@ -172,10 +242,9 @@ class MainInterface:
             Constants.EPS_COUNTER,
             f"{1/(current_time - self._latest_exchange):.2f}"
         )
-        self._update(
-            Constants.LOCKED_STATUS,
-            not controls.skip
-        )
+        self._update(Constants.LOCKED_STATUS, not controls.skip)
+        if state.message != 'none':
+            self._update(Constants.LATEST_MESSAGE, state.message)
         self._latest_exchange = current_time
 
     def _stats_update(self, state: MAIGameState) -> None:
@@ -187,6 +256,12 @@ class MainInterface:
         self._update(Constants.STATS_BALL_P_Z, state.ball.position.z)
         self._update(Constants.STATS_BOOST, state.boostAmount)
         self._update(Constants.STATS_DEAD, state.dead)
+        for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
+            for i in range(len(array)):
+                car = array[i]
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_X'), round(car.position.x, 3))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Y'), round(car.position.y, 3))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), round(car.position.z, 3))
 
     def run(self):
         self._controller = MainController()
