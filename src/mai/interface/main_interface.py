@@ -41,6 +41,9 @@ class Constants:
     STATS_CAR_P_X = ''
     STATS_CAR_P_Y = ''
     STATS_CAR_P_Z = ''
+    STATS_CAR_R_PITCH = ''
+    STATS_CAR_R_YAW = ''
+    STATS_CAR_R_ROLL = ''
     STATS_BALL_P_X = ''
     STATS_BALL_P_Y = ''
     STATS_BALL_P_Z = ''
@@ -104,7 +107,10 @@ class MainInterface:
                                 sg.Text('Car'),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_X, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_Y, size=(FLOAT_MAX_SIZE,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(FLOAT_MAX_SIZE,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_R_PITCH, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_R_YAW, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_R_ROLL, size=(FLOAT_MAX_SIZE,1))
                             ], [
                                 sg.Text('Ball'),
                                 sg.StatusBar('', k=Constants.STATS_BALL_P_X, size=(FLOAT_MAX_SIZE,1)),
@@ -252,9 +258,12 @@ class MainInterface:
         if self._stats_update_enabled: self._stats_update(state)
 
     def _stats_update(self, state: MAIGameState) -> None:
-        self._update(Constants.STATS_CAR_P_X , self._fmt(state.car.rotation.pitch))
-        self._update(Constants.STATS_CAR_P_Y , self._fmt(state.car.rotation.yaw))
-        self._update(Constants.STATS_CAR_P_Z , self._fmt(state.car.rotation.roll))
+        self._update(Constants.STATS_CAR_P_X , self._fmt(state.car.position.x))
+        self._update(Constants.STATS_CAR_P_Y , self._fmt(state.car.position.y))
+        self._update(Constants.STATS_CAR_P_Z , self._fmt(state.car.position.z))
+        self._update(Constants.STATS_CAR_R_PITCH , self._fmt(state.car.rotation.pitch))
+        self._update(Constants.STATS_CAR_R_YAW , self._fmt(state.car.rotation.yaw))
+        self._update(Constants.STATS_CAR_R_ROLL, self._fmt(state.car.rotation.roll))
         self._update(Constants.STATS_BALL_P_X, self._fmt(state.ball.position.x))
         self._update(Constants.STATS_BALL_P_Y, self._fmt(state.ball.position.y))
         self._update(Constants.STATS_BALL_P_Z, self._fmt(state.ball.position.z))
