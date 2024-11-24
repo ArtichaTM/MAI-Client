@@ -283,7 +283,8 @@ class MainInterface:
                     except Empty:
                         pass
                 values: dict | None
-            assert values is not None
+            if values is not None:
+                continue
             assert self._window is not None
 
             match (event):
