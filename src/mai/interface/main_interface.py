@@ -285,6 +285,7 @@ class MainInterface:
                 values: dict | None
             if values is not None:
                 continue
+            assert values is not None
             assert self._window is not None
 
             match (event):
