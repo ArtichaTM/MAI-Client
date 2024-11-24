@@ -4,6 +4,7 @@ from threading import Thread
 
 from .names import MAIControls, MAIGameState
 from .client import CapnPClient
+from .data_classes import AdditionalContext
 
 __all__ = ('Exchanger', 'register_for_exchange')
 
@@ -11,9 +12,10 @@ __all__ = ('Exchanger', 'register_for_exchange')
 class Exchanger:
     __slots__ = (
         '_listener', '_client', '_thread', '_exchanges_done',
-        'sleep_time', 'stop',
+        'sleep_time', 'stop', '_context'
     )
     _instance: Optional['Exchanger'] = None
+    _listener_type = Callable[[MAIGameState, AdditionalContext], Optional[MAIControls]]
 
     def __init__(self, client: CapnPClient) -> None:
         assert self._instance is None
@@ -24,6 +26,7 @@ class Exchanger:
         self.sleep_time: float = 0.3
         self.stop = False
         self._exchanges_done = 1
+        self._context: AdditionalContext | None = None
 
     @staticmethod
     def create_dummy_controls() -> MAIControls:
@@ -31,7 +34,26 @@ class Exchanger:
         message.skip = True
         return message
 
+    def _update_context(self, state: MAIGameState) -> None:
+        if state.message == 'none':
+            return
+        elif state.message == 'gameExit':
+            self._context = None
+            return
+        elif state.message == 'kickoffTimerEnded':
+            if self._context is None:
+                self._context = AdditionalContext()
+            car_y = state.car.position.y
+            if car_y < 0:
+                self._context.team_multiplier = -1
+            else:
+                self._context.team_multiplier = 1
+
+        if self._context is not None:
+            self._context.latest_message = state.message
+
     def exchange(self, state: MAIGameState) -> MAIControls:
+        self._update_context(state)
         if self._listener is None:
             return self.create_dummy_controls()
         controls = self._listener(state)
@@ -42,7 +64,7 @@ class Exchanger:
     @classmethod
     def register_for_exchange(
         cls,
-        function: Callable[[MAIGameState], Optional[MAIControls]]
+        function: _listener_type
     ) -> None:
         assert callable(function)
         assert cls._instance is not None
@@ -84,5 +106,5 @@ class Exchanger:
         type(self)._instance = None
 
 
-def register_for_exchange(function: Callable[[MAIGameState], MAIControls]):
+def register_for_exchange(function: Exchanger._listener_type):
     Exchanger.register_for_exchange(function)

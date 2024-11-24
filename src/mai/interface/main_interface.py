@@ -9,7 +9,7 @@ import PySimpleGUI as sg
 from mai.capnp.exchanger import Exchanger
 from mai.capnp.names import MAIControls, MAIGameState
 from mai.control import MainController
-from mai.capnp.data_classes import NormalControls, DodgeForwardType, DodgeStrafeType
+from mai.capnp.data_classes import NormalControls, DodgeForwardType, DodgeStrafeType, AdditionalContext
 from mai.control.tactics.simple import SequencedCommands
 
 __all__ = ('MainInterface',)
@@ -218,7 +218,7 @@ class MainInterface:
             ]
         ], margins=(0, 0))
 
-    def exchange(self, state: MAIGameState) -> MAIControls:
+    def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         assert Exchanger._instance is not None
         assert self._window is not None
         controls = self._controller.react(state)

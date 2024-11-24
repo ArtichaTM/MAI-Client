@@ -1,8 +1,5 @@
-from typing import Sequence
-
 from .bases import BaseTactic
-from ...capnp.data_classes import NormalControls
-
+from mai.capnp.data_classes import NormalControls
 
 
 class SequencedCommands(BaseTactic):
@@ -12,7 +9,7 @@ class SequencedCommands(BaseTactic):
         super().__init__()
         self.commands = list(reversed(commands))
 
-    def react(self, state):
+    def react(self, state, context):
         command = self.commands.pop()
         assert isinstance(command, NormalControls)
         if not len(self.commands):

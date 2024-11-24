@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from mai.capnp.names import MAIControls, MAIGameState
+from mai.capnp.data_classes import AdditionalContext
 
 class BaseTactic(ABC):
     """Base class for all tactics
@@ -14,5 +15,5 @@ class BaseTactic(ABC):
         self.finished = False
 
     @abstractmethod
-    def react(self, state: MAIGameState) -> MAIControls:
+    def react(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         raise NotImplementedError()

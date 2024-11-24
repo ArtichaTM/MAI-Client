@@ -40,6 +40,8 @@ class CapnPClient:
                 assert e.errno == 10054
                 self.close()
                 return None
+            except OSError:
+                return None
             else:
                 break
         if not b:

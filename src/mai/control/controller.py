@@ -1,6 +1,7 @@
 from queue import Queue
 
 from mai.capnp.names import MAIControls, MAIGameState
+from mai.capnp.data_classes import AdditionalContext
 
 from .tactics.bases import BaseTactic
 
@@ -13,14 +14,14 @@ class MainController:
         self._tactics = Queue()
         self._current_tactic = None
 
-    def react(self, state: MAIGameState) -> MAIControls:
+    def react(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         if self._current_tactic is None:
             if self._tactics.empty():
                 controls = MAIControls.new_message()
                 controls.skip = True
                 return controls
             self._current_tactic = self._tactics.get_nowait()
-        controls = self._current_tactic.react(state)
+        controls = self._current_tactic.react(state, context)
         if self._current_tactic.finished:
             self._current_tactic = None
         return controls

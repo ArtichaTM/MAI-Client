@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from enum import IntEnum
+from typing import Literal
 
 import numpy as np
 
-from mai.capnp.names import MAIControls
+from mai.capnp.names import MAIControls, MAIGameState
 
 
 class DodgeForwardType(IntEnum):
@@ -15,6 +16,13 @@ class DodgeStrafeType(IntEnum):
     LEFT = -1
     NONE = 0
     RIGHT = 1
+
+
+@dataclass(frozen=False, slots=True, kw_only=False)
+class Vector:
+    x: float = field(default=0)  # (0, 1) 
+    y: float = field(default=0)  # (0, 1) 
+    z: float = field(default=0)  # (0, 1) 
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -92,3 +100,14 @@ class FloatControls:
             dodgeForward=DodgeForwardType(round(dF)),
             dodgeStrafe=DodgeStrafeType(round(dS))
         )
+
+
+@dataclass(frozen=False, slots=True, kw_only=True)
+class AdditionalContext:
+    """
+    Additional context values, that changes based on messages from server
+    """
+    # Multiplier based on player team
+    # If on car spawn y is negative, than we place here -1, else 1
+    team_multiplier: Literal[-1, 1] = field(default=1)
+    latest_message: MAIGameState.MessageType = field(default='none')
