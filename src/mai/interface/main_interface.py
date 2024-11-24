@@ -269,6 +269,7 @@ class MainInterface:
 
         while not exchanger.stop:
             event = 'NONE'
+            values = None
             while event == 'NONE':
                 assert self._window is not None
                 event, values = self._window.read(timeout=0, timeout_key='NONE')
@@ -281,7 +282,9 @@ class MainInterface:
                         self.call_functions.get(timeout=0)()
                     except Empty:
                         pass
-                values: dict
+                values: dict | None
+            assert values is not None
+            assert self._window is not None
 
             match (event):
                 case sg.WIN_CLOSED:
