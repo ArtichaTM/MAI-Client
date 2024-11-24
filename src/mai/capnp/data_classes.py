@@ -33,11 +33,11 @@ class NormalControls:
 
     def toMAIControls(self) -> MAIControls:
         controls = MAIControls.new_message()
-        if self.throttle > 0.01: controls.throttle = self.throttle
-        if self.steer > 0.01: controls.steer = self.steer
-        if self.pitch > 0.01: controls.pitch = self.pitch
-        if self.yaw > 0.01: controls.yaw = self.yaw
-        if self.roll > 0.01: controls.roll = self.roll
+        if abs(self.throttle) > 0.01: controls.throttle = self.throttle
+        if abs(self.steer) > 0.01: controls.steer = self.steer
+        if abs(self.pitch) > 0.01: controls.pitch = self.pitch
+        if abs(self.yaw) > 0.01: controls.yaw = self.yaw
+        if abs(self.roll) > 0.01: controls.roll = self.roll
         if self.boost: controls.boost = True
         if self.jump: controls.jump = True
         if self.handbrake: controls.handbrake = True

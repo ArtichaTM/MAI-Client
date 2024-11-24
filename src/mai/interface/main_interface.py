@@ -49,9 +49,6 @@ class Constants:
     STATS_CAR_A2_X = ''
     STATS_CAR_A2_Y = ''
     STATS_CAR_A2_Z = ''
-    STATS_CAR_A3_X = ''
-    STATS_CAR_A3_Y = ''
-    STATS_CAR_A3_Z = ''
     STATS_CAR_E0_X = ''
     STATS_CAR_E0_Y = ''
     STATS_CAR_E0_Z = ''
@@ -127,11 +124,6 @@ class MainInterface:
                                 sg.StatusBar('', k=Constants.STATS_CAR_A2_X, size=(5,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_A2_Y, size=(5,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_A2_Z, size=(5,1))
-                            ], [
-                                sg.Text('Ally4'),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A3_X, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A3_Y, size=(5,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_A3_Z, size=(5,1))
                             ], [
                                 sg.Text('Enemy1'),
                                 sg.StatusBar('', k=Constants.STATS_CAR_E0_X, size=(5,1)),
