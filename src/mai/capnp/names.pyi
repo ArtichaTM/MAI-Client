@@ -40,9 +40,9 @@ class MAIVectorBuilder(MAIVector):
     def write_packed(file: BufferedWriter) -> None: ...
 
 class MAIRotator:
-    pitch: int
-    roll: int
-    yaw: int
+    pitch: float
+    roll: float
+    yaw: float
     @staticmethod
     @contextmanager
     def from_bytes(
