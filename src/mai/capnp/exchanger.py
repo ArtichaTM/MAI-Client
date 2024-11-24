@@ -56,7 +56,7 @@ class Exchanger:
         self._update_context(state)
         if self._listener is None:
             return self.create_dummy_controls()
-        controls = self._listener(state)
+        controls = self._listener(state, self._context)
         if controls is None:
             return self.create_dummy_controls()
         return controls

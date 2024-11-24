@@ -221,7 +221,7 @@ class MainInterface:
     def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         assert Exchanger._instance is not None
         assert self._window is not None
-        controls = self._controller.react(state)
+        controls = self._controller.react(state, context)
         if not self.call_functions.full():
             self.call_functions.put(partial(self._status_bars_update, state, controls))
         return controls
