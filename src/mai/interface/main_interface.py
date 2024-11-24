@@ -1,5 +1,8 @@
 from typing import Optional, Callable
 from time import perf_counter
+from queue import Queue
+from queue import Empty
+from functools import partial
 
 import PySimpleGUI as sg
 
@@ -72,17 +75,19 @@ del i
 
 class MainInterface:
     __slots__ = (
-        '_window', '_latest_exchange', '_exchange_func',
+        '_window', '_latest_exchange', '_exchange_func', 'call_functions',
         '_stats_update_enabled', '_controller', '_latest_message'
     )
     _window: sg.Window | None
     _exchange_func: Callable[[MAIGameState], Optional[MAIControls]] | None
+    call_functions: Queue[Callable]
 
     def __init__(self):
         self._build_window()
         self._latest_exchange = perf_counter()
         self._exchange_func = None
         self._stats_update_enabled = False
+        self.call_functions = Queue(1)
 
     def _build_window(self) -> None:
         self._window = sg.Window('MAI', [
@@ -216,8 +221,8 @@ class MainInterface:
         assert Exchanger._instance is not None
         assert self._window is not None
         controls = self._controller.react(state)
-        self._status_bars_update(state, controls)
-        if self._stats_update_enabled: self._stats_update(state)
+        if not self.call_functions.full():
+            self.call_functions.put(partial(self._status_bars_update, state, controls))
         return controls
 
     def _update(self, name: str, value) -> None:
@@ -238,6 +243,7 @@ class MainInterface:
         if state.message != 'none':
             self._update(Constants.LATEST_MESSAGE, state.message)
         self._latest_exchange = current_time
+        if self._stats_update_enabled: self._stats_update(state)
 
     def _stats_update(self, state: MAIGameState) -> None:
         self._update(Constants.STATS_CAR_P_X , state.car.position.x)
@@ -255,19 +261,31 @@ class MainInterface:
                 self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Y'), round(car.position.y, 3))
                 self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), round(car.position.z, 3))
 
-    def run(self):
+    def run(self) -> int:
         self._controller = MainController()
         exchanger = Exchanger._instance
         Exchanger.register_for_exchange(self.exchange)
         assert exchanger is not None
+
         while not exchanger.stop:
-            assert self._window is not None
-            event, values = self._window.read()
-            values: dict
+            event = 'NONE'
+            while event == 'NONE':
+                assert self._window is not None
+                event, values = self._window.read(timeout=0, timeout_key='NONE')
+                alive = exchanger.isAlive()
+                if not alive:
+                    self._window.close()
+                    return 1
+                if self.call_functions.not_empty:
+                    try:
+                        self.call_functions.get(timeout=0)()
+                    except Empty:
+                        pass
+                values: dict
 
             match (event):
                 case sg.WIN_CLOSED:
-                    return
+                    return 0
                 case Constants.SLEEP_TIME:
                     exchanger.sleep_time = values[Constants.SLEEP_TIME]
                 case Constants.TABS:
@@ -369,3 +387,4 @@ class MainInterface:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(reset=True)
                     ))
+        return 2

@@ -47,5 +47,5 @@ class HostPort:
                     )
                 else:
                     self._window.close()
-                    Settings.server_address = (host, port)
+                    Settings.server_address = (host, self.port)
                     return True

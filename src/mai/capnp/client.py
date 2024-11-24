@@ -1,7 +1,8 @@
 from typing import Optional
 import socket
-from time import sleep
+from time import sleep, perf_counter
 
+from mai.settings import Settings
 from .names import MAIGameState, MAIControls
 
 
@@ -26,11 +27,15 @@ class CapnPClient:
     def receive(self) -> Optional[MAIGameState]:
         assert isinstance(self.socket, socket.socket)
         b = None
+        receive_started = perf_counter()
         while self.socket:
             try:
                 b = self.socket.recv(1024)
             except BlockingIOError:
                 sleep(self.sleep_time)
+                if (perf_counter()-receive_started) > Settings.timeout_seconds:
+                    self.close()
+                    return None
             except ConnectionResetError as e:
                 assert e.errno == 10054
                 self.close()

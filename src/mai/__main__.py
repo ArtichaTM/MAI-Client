@@ -23,17 +23,21 @@ def check_socket(address: str, port: int, client: CapnPClient, no_popup: bool = 
 
 
 def main():
-    client = CapnPClient()
-    checker = partial(check_socket, client=client)
-    with client:
-        client: CapnPClient
-        address, port = getAddressPort(checker)
-        if address is None:
-            return
+    while True:
+        address, port = None, None
+        client = CapnPClient()
+        checker = partial(check_socket, client=client)
         exchanger = Exchanger(client)
-        exchanger.run_forever_threaded()
-        runMainInterface()
-        exchanger.join()
+        with client:
+            address, port = getAddressPort(checker)
+            if address is None:
+                return
+            exchanger.run_forever_threaded()
+            exit_code = runMainInterface()
+            print('Joining')
+            exchanger.join()
+            if exit_code == 0:
+                return
 
 if __name__ == '__main__':
     main()

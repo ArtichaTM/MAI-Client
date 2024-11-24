@@ -14,6 +14,7 @@ class Exchanger:
         'sleep_time', 'stop',
     )
     _instance: Optional['Exchanger'] = None
+
     def __init__(self, client: CapnPClient) -> None:
         assert self._instance is None
         type(self)._instance = self
@@ -46,21 +47,21 @@ class Exchanger:
         assert callable(function)
         assert cls._instance is not None
         assert cls._instance._listener is None, f"Listener already exists"
-        cls._listener = function
+        cls._instance._listener = function
 
     def _run(self) -> None:
         while not self.stop:
             if self.stop: return
             state = self._client.receive()
             if self.stop: return
-            if state is None:
-                return
+            if state is None: return
             controls = self.exchange(state)
             if self.stop: return
             sleep(self.sleep_time)
             if self.stop: return
             self._client.send(controls)
             self._exchanges_done += 1
+
 
     def run_forever_threaded(self) -> None:
         assert self._thread is None
@@ -71,11 +72,16 @@ class Exchanger:
         )
         self._thread.start()
 
+    def isAlive(self) -> bool:
+        assert self._thread is not None
+        return self._client.socket is not None
+
     def join(self) -> None:
         self._client.socket = None
         self.stop = True
         assert self._thread is not None
         self._thread.join(self.sleep_time+0.1)
+        type(self)._instance = None
 
 
 def register_for_exchange(function: Callable[[MAIGameState], MAIControls]):

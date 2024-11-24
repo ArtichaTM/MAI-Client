@@ -25,6 +25,7 @@ def getAddressPort(checker: Callable[[str, int], bool]) -> tuple[str, int] | tup
         if output:
             return (host, port)
 
-def runMainInterface() -> None:
+
+def runMainInterface() -> int:
     interface = MainInterface()
-    interface.run()
+    return interface.run()
