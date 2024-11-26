@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Generator
+from typing import Any, Optional, Callable, Generator
 from time import perf_counter
 from queue import Queue, Empty
 from functools import partial
@@ -92,11 +92,19 @@ class Constants(enum.IntEnum):
             yield self.module(module)
 
 
+class RunType(str, enum.Enum):
+    CUSTOM_TRAINING = 'Custom training'
+    v11 = '1v1'
+    v22 = '2v2'
+    v33 = '3v3'
+    v44 = '4v4'
+
+
 class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
         '_stats_update_enabled', '_controller', '_latest_message',
-        '_nnc',
+        '_nnc', '_values',
         'call_functions',
     )
     _window: sg.Window | None
@@ -111,12 +119,40 @@ class MainInterface:
         self._nnc = NNController()
         self._build_window()
 
-    def set_visible(self, v: bool, *k: Constants) -> None:
+    def __getitem__(self, value: Constants | str) -> sg.Element:
+        return self._window[value]  # type: ignore
+
+    def _set_disabled(self, v: bool, *k: Constants | str) -> None:
         assert self._window is not None
         for key in k:
-            el = self._window[key]
+            el = self[key]
             assert isinstance(el, sg.Element)
-            el.update(visible=v)  # type: ignore
+            el.update(disabled=v)  # type: ignore
+
+    def build_run_params(self) -> dict[str, Any]:
+        assert self._values is not None
+        match_type = self._values[Constants.USE_MATCH_TYPE]
+        assert isinstance(match_type, str)
+
+        self._set_disabled(
+            True,
+            Constants.USE_BUTTON_PLAY,
+            Constants.USE_BUTTON_TRAIN
+        )
+        module_checkbox_keys = {
+            Constants.MODULES_CHECKBOX.module(m
+        ): m for m in self._nnc.get_all_modules()}
+        self._set_disabled(
+            False,
+            Constants.USE_BUTTON_PAUSE,
+            Constants.USE_BUTTON_STOP,
+            *module_checkbox_keys.keys()
+        )
+        return {
+            'type': RunType(match_type),
+            'modules': [v.name for k, v in module_checkbox_keys.items(
+                ) if self._values[k]]
+        }
 
     def _build_module_row(self, module: 'NNModuleBase') -> list[sg.Element]:
         return [
@@ -241,17 +277,20 @@ class MainInterface:
                     sg.Tab('Use', [
                         [
                             sg.Text("Match type:"),
-                            sg.OptionMenu([
-                                'Custom training', 'Training',
-                                '1v1', '2v2', '3v3'
-                            ], k=Constants.USE_MATCH_TYPE, auto_size_text=False, s=(20, 1)),
+                            sg.OptionMenu(
+                                [i.value for i in RunType],
+                                k=Constants.USE_MATCH_TYPE,
+                                auto_size_text=False,
+                                s=(20, 1),
+                                default_value=RunType.CUSTOM_TRAINING.value
+                            ),
                         ],
                         [
                             sg.Button("Train", k=Constants.USE_BUTTON_TRAIN),
                             sg.Button("Play", k=Constants.USE_BUTTON_PLAY),
-                            sg.Button('Pause', k=Constants.USE_BUTTON_PAUSE, visible=False),
-                            sg.Button('Resume', k=Constants.USE_BUTTON_RESUME, visible=False),
-                            sg.Button('Stop', k=Constants.USE_BUTTON_STOP, visible=False)
+                            sg.Button('Pause', k=Constants.USE_BUTTON_PAUSE, disabled=True),
+                            sg.Button('Resume', k=Constants.USE_BUTTON_RESUME, disabled=True),
+                            sg.Button('Stop', k=Constants.USE_BUTTON_STOP, disabled=True)
                         ]
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
@@ -293,7 +332,7 @@ class MainInterface:
     def _update(self, name: Constants, value: str) -> None:
         assert isinstance(name, Constants), name
         assert isinstance(value, str), value
-        self._window[name].update(value)  # type: ignore
+        self[name].update(value)  # type: ignore
 
     def _status_bars_update(self, state: MAIGameState, controls: MAIControls) -> None:
         assert Exchanger._instance is not None
@@ -339,10 +378,10 @@ class MainInterface:
 
         while not exchanger.stop:
             event = 'NONE'
-            values = None
+            self._values = None
             while event == 'NONE':
                 assert self._window is not None
-                event, values = self._window.read(timeout=0, timeout_key='NONE')
+                event, self._values = self._window.read(timeout=0, timeout_key='NONE')
                 alive = exchanger.isAlive()
                 if not alive:
                     self._window.close()
@@ -352,18 +391,18 @@ class MainInterface:
                         self.call_functions.get(timeout=0)()
                     except Empty:
                         pass
-                values: dict | None
+                self._values: dict | None
             if event == sg.WIN_CLOSED:
                 return 0
-            if values is None:
+            if self._values is None:
                 continue
             assert self._window is not None
 
             match (event):
                 case Constants.SLEEP_TIME:
-                    exchanger.sleep_time = values[Constants.SLEEP_TIME]
+                    exchanger.sleep_time = self._values[Constants.SLEEP_TIME]
                 case Constants.TABS:
-                    new_tab = values[Constants.TABS]
+                    new_tab = self._values[Constants.TABS]
                     if new_tab == 'Stats':
                         assert not self._stats_update_enabled
                         self._stats_update_enabled = True
@@ -432,9 +471,10 @@ class MainInterface:
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_BOOST_BUTTON:
-                    boost_input: sg.Input = self._window[
+                    boost_input = self[
                         Constants.DEBUG_BOOST_INPUT
-                    ]  # type: ignore
+                    ]
+                    assert isinstance(boost_input, sg.Input)
                     try:
                         boost_tick_amount = int(boost_input.get().strip())
                     except ValueError:
@@ -445,7 +485,7 @@ class MainInterface:
                         NormalControls(jump=False)
                     ))
                 case Constants.DEBUG_JUMP_BUTTON:
-                    jump_input: sg.Input = self._window[
+                    jump_input: sg.Input = self[
                         Constants.DEBUG_JUMP_INPUT
                     ]  # type: ignore
                     try:
@@ -462,42 +502,28 @@ class MainInterface:
                         NormalControls(reset=True)
                     ))
                 case Constants.USE_BUTTON_TRAIN:
-                    self.set_visible(
-                        False,
-                        Constants.USE_BUTTON_PLAY,
-                        Constants.USE_BUTTON_TRAIN
-                    )
-                    self.set_visible(
-                        True,
-                        Constants.USE_BUTTON_PAUSE,
-                        Constants.USE_BUTTON_STOP
-                    )
+                    self._controller.train(self.build_run_params())
                 case Constants.USE_BUTTON_PLAY:
-                    self.set_visible(
-                        False,
-                        Constants.USE_BUTTON_PLAY,
-                        Constants.USE_BUTTON_TRAIN
-                    )
-                    self.set_visible(
-                        True,
-                        Constants.USE_BUTTON_PAUSE,
-                        Constants.USE_BUTTON_STOP
-                    )
+                    self._controller.play(self.build_run_params())
                 case Constants.USE_BUTTON_PAUSE:
-                    self.set_visible(False, Constants.USE_BUTTON_PAUSE)
-                    self.set_visible(True, Constants.USE_BUTTON_RESUME)
+                    result = self._controller.pause()
+                    if result:
+                        self._set_disabled(True, Constants.USE_BUTTON_PAUSE)
+                        self._set_disabled(False, Constants.USE_BUTTON_RESUME)
                 case Constants.USE_BUTTON_RESUME:
-                    self.set_visible(False, Constants.USE_BUTTON_RESUME)
-                    self.set_visible(True, Constants.USE_BUTTON_PAUSE)
+                    self._controller.resume()
+                    self._set_disabled(True, Constants.USE_BUTTON_RESUME)
+                    self._set_disabled(False, Constants.USE_BUTTON_PAUSE)
                 case Constants.USE_BUTTON_STOP:
-                    self.set_visible(
-                        False,
+                    self._controller.stop()
+                    self._set_disabled(
+                        True,
                         Constants.USE_BUTTON_RESUME,
                         Constants.USE_BUTTON_PAUSE,
                         Constants.USE_BUTTON_STOP,
                     )
-                    self.set_visible(
-                        True,
+                    self._set_disabled(
+                        False,
                         Constants.USE_BUTTON_PLAY,
                         Constants.USE_BUTTON_TRAIN
                     )

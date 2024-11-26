@@ -34,7 +34,6 @@ def main():
                 return
             exchanger.run_forever_threaded()
             exit_code = runMainInterface()
-            print('Joining')
             exchanger.join()
             if exit_code == 0:
                 return

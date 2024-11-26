@@ -1,20 +1,25 @@
+from typing import Any, TYPE_CHECKING
 from queue import Queue
 
 from mai.capnp.names import MAIControls, MAIGameState
-from mai.capnp.data_classes import AdditionalContext
 
 from .tactics.bases import BaseTactic
 
+if TYPE_CHECKING:
+    from mai.capnp.data_classes import AdditionalContext
+
 class MainController:
-    __slots__ = ('_tactics', '_current_tactic')
+    __slots__ = ('_tactics', '_current_tactic', '_paused_tactics')
     _current_tactic: BaseTactic | None
     _tactics: Queue[BaseTactic]
+    _paused_tactics: Queue[BaseTactic] | None
 
     def __init__(self) -> None:
         self._tactics = Queue()
         self._current_tactic = None
+        self._paused_tactics = None
 
-    def react(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
+    def react(self, state: MAIGameState, context: 'AdditionalContext') -> MAIControls:
         if self._current_tactic is None:
             if self._tactics.empty():
                 controls = MAIControls.new_message()
@@ -33,3 +38,30 @@ class MainController:
     def clear_all_tactics(self) -> None:
         self._tactics = Queue()
         self._current_tactic = None
+
+    def train(self, params: dict[str, Any]) -> None:
+        print(f'Train with {params}!')
+
+    def play(self, params: dict[str, Any]) -> None:
+        print(f'Play with {params}!')
+
+    def pause(self) -> bool:
+        assert self._paused_tactics is None
+        if self._current_tactic is None:
+            return False
+
+        self._paused_tactics = Queue()
+        self._paused_tactics.put(self._current_tactic)
+        self._current_tactic = None
+        while self._tactics.not_empty:
+            self._paused_tactics.put(self._tactics.get(block=False))
+        return True
+
+    def resume(self) -> None:
+        assert self._paused_tactics is not None
+        self._current_tactic = self._paused_tactics.get()
+        self._tactics = self._paused_tactics
+        self._paused_tactics = None
+
+    def stop(self) -> None:
+        self.clear_all_tactics()
