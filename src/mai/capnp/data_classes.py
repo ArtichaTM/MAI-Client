@@ -83,16 +83,16 @@ class FloatControls:
         return value_p-value_n
 
     def toNormalControls(self) -> NormalControls:
-        assert -1 <= self.throttle        <= 1
-        assert -1 <= self.steer           <= 1
-        assert -1 <= self.pitch           <= 1
-        assert -1 <= self.yaw             <= 1
-        assert -1 <= self.roll            <= 1
-        assert  0 <= self.boost           <= 1
-        assert  0 <= self.jump            <= 1
-        assert  0 <= self.handbrake       <= 1
-        assert -1 <= self.dodgeVertical   <= 1
-        assert -1 <= self.dodgeStrafe     <= 1
+        assert -1 <= self.throttle      <= 1
+        assert -1 <= self.steer         <= 1
+        assert -1 <= self.pitch         <= 1
+        assert -1 <= self.yaw           <= 1
+        assert -1 <= self.roll          <= 1
+        assert  0 <= self.boost         <= 1
+        assert  0 <= self.jump          <= 1
+        assert  0 <= self.handbrake     <= 1
+        assert -1 <= self.dodgeVertical <= 1
+        assert -1 <= self.dodgeStrafe   <= 1
 
         return NormalControls(
             throttle=self.throttle,

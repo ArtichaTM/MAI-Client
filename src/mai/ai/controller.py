@@ -1,3 +1,4 @@
+from typing import Generator
 import numpy as np
 from torch import nn, Tensor, tensor
 from tensordict.tensordict import TensorDict
@@ -35,8 +36,9 @@ class NNController(nn.Module):
         assert 'state' in self._all_modules, self._all_modules
         self._ordered_modules = [self._all_modules['state']]
 
-    def get_all_modules(self) -> list[NNModuleBase]:
-        return list(self._all_modules.values())
+    def get_all_modules(self) -> Generator[NNModuleBase, None, None]:
+        for module in self._all_modules.values():
+            yield module
 
     def module_enable(self, name: str) -> None:
         assert name not in {i.name for i in self._ordered_modules}

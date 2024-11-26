@@ -103,18 +103,25 @@ class RunType(str, enum.Enum):
 class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
-        '_stats_update_enabled', '_controller', '_latest_message',
+        '_stats_update_enabled', '_modules_update_enabled',
+        '_controller', '_latest_message',
         '_nnc', '_values',
         'call_functions',
     )
     _window: sg.Window | None
     _exchange_func: Callable[[MAIGameState], Optional[MAIControls]] | None
     call_functions: Queue[Callable]
+    module_state_to_color: dict[tuple[bool, bool], str] = {
+        (False, False): 'red',
+        (True, False): 'yellow',
+        (True, True): 'green',
+    }
 
     def __init__(self):
         self._latest_exchange = perf_counter()
         self._exchange_func = None
         self._stats_update_enabled = False
+        self._modules_update_enabled = False
         self.call_functions = Queue(1)
         self._nnc = NNController()
         self._build_window()
@@ -156,14 +163,79 @@ class MainInterface:
 
     def _build_module_row(self, module: 'NNModuleBase') -> list[sg.Element]:
         return [
-            sg.Text(module.name[:15].rjust(15,)),
-            sg.Checkbox('', k=Constants.MODULES_CHECKBOX.module(module)),
+            sg.Text(module.name[:15].rjust(15,), p=(0, 0)),
+            sg.Checkbox(
+                '',
+                k=Constants.MODULES_CHECKBOX.module(module),
+                p=(0, 1)
+            ),
             sg.Progress(
                 max_value=100,
-                s=(10, 1),
+                s=(10, 10),
                 k=Constants.MODULES_POWER.module(module)
             )
         ]
+
+    def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
+        assert Exchanger._instance is not None
+        assert self._window is not None
+        controls = self._controller.react(state, context)
+        if not self.call_functions.full():
+            self.call_functions.put(partial(self._status_bars_update, state, controls))
+        return controls
+
+    def _fmt(self, value: float) -> str:
+        return format(value, " > 1.3f")
+
+    def _update(self, name: Constants, value: str) -> None:
+        assert isinstance(name, Constants), name
+        assert isinstance(value, str), value
+        self[name].update(value)  # type: ignore
+
+    def _status_bars_update(self, state: MAIGameState, controls: MAIControls) -> None:
+        assert Exchanger._instance is not None
+        self._update(
+            Constants.CALLS_COUNTER,
+            str(Exchanger._instance._exchanges_done)
+        )
+        current_time = perf_counter()
+        self._update(
+            Constants.EPS_COUNTER,
+            f"{1/(current_time - self._latest_exchange):.2f}"
+        )
+        self._update(Constants.LOCKED_STATUS, str(not controls.skip))
+        if state.message != 'none':
+            self._update(Constants.LATEST_MESSAGE, state.message)
+        self._latest_exchange = current_time
+        if self._stats_update_enabled: self._stats_update(state)
+        if self._modules_update_enabled: self._modules_update()
+
+    def _stats_update(self, state: MAIGameState) -> None:
+        self._update(Constants.STATS_CAR_P_X , self._fmt(state.car.position.x))
+        self._update(Constants.STATS_CAR_P_Y , self._fmt(state.car.position.y))
+        self._update(Constants.STATS_CAR_P_Z , self._fmt(state.car.position.z))
+        self._update(Constants.STATS_CAR_R_PITCH , self._fmt(state.car.rotation.pitch))
+        self._update(Constants.STATS_CAR_R_YAW , self._fmt(state.car.rotation.yaw))
+        self._update(Constants.STATS_CAR_R_ROLL, self._fmt(state.car.rotation.roll))
+        self._update(Constants.STATS_BALL_P_X, self._fmt(state.ball.position.x))
+        self._update(Constants.STATS_BALL_P_Y, self._fmt(state.ball.position.y))
+        self._update(Constants.STATS_BALL_P_Z, self._fmt(state.ball.position.z))
+        self._update(Constants.STATS_BOOST, str(state.boostAmount))
+        self._update(Constants.STATS_DEAD, str(state.dead))
+        for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
+            for i in range(len(array)):
+                car = array[i]
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_X'), self._fmt(car.position.x))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Y'), self._fmt(car.position.y))
+                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), self._fmt(car.position.z))
+
+    def _modules_update(self) -> None:
+        for module in self._nnc.get_all_modules():
+            progress_bar = self[Constants.MODULES_POWER.module(module)]
+            progress_bar.update(round(module.power*100))
+            checkbox = self[Constants.MODULES_CHECKBOX.module(module)]
+            checkbox_color = type(self).module_state_to_color[(module.loaded, module.enabled)]
+            checkbox.update(checkbox_color=checkbox_color)
 
     def _build_window(self) -> None:
         self._window = sg.Window('MAI', [
@@ -318,58 +390,6 @@ class MainInterface:
             ]
         ], margins=(0, 0))
 
-    def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
-        assert Exchanger._instance is not None
-        assert self._window is not None
-        controls = self._controller.react(state, context)
-        if not self.call_functions.full():
-            self.call_functions.put(partial(self._status_bars_update, state, controls))
-        return controls
-
-    def _fmt(self, value: float) -> str:
-        return format(value, " > 1.3f")
-
-    def _update(self, name: Constants, value: str) -> None:
-        assert isinstance(name, Constants), name
-        assert isinstance(value, str), value
-        self[name].update(value)  # type: ignore
-
-    def _status_bars_update(self, state: MAIGameState, controls: MAIControls) -> None:
-        assert Exchanger._instance is not None
-        self._update(
-            Constants.CALLS_COUNTER,
-            str(Exchanger._instance._exchanges_done)
-        )
-        current_time = perf_counter()
-        self._update(
-            Constants.EPS_COUNTER,
-            f"{1/(current_time - self._latest_exchange):.2f}"
-        )
-        self._update(Constants.LOCKED_STATUS, str(not controls.skip))
-        if state.message != 'none':
-            self._update(Constants.LATEST_MESSAGE, state.message)
-        self._latest_exchange = current_time
-        if self._stats_update_enabled: self._stats_update(state)
-
-    def _stats_update(self, state: MAIGameState) -> None:
-        self._update(Constants.STATS_CAR_P_X , self._fmt(state.car.position.x))
-        self._update(Constants.STATS_CAR_P_Y , self._fmt(state.car.position.y))
-        self._update(Constants.STATS_CAR_P_Z , self._fmt(state.car.position.z))
-        self._update(Constants.STATS_CAR_R_PITCH , self._fmt(state.car.rotation.pitch))
-        self._update(Constants.STATS_CAR_R_YAW , self._fmt(state.car.rotation.yaw))
-        self._update(Constants.STATS_CAR_R_ROLL, self._fmt(state.car.rotation.roll))
-        self._update(Constants.STATS_BALL_P_X, self._fmt(state.ball.position.x))
-        self._update(Constants.STATS_BALL_P_Y, self._fmt(state.ball.position.y))
-        self._update(Constants.STATS_BALL_P_Z, self._fmt(state.ball.position.z))
-        self._update(Constants.STATS_BOOST, str(state.boostAmount))
-        self._update(Constants.STATS_DEAD, str(state.dead))
-        for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
-            for i in range(len(array)):
-                car = array[i]
-                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_X'), self._fmt(car.position.x))
-                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Y'), self._fmt(car.position.y))
-                self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), self._fmt(car.position.z))
-
     def run(self) -> int:
         self._controller = MainController()
         exchanger = Exchanger._instance
@@ -408,6 +428,11 @@ class MainInterface:
                         self._stats_update_enabled = True
                     elif self._stats_update_enabled:
                         self._stats_update_enabled = False
+                    if new_tab == 'Modules':
+                        assert not self._modules_update_enabled
+                        self._modules_update_enabled = True
+                    elif self._modules_update_enabled:
+                        self._modules_update_enabled = False
                 case Constants.DEBUG_CLEAR:
                     self._controller.clear_all_tactics()
                 case Constants.DEBUG_PITCH:
