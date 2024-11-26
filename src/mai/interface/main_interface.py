@@ -1,8 +1,8 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, Generator
 from time import perf_counter
-from queue import Queue
-from queue import Empty
+from queue import Queue, Empty
 from functools import partial
+import enum
 
 import PySimpleGUI as sg
 
@@ -22,67 +22,75 @@ __all__ = ('MainInterface',)
 
 FLOAT_MAX_SIZE = 6
 
-class Constants:
-    TABS = ''
-    SLEEP_TIME = ''
-    EPS_COUNTER = ''
-    CALLS_COUNTER = ''
-    LOCKED_STATUS = ''
-    LATEST_MESSAGE = ''
-    STATS_BOOST = ''
-    STATS_DEAD = ''
-    DEBUG_CLEAR = ''
-    DEBUG_PITCH = ''
-    DEBUG_YAW = ''
-    DEBUG_ROLL = ''
-    DEBUG_JUMP_D_L = ''
-    DEBUG_JUMP_D_F = ''
-    DEBUG_JUMP_D_R = ''
-    DEBUG_JUMP_D_B = ''
-    DEBUG_BOOST_BUTTON = ''
-    DEBUG_BOOST_INPUT = ''
-    DEBUG_JUMP_BUTTON = ''
-    DEBUG_JUMP_INPUT = ''
-    DEBUG_RESET_TRAINING = ''
-    STATS_CAR_P_X = ''
-    STATS_CAR_P_Y = ''
-    STATS_CAR_P_Z = ''
-    STATS_CAR_R_PITCH = ''
-    STATS_CAR_R_YAW = ''
-    STATS_CAR_R_ROLL = ''
-    STATS_BALL_P_X = ''
-    STATS_BALL_P_Y = ''
-    STATS_BALL_P_Z = ''
-    STATS_CAR_A0_X = ''
-    STATS_CAR_A0_Y = ''
-    STATS_CAR_A0_Z = ''
-    STATS_CAR_A1_X = ''
-    STATS_CAR_A1_Y = ''
-    STATS_CAR_A1_Z = ''
-    STATS_CAR_A2_X = ''
-    STATS_CAR_A2_Y = ''
-    STATS_CAR_A2_Z = ''
-    STATS_CAR_E0_X = ''
-    STATS_CAR_E0_Y = ''
-    STATS_CAR_E0_Z = ''
-    STATS_CAR_E1_X = ''
-    STATS_CAR_E1_Y = ''
-    STATS_CAR_E1_Z = ''
-    STATS_CAR_E2_X = ''
-    STATS_CAR_E2_Y = ''
-    STATS_CAR_E2_Z = ''
-    STATS_CAR_E3_X = ''
-    STATS_CAR_E3_Y = ''
-    STATS_CAR_E3_Z = ''
-    MODULES_POWER = ''
 
+class Constants(enum.IntEnum):
+    TABS = enum.auto()
+    SLEEP_TIME = enum.auto()
+    EPS_COUNTER = enum.auto()
+    CALLS_COUNTER = enum.auto()
+    LOCKED_STATUS = enum.auto()
+    LATEST_MESSAGE = enum.auto()
+    STATS_BOOST = enum.auto()
+    STATS_DEAD = enum.auto()
+    DEBUG_CLEAR = enum.auto()
+    DEBUG_PITCH = enum.auto()
+    DEBUG_YAW = enum.auto()
+    DEBUG_ROLL = enum.auto()
+    DEBUG_JUMP_D_L = enum.auto()
+    DEBUG_JUMP_D_F = enum.auto()
+    DEBUG_JUMP_D_R = enum.auto()
+    DEBUG_JUMP_D_B = enum.auto()
+    DEBUG_BOOST_BUTTON = enum.auto()
+    DEBUG_BOOST_INPUT = enum.auto()
+    DEBUG_JUMP_BUTTON = enum.auto()
+    DEBUG_JUMP_INPUT = enum.auto()
+    DEBUG_RESET_TRAINING = enum.auto()
+    STATS_CAR_P_X = enum.auto()
+    STATS_CAR_P_Y = enum.auto()
+    STATS_CAR_P_Z = enum.auto()
+    STATS_CAR_R_PITCH = enum.auto()
+    STATS_CAR_R_YAW = enum.auto()
+    STATS_CAR_R_ROLL = enum.auto()
+    STATS_BALL_P_X = enum.auto()
+    STATS_BALL_P_Y = enum.auto()
+    STATS_BALL_P_Z = enum.auto()
+    STATS_CAR_A0_X = enum.auto()
+    STATS_CAR_A0_Y = enum.auto()
+    STATS_CAR_A0_Z = enum.auto()
+    STATS_CAR_A1_X = enum.auto()
+    STATS_CAR_A1_Y = enum.auto()
+    STATS_CAR_A1_Z = enum.auto()
+    STATS_CAR_A2_X = enum.auto()
+    STATS_CAR_A2_Y = enum.auto()
+    STATS_CAR_A2_Z = enum.auto()
+    STATS_CAR_E0_X = enum.auto()
+    STATS_CAR_E0_Y = enum.auto()
+    STATS_CAR_E0_Z = enum.auto()
+    STATS_CAR_E1_X = enum.auto()
+    STATS_CAR_E1_Y = enum.auto()
+    STATS_CAR_E1_Z = enum.auto()
+    STATS_CAR_E2_X = enum.auto()
+    STATS_CAR_E2_Y = enum.auto()
+    STATS_CAR_E2_Z = enum.auto()
+    STATS_CAR_E3_X = enum.auto()
+    STATS_CAR_E3_Y = enum.auto()
+    STATS_CAR_E3_Z = enum.auto()
+    MODULES_CHECKBOX = enum.auto()
+    MODULES_POWER = enum.auto()
+    USE_MATCH_TYPE = enum.auto()
+    USE_BUTTON_TRAIN = enum.auto()
+    USE_BUTTON_PLAY = enum.auto()
+    USE_BUTTON_PAUSE = enum.auto()
+    USE_BUTTON_RESUME = enum.auto()
+    USE_BUTTON_STOP = enum.auto()
 
-i = ''
-for i in dir(Constants):
-    if i.startswith('__'):
-        continue
-    setattr(Constants, i, f"-{i.replace('_', '-')}-")
-del i
+    def module(self, module: 'NNModuleBase') -> str:
+        return f"{self}{module.name.replace('_', '-')}-"
+
+    def module_iter(self, modules: list['NNModuleBase']) -> Generator[str, None, None]:
+        for module in modules:
+            yield self.module(module)
+
 
 class MainInterface:
     __slots__ = (
@@ -103,13 +111,21 @@ class MainInterface:
         self._nnc = NNController()
         self._build_window()
 
-    def _build_module_row(self, module: NNModuleBase) -> list[sg.Element]:
+    def set_visible(self, v: bool, *k: Constants) -> None:
+        assert self._window is not None
+        for key in k:
+            el = self._window[key]
+            assert isinstance(el, sg.Element)
+            el.update(visible=v)  # type: ignore
+
+    def _build_module_row(self, module: 'NNModuleBase') -> list[sg.Element]:
         return [
             sg.Text(module.name[:15].rjust(15,)),
+            sg.Checkbox('', k=Constants.MODULES_CHECKBOX.module(module)),
             sg.Progress(
                 max_value=100,
                 s=(10, 1),
-                k=Constants.MODULES_POWER + module.name + '-'
+                k=Constants.MODULES_POWER.module(module)
             )
         ]
 
@@ -221,6 +237,22 @@ class MainInterface:
                     ]),
                     sg.Tab('Modules', [
                         self._build_module_row(nn) for nn in self._nnc.get_all_modules()
+                    ]),
+                    sg.Tab('Use', [
+                        [
+                            sg.Text("Match type:"),
+                            sg.OptionMenu([
+                                'Custom training', 'Training',
+                                '1v1', '2v2', '3v3'
+                            ], k=Constants.USE_MATCH_TYPE, auto_size_text=False, s=(20, 1)),
+                        ],
+                        [
+                            sg.Button("Train", k=Constants.USE_BUTTON_TRAIN),
+                            sg.Button("Play", k=Constants.USE_BUTTON_PLAY),
+                            sg.Button('Pause', k=Constants.USE_BUTTON_PAUSE, visible=False),
+                            sg.Button('Resume', k=Constants.USE_BUTTON_RESUME, visible=False),
+                            sg.Button('Stop', k=Constants.USE_BUTTON_STOP, visible=False)
+                        ]
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
             ], [
@@ -258,9 +290,9 @@ class MainInterface:
     def _fmt(self, value: float) -> str:
         return format(value, " > 1.3f")
 
-    def _update(self, name: str, value: str) -> None:
-        assert isinstance(name, str)
-        assert isinstance(value ,str)
+    def _update(self, name: Constants, value: str) -> None:
+        assert isinstance(name, Constants), name
+        assert isinstance(value, str), value
         self._window[name].update(value)  # type: ignore
 
     def _status_bars_update(self, state: MAIGameState, controls: MAIControls) -> None:
@@ -429,4 +461,44 @@ class MainInterface:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(reset=True)
                     ))
+                case Constants.USE_BUTTON_TRAIN:
+                    self.set_visible(
+                        False,
+                        Constants.USE_BUTTON_PLAY,
+                        Constants.USE_BUTTON_TRAIN
+                    )
+                    self.set_visible(
+                        True,
+                        Constants.USE_BUTTON_PAUSE,
+                        Constants.USE_BUTTON_STOP
+                    )
+                case Constants.USE_BUTTON_PLAY:
+                    self.set_visible(
+                        False,
+                        Constants.USE_BUTTON_PLAY,
+                        Constants.USE_BUTTON_TRAIN
+                    )
+                    self.set_visible(
+                        True,
+                        Constants.USE_BUTTON_PAUSE,
+                        Constants.USE_BUTTON_STOP
+                    )
+                case Constants.USE_BUTTON_PAUSE:
+                    self.set_visible(False, Constants.USE_BUTTON_PAUSE)
+                    self.set_visible(True, Constants.USE_BUTTON_RESUME)
+                case Constants.USE_BUTTON_RESUME:
+                    self.set_visible(False, Constants.USE_BUTTON_RESUME)
+                    self.set_visible(True, Constants.USE_BUTTON_PAUSE)
+                case Constants.USE_BUTTON_STOP:
+                    self.set_visible(
+                        False,
+                        Constants.USE_BUTTON_RESUME,
+                        Constants.USE_BUTTON_PAUSE,
+                        Constants.USE_BUTTON_STOP,
+                    )
+                    self.set_visible(
+                        True,
+                        Constants.USE_BUTTON_PLAY,
+                        Constants.USE_BUTTON_TRAIN
+                    )
         return 2

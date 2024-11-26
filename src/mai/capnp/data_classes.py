@@ -92,7 +92,7 @@ class FloatControls:
         assert  0 <= self.jump            <= 1
         assert  0 <= self.handbrake       <= 1
         assert -1 <= self.dodgeVertical   <= 1
-        assert -1 <= self.dodgeStrafe <= 1
+        assert -1 <= self.dodgeStrafe     <= 1
 
         return NormalControls(
             throttle=self.throttle,
