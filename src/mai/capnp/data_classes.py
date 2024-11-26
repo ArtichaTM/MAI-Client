@@ -1,28 +1,27 @@
+from typing import Literal, Type
+import enum
 from dataclasses import dataclass, field
-from enum import IntEnum
-from typing import Literal
 
 import numpy as np
 
 from mai.capnp.names import MAIControls, MAIGameState
 
 
-class DodgeForwardType(IntEnum):
+class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
     NONE = 0
     FORWARD = 1
 
-class DodgeStrafeType(IntEnum):
+class DodgeStrafeType(enum.IntEnum):
     LEFT = -1
     NONE = 0
     RIGHT = 1
 
-
 @dataclass(frozen=False, slots=True, kw_only=False)
 class Vector:
-    x: float = field(default=0)  # (0, 1) 
-    y: float = field(default=0)  # (0, 1) 
-    z: float = field(default=0)  # (0, 1) 
+    x: float = field(default=0)  # (0, 1)
+    y: float = field(default=0)  # (0, 1)
+    z: float = field(default=0)  # (0, 1)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -35,7 +34,7 @@ class NormalControls:
     boost: bool = field(default=False)
     jump: bool = field(default=False)
     handbrake: bool = field(default=False)
-    dodgeForward: DodgeForwardType = field(default=DodgeForwardType.NONE)
+    dodgeVertical: DodgeVerticalType = field(default=DodgeVerticalType.NONE)
     dodgeStrafe: DodgeStrafeType = field(default=DodgeStrafeType.NONE)
     reset: bool = field(default=False)
 
@@ -49,7 +48,7 @@ class NormalControls:
         if self.boost: controls.boost = True
         if self.jump: controls.jump = True
         if self.handbrake: controls.handbrake = True
-        if self.dodgeForward.value != 0: controls.dodgeForward = float(self.dodgeForward.value)
+        if self.dodgeVertical.value != 0: controls.dodgeForward = float(self.dodgeVertical.value)
         if self.dodgeStrafe.value != 0: controls.dodgeStrafe = float(self.dodgeStrafe.value)
         if self.reset: controls.reset = True
         return controls
@@ -65,40 +64,62 @@ class FloatControls:
     boost: float = field(default=0)
     jump: float = field(default=0)
     handbrake: float = field(default=0)
-    dodgeForward: float = field(default=0)
-    dodgeBackward: float = field(default=0)
-    dodgeLeft: float = field(default=0)
-    dodgeRight: float = field(default=0)
+    dodgeVertical: float = field(default=0)
+    dodgeStrafe: float = field(default=0)
+
+    @staticmethod
+    def absMax(value_n: float, value_p: float) -> float:
+        """
+        absMax(0.5, 0.7) -> 0.7
+        absMax(0.7, 0.5) -> -0.7
+        absMax(0.7, 0.5) -> -0.7
+        absMax(0.5, 0.5) -> 0.5
+        """
+        assert isinstance(value_n, float)
+        assert isinstance(value_p, float)
+        assert 0 <= value_n <= 1
+        assert 0 <= value_p <= 1
+        # return -value_n if abs(value_n) > value_p else value_p
+        return value_p-value_n
 
     def toNormalControls(self) -> NormalControls:
-        assert 0 <= self.throttle       <= 1
-        assert 0 <= self.steer          <= 1
-        assert 0 <= self.pitch          <= 1
-        assert 0 <= self.yaw            <= 1
-        assert 0 <= self.roll           <= 1
-        assert 0 <= self.boost          <= 1
-        assert 0 <= self.jump           <= 1
-        assert 0 <= self.handbrake      <= 1
-        assert 0 <= self.dodgeForward   <= 1
-        assert 0 <= self.dodgeBackward  <= 1
-        assert 0 <= self.dodgeLeft      <= 1
-        assert 0 <= self.dodgeRight     <= 1
+        assert -1 <= self.throttle        <= 1
+        assert -1 <= self.steer           <= 1
+        assert -1 <= self.pitch           <= 1
+        assert -1 <= self.yaw             <= 1
+        assert -1 <= self.roll            <= 1
+        assert  0 <= self.boost           <= 1
+        assert  0 <= self.jump            <= 1
+        assert  0 <= self.handbrake       <= 1
+        assert -1 <= self.dodgeVertical   <= 1
+        assert -1 <= self.dodgeStrafe <= 1
 
-        dF = np.array([self.dodgeForward, self.dodgeBackward], dtype=np.float32)
-        dS = np.array([self.dodgeForward, self.dodgeBackward], dtype=np.float32)
-        dF = dF[np.argmax(np.abs(dF))]
-        dS = dS[np.argmax(np.abs(dS))]
         return NormalControls(
-            throttle=(self.throttle+1)/2,
-            steer=(self.steer+1)/2,
-            pitch=(self.pitch+1)/2,
-            yaw=(self.yaw+1)/2,
-            roll=(self.roll+1)/2,
+            throttle=self.throttle,
+            steer=self.steer,
+            pitch=self.pitch,
+            yaw=self.yaw,
+            roll=self.roll,
             boost=bool(round(self.boost)),
             jump=bool(round(self.jump)),
             handbrake=bool(round(self.handbrake)),
-            dodgeForward=DodgeForwardType(round(dF)),
-            dodgeStrafe=DodgeStrafeType(round(dS))
+            dodgeVertical=DodgeVerticalType(round(self.dodgeVertical)),
+            dodgeStrafe=DodgeStrafeType(round(self.dodgeStrafe))
+        )
+
+    @classmethod
+    def from_dict[T:FloatControls](cls: Type[T], d: dict[str, float]) -> T:
+        return cls(
+            throttle = d['throttle'],
+            steer = d['steer'],
+            pitch = d['pitch'],
+            yaw = d['yaw'],
+            roll = d['roll'],
+            boost = d['boost'],
+            jump = d['jump'],
+            handbrake = d['handbrake'],
+            dodgeVertical = d['dodgeVertical'],
+            dodgeStrafe = d['dodgeStrafe']
         )
 
 

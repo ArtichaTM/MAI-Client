@@ -9,8 +9,14 @@ import PySimpleGUI as sg
 from mai.capnp.exchanger import Exchanger
 from mai.capnp.names import MAIControls, MAIGameState
 from mai.control import MainController
-from mai.capnp.data_classes import NormalControls, DodgeForwardType, DodgeStrafeType, AdditionalContext
+from mai.capnp.data_classes import (
+    NormalControls,
+    DodgeVerticalType,
+    DodgeStrafeType,
+    AdditionalContext
+)
 from mai.control.tactics.simple import SequencedCommands
+from mai.ai.controller import NNController, NNModuleBase
 
 __all__ = ('MainInterface',)
 
@@ -68,6 +74,7 @@ class Constants:
     STATS_CAR_E3_X = ''
     STATS_CAR_E3_Y = ''
     STATS_CAR_E3_Z = ''
+    MODULES_POWER = ''
 
 
 i = ''
@@ -79,19 +86,32 @@ del i
 
 class MainInterface:
     __slots__ = (
-        '_window', '_latest_exchange', '_exchange_func', 'call_functions',
-        '_stats_update_enabled', '_controller', '_latest_message'
+        '_window', '_latest_exchange', '_exchange_func',
+        '_stats_update_enabled', '_controller', '_latest_message',
+        '_nnc',
+        'call_functions',
     )
     _window: sg.Window | None
     _exchange_func: Callable[[MAIGameState], Optional[MAIControls]] | None
     call_functions: Queue[Callable]
 
     def __init__(self):
-        self._build_window()
         self._latest_exchange = perf_counter()
         self._exchange_func = None
         self._stats_update_enabled = False
         self.call_functions = Queue(1)
+        self._nnc = NNController()
+        self._build_window()
+
+    def _build_module_row(self, module: NNModuleBase) -> list[sg.Element]:
+        return [
+            sg.Text(module.name[:15].rjust(15,)),
+            sg.Progress(
+                max_value=100,
+                s=(10, 1),
+                k=Constants.MODULES_POWER + module.name + '-'
+            )
+        ]
 
     def _build_window(self) -> None:
         self._window = sg.Window('MAI', [
@@ -198,6 +218,9 @@ class MainInterface:
                         [
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING)
                         ]
+                    ]),
+                    sg.Tab('Modules', [
+                        self._build_module_row(nn) for nn in self._nnc.get_all_modules()
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
             ], [
@@ -355,7 +378,7 @@ class MainInterface:
                         NormalControls(jump=True),
                         NormalControls(jump=False),
                         NormalControls(jump=True,
-                                       dodgeForward=DodgeForwardType.FORWARD),
+                                       dodgeVertical=DodgeVerticalType.FORWARD),
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_JUMP_D_R:
@@ -373,7 +396,7 @@ class MainInterface:
                         NormalControls(jump=True),
                         NormalControls(jump=False),
                         NormalControls(jump=True,
-                                       dodgeForward=DodgeForwardType.BACKWARD),
+                                       dodgeVertical=DodgeVerticalType.BACKWARD),
                         *[NormalControls()] * 6
                     ))
                 case Constants.DEBUG_BOOST_BUTTON:
