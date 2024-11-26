@@ -25,7 +25,8 @@ FLOAT_MAX_SIZE = 6
 
 class Constants(enum.IntEnum):
     TABS = enum.auto()
-    SLEEP_TIME = enum.auto()
+    SETTINGS_SLEEP_TIME = enum.auto()
+    SETTINGS_EPC_ALGORITHM = enum.auto()
     EPS_COUNTER = enum.auto()
     CALLS_COUNTER = enum.auto()
     LOCKED_STATUS = enum.auto()
@@ -104,7 +105,7 @@ class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
         '_stats_update_enabled', '_modules_update_enabled',
-        '_controller', '_latest_message',
+        '_controller', '_latest_message', '_epc_update', '_epc',
         '_nnc', '_values',
         'call_functions',
     )
@@ -124,6 +125,7 @@ class MainInterface:
         self._modules_update_enabled = False
         self.call_functions = Queue(1)
         self._nnc = NNController()
+        self._epc_update = self.epc_update_fast
         self._build_window()
 
     def __getitem__(self, value: Constants | str) -> sg.Element:
@@ -135,6 +137,13 @@ class MainInterface:
             el = self[key]
             assert isinstance(el, sg.Element)
             el.update(disabled=v)  # type: ignore
+
+    def epc_update_fast(self) -> None:
+        self._epc = 1 / (perf_counter() - self._latest_exchange)
+
+    def epc_update_slow(self) -> None:
+        new_epc = 1 / (perf_counter() - self._latest_exchange)
+        self._epc += (new_epc - self._epc) / new_epc
 
     def build_run_params(self) -> dict[str, Any]:
         assert self._values is not None
@@ -188,8 +197,8 @@ class MainInterface:
         return format(value, " > 1.3f")
 
     def _update(self, name: Constants, value: str) -> None:
-        assert isinstance(name, Constants), name
-        assert isinstance(value, str), value
+        assert isinstance(name, Constants), f"{type(name)}({name})"
+        assert isinstance(value, str), f"{type(value)}({value})"
         self[name].update(value)  # type: ignore
 
     def _status_bars_update(self, state: MAIGameState, controls: MAIControls) -> None:
@@ -198,15 +207,15 @@ class MainInterface:
             Constants.CALLS_COUNTER,
             str(Exchanger._instance._exchanges_done)
         )
-        current_time = perf_counter()
+        self._epc_update()
         self._update(
             Constants.EPS_COUNTER,
-            f"{1/(current_time - self._latest_exchange):.2f}"
+            f"{self._epc:.2f}"
         )
         self._update(Constants.LOCKED_STATUS, str(not controls.skip))
         if state.message != 'none':
-            self._update(Constants.LATEST_MESSAGE, state.message)
-        self._latest_exchange = current_time
+            self._update(Constants.LATEST_MESSAGE, str(state.message))
+        self._latest_exchange =  perf_counter()
         if self._stats_update_enabled: self._stats_update(state)
         if self._modules_update_enabled: self._modules_update()
 
@@ -312,7 +321,13 @@ class MainInterface:
                                 resolution=0.005,
                                 orientation='horizontal',
                                 enable_events=True,
-                                k=Constants.SLEEP_TIME
+                                k=Constants.SETTINGS_SLEEP_TIME
+                            ),
+                            sg.Checkbox(
+                                "Fast EPC counter",
+                                k=Constants.SETTINGS_EPC_ALGORITHM,
+                                default=True,
+                                enable_events=True
                             )
                         ],
                     ]),
@@ -414,8 +429,6 @@ class MainInterface:
             assert self._window is not None
 
             match (event):
-                case Constants.SLEEP_TIME:
-                    exchanger.sleep_time = self._values[Constants.SLEEP_TIME]
                 case Constants.TABS:
                     new_tab = self._values[Constants.TABS]
                     if new_tab == 'Stats':
@@ -428,6 +441,14 @@ class MainInterface:
                         self._modules_update_enabled = True
                     elif self._modules_update_enabled:
                         self._modules_update_enabled = False
+                case Constants.SETTINGS_SLEEP_TIME:
+                    exchanger.sleep_time = self._values[Constants.SETTINGS_SLEEP_TIME]
+                case Constants.SETTINGS_EPC_ALGORITHM:
+                    fast: bool = self._values[Constants.SETTINGS_EPC_ALGORITHM]
+                    if fast:
+                        self._epc_update = self.epc_update_fast
+                    else:
+                        self._epc_update = self.epc_update_slow
                 case Constants.DEBUG_CLEAR:
                     self._controller.clear_all_tactics()
                 case Constants.DEBUG_PITCH:
