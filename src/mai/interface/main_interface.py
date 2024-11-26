@@ -211,17 +211,17 @@ class MainInterface:
         if self._modules_update_enabled: self._modules_update()
 
     def _stats_update(self, state: MAIGameState) -> None:
-        self._update(Constants.STATS_CAR_P_X , self._fmt(state.car.position.x))
-        self._update(Constants.STATS_CAR_P_Y , self._fmt(state.car.position.y))
-        self._update(Constants.STATS_CAR_P_Z , self._fmt(state.car.position.z))
-        self._update(Constants.STATS_CAR_R_PITCH , self._fmt(state.car.rotation.pitch))
-        self._update(Constants.STATS_CAR_R_YAW , self._fmt(state.car.rotation.yaw))
-        self._update(Constants.STATS_CAR_R_ROLL, self._fmt(state.car.rotation.roll))
-        self._update(Constants.STATS_BALL_P_X, self._fmt(state.ball.position.x))
-        self._update(Constants.STATS_BALL_P_Y, self._fmt(state.ball.position.y))
-        self._update(Constants.STATS_BALL_P_Z, self._fmt(state.ball.position.z))
-        self._update(Constants.STATS_BOOST, str(state.boostAmount))
-        self._update(Constants.STATS_DEAD, str(state.dead))
+        self._update(Constants.STATS_CAR_P_X    , self._fmt(state.car.position.x    ))
+        self._update(Constants.STATS_CAR_P_Y    , self._fmt(state.car.position.y    ))
+        self._update(Constants.STATS_CAR_P_Z    , self._fmt(state.car.position.z    ))
+        self._update(Constants.STATS_CAR_R_PITCH, self._fmt(state.car.rotation.pitch))
+        self._update(Constants.STATS_CAR_R_YAW  , self._fmt(state.car.rotation.yaw  ))
+        self._update(Constants.STATS_CAR_R_ROLL , self._fmt(state.car.rotation.roll ))
+        self._update(Constants.STATS_BALL_P_X   , self._fmt(state.ball.position.x   ))
+        self._update(Constants.STATS_BALL_P_Y   , self._fmt(state.ball.position.y   ))
+        self._update(Constants.STATS_BALL_P_Z   , self._fmt(state.ball.position.z   ))
+        self._update(Constants.STATS_BOOST      ,       str(state.boostAmount       ))
+        self._update(Constants.STATS_DEAD       ,       str(state.dead              ))
         for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
             for i in range(len(array)):
                 car = array[i]
@@ -319,27 +319,23 @@ class MainInterface:
                     sg.Tab('Debug', [
                         [
                             sg.Button("ClearAllCommands", k=Constants.DEBUG_CLEAR),
-                        ],
-                        [
+                        ], [
                             sg.Button("Pitch", k=Constants.DEBUG_PITCH),
                             sg.Button("Yaw", k=Constants.DEBUG_YAW),
                             sg.Button("Roll", k=Constants.DEBUG_ROLL),
-                        ],
-                        [
+                        ], [
                             sg.Button("JumpDodgeLeft", k=Constants.DEBUG_JUMP_D_L),
                             sg.Button("JumpDodgeForward", k=Constants.DEBUG_JUMP_D_F),
                             sg.Button("JumpDodgeRight", k=Constants.DEBUG_JUMP_D_R),
                             sg.Button("JumpDodgeBackward", k=Constants.DEBUG_JUMP_D_B),
-                        ],
-                        [
+                        ], [
                             sg.Button("Boost for", k=Constants.DEBUG_BOOST_BUTTON),
                             sg.Input('300', s=(4, 1), k=Constants.DEBUG_BOOST_INPUT),
                             sg.T('ticks'),
                             sg.Button("Jump for", k=Constants.DEBUG_JUMP_BUTTON),
                             sg.Input('300', s=(4, 1), k=Constants.DEBUG_JUMP_INPUT),
                             sg.T('ticks')
-                        ],
-                        [
+                        ], [
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING)
                         ]
                     ]),
@@ -356,8 +352,7 @@ class MainInterface:
                                 s=(20, 1),
                                 default_value=RunType.CUSTOM_TRAINING.value
                             ),
-                        ],
-                        [
+                        ], [
                             sg.Button("Train", k=Constants.USE_BUTTON_TRAIN),
                             sg.Button("Play", k=Constants.USE_BUTTON_PLAY),
                             sg.Button('Pause', k=Constants.USE_BUTTON_PAUSE, disabled=True),
