@@ -31,7 +31,6 @@ def load_torch() -> None:
 
 
 def main():
-    print('Init')
     from time import perf_counter
     torch_load_thread = Thread(target=load_torch, name='Torch preload')
     torch_load_thread.start()
