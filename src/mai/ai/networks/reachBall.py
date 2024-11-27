@@ -37,5 +37,5 @@ class NNModule(NNModuleBase):
         )
 
     def requires(self) -> set[str]:
-        return {'state',}
+        return set()
 

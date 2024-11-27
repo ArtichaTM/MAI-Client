@@ -13,7 +13,9 @@ from mai.capnp.data_classes import (
     NormalControls,
     DodgeVerticalType,
     DodgeStrafeType,
-    AdditionalContext
+    AdditionalContext,
+    RunType,
+    RunParameters
 )
 from mai.control.tactics.simple import SequencedCommands
 from mai.ai.controller import NNController, NNModuleBase
@@ -93,14 +95,6 @@ class Constants(enum.IntEnum):
             yield self.module(module)
 
 
-class RunType(str, enum.Enum):
-    CUSTOM_TRAINING = 'Custom training'
-    v11 = '1v1'
-    v22 = '2v2'
-    v33 = '3v3'
-    v44 = '4v4'
-
-
 class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
@@ -145,7 +139,7 @@ class MainInterface:
         new_epc = 1 / (perf_counter() - self._latest_exchange)
         self._epc += (new_epc - self._epc) / new_epc
 
-    def build_run_params(self) -> dict[str, Any]:
+    def build_run_params(self) -> RunParameters:
         assert self._values is not None
         match_type = self._values[Constants.USE_MATCH_TYPE]
         assert isinstance(match_type, str)
@@ -164,11 +158,11 @@ class MainInterface:
             Constants.USE_BUTTON_STOP,
             *module_checkbox_keys.keys()
         )
-        return {
-            'type': RunType(match_type),
-            'modules': [v.name for k, v in module_checkbox_keys.items(
-                ) if self._values[k]]
-        }
+        return RunParameters(
+            type=RunType(match_type),
+            modules=[v.name for k, v in module_checkbox_keys.items(
+            ) if self._values[k]]
+        )
 
     def _build_module_row(self, module: 'NNModuleBase') -> list[sg.Element]:
         return [
@@ -543,9 +537,11 @@ class MainInterface:
                         NormalControls(reset=True)
                     ))
                 case Constants.USE_BUTTON_TRAIN:
-                    self._controller.train(self.build_run_params())
+                    self._nnc.training = True
+                    self._controller.train(self._nnc, self.build_run_params())
                 case Constants.USE_BUTTON_PLAY:
-                    self._controller.play(self.build_run_params())
+                    self._nnc.training = False
+                    self._controller.play(self._nnc, self.build_run_params())
                 case Constants.USE_BUTTON_PAUSE:
                     result = self._controller.pause()
                     if result:

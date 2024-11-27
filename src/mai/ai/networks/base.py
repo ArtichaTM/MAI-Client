@@ -29,12 +29,12 @@ class NNModuleBase(ABC):
         self._training = False
         self._model: torch.nn.Sequential | None = None
         self.current_output: Any = None
-        self.power = 1
+        self.power = 0
 
     def __repr__(self) -> str:
         return (
-            f"<NNM {self.name} from {self.path_to_model},"
-            f" loaded={self.loaded}, enabled={self.enabled}, "
+            f"<NNM {self.name} from {self.path_to_model}, "
+            f"loaded={self.loaded}, enabled={self.enabled}, "
             f"power={self.power: > 1.2f}>"
         )
 
@@ -85,6 +85,12 @@ class NNModuleBase(ABC):
         assert cls._path_to_model
         return Path(cls._path_to_model)
 
+    def set_training(self, value: bool) -> None:
+        assert isinstance(value, bool)
+        if not self.loaded: return
+        assert self._model is not None
+        self._model.training = value
+
     def _load(self) -> None:
         path = type(self).path_to_model()
         if path.exists():
@@ -103,14 +109,16 @@ class NNModuleBase(ABC):
         assert not self.loaded
         self._load()
 
-    def unload(self, save: bool = False) -> None:
+    def unload(self, save: bool | None) -> None:
         """
         Unloads model from CPU/GPU memory
 
         :param save: if True, new weights saved into module path
         """
+        assert save is None or isinstance(save, bool)
         assert self._model is not None
         assert self.loaded
+        if save is None: save = False
         if save:
             path = type(self).path_to_model()
             torch.save(self._model, path)
@@ -132,7 +140,7 @@ class NNModuleBase(ABC):
         assert self._enabled
         assert 0 <= self.power <= 1
         tensor_dict = nnc.current_dict
-        input = torch.tensor([tensor_dict[i] for i in self.input_types])
+        input = torch.tensor([tensor_dict[i][0] for i in self.input_types])
         output: torch.Tensor = self._model(input) * self.power
         for name, value in zip(self.output_types, output):
             tensor_dict[name] = value

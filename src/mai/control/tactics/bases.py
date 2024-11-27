@@ -14,6 +14,9 @@ class BaseTactic(ABC):
         super().__init__()
         self.finished = False
 
+    def prepare(self) -> None:
+        pass
+
     @abstractmethod
     def react(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         raise NotImplementedError()

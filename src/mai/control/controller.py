@@ -2,14 +2,19 @@ from typing import Any, TYPE_CHECKING
 from queue import Queue
 
 from mai.capnp.names import MAIControls, MAIGameState
+from mai.capnp.data_classes import RunType, RunParameters
 
 from .tactics.bases import BaseTactic
+from .tactics.run_module import RunModule
 
 if TYPE_CHECKING:
     from mai.capnp.data_classes import AdditionalContext
+    from mai.ai.controller import NNController
 
 class MainController:
-    __slots__ = ('_tactics', '_current_tactic', '_paused_tactics')
+    __slots__ = (
+        '_tactics', '_current_tactic', '_paused_tactics',
+    )
     _current_tactic: BaseTactic | None
     _tactics: Queue[BaseTactic]
     _paused_tactics: Queue[BaseTactic] | None
@@ -26,6 +31,7 @@ class MainController:
                 controls.skip = True
                 return controls
             self._current_tactic = self._tactics.get_nowait()
+            self._current_tactic.prepare()
         controls = self._current_tactic.react(state, context)
         if self._current_tactic.finished:
             self._current_tactic = None
@@ -39,10 +45,23 @@ class MainController:
         self._tactics = Queue()
         self._current_tactic = None
 
-    def train(self, params: dict[str, Any]) -> None:
-        print(f'Train with {params}!')
+    def train(self, nnc: 'NNController', params: RunParameters) -> None:
+        type = params.type
+        modules = params.modules
+        if len(modules) == 1:
+            module = modules[0]
+            if type != RunType.CUSTOM_TRAINING:
+                raise ValueError(
+                    f"Can't run module ({module}) train "
+                    f"with type != `{RunType.CUSTOM_TRAINING.value}`. "
+                    "Add more modules for complete training or set "
+                    f"training type to {RunType.CUSTOM_TRAINING.value}"
+                )
+            rm = RunModule(modules[0], nnc)
+            self.add_reaction_tactic(rm)
+            return
 
-    def play(self, params: dict[str, Any]) -> None:
+    def play(self, nnc: 'NNController', params: RunParameters) -> None:
         print(f'Play with {params}!')
 
     def pause(self) -> bool:

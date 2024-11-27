@@ -1,4 +1,4 @@
-from typing import Literal, Type
+from typing import Literal, Type, NamedTuple
 import enum
 from dataclasses import dataclass, field
 
@@ -16,6 +16,19 @@ class DodgeStrafeType(enum.IntEnum):
     LEFT = -1
     NONE = 0
     RIGHT = 1
+
+class RunType(str, enum.Enum):
+    CUSTOM_TRAINING = 'Custom training'
+    v11 = '1v1'
+    v22 = '2v2'
+    v33 = '3v3'
+    v44 = '4v4'
+
+class RunParameters(NamedTuple):
+    __slots__ = ()
+    type: RunType
+    modules: list[str]
+
 
 @dataclass(frozen=False, slots=True, kw_only=False)
 class Vector:
