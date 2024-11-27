@@ -132,8 +132,8 @@ class MainInterface:
         self._modules_update_enabled = False
         self.call_functions = Queue(1)
         self._epc_update = self.epc_update_fast
-        # from mai.ai.controller import NNController
-        # self._nnc = NNController()
+        from mai.ai.controller import NNController
+        self._nnc = NNController()
         self._build_window()
 
     def __getitem__(self, value: Constants | str) -> sg.Element:
@@ -414,7 +414,8 @@ class MainInterface:
                                 k=Constants.USE_MATCH_TYPE,
                                 auto_size_text=False,
                                 s=(20, 1),
-                                default_value=RunType.CUSTOM_TRAINING.value
+                                default_value=RunType.CUSTOM_TRAINING.value,
+                                enable_events=False
                             ),
                         ], [
                             sg.Button("Train", k=Constants.USE_BUTTON_TRAIN),
