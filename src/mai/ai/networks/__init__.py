@@ -14,8 +14,7 @@ def build_networks() -> dict[str, type[NNModuleBase]]:
             exec(f"from .{name} import NNModule", values)
         except Exception as e:
             warning(
-                f"Can't import {name} because of "
-                f"{type(e).__qualname__}{e.args}",
+                f"Can't import {name} because:",
                 exc_info=e
             )
             continue
