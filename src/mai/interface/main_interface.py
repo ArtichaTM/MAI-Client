@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Generator
+from typing import Optional, Callable, Generator, TYPE_CHECKING
 from time import perf_counter
 from queue import Queue, Empty
 from functools import partial
@@ -18,13 +18,14 @@ from mai.capnp.data_classes import (
     RunParameters
 )
 from mai.control.tactics.simple import SequencedCommands
-from mai.ai.controller import NNController, NNModuleBase
 from mai.functions import popup
 
 __all__ = ('MainInterface',)
 
 FLOAT_MAX_SIZE = 6
 
+if TYPE_CHECKING:
+    from mai.ai.controller import NNModuleBase
 
 class Constants(enum.IntEnum):
     TABS = enum.auto()
@@ -119,8 +120,9 @@ class MainInterface:
         self._stats_update_enabled = False
         self._modules_update_enabled = False
         self.call_functions = Queue(1)
-        self._nnc = NNController()
         self._epc_update = self.epc_update_fast
+        # from mai.ai.controller import NNController
+        # self._nnc = NNController()
         self._build_window()
 
     def __getitem__(self, value: Constants | str) -> sg.Element:
@@ -359,9 +361,9 @@ class MainInterface:
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING)
                         ]
                     ]),
-                    sg.Tab('Modules', [
-                        self._build_module_row(nn) for nn in self._nnc.get_all_modules()
-                    ]),
+                    # sg.Tab('Modules', [
+                    #     self._build_module_row(nn) for nn in self._nnc.get_all_modules()
+                    # ]),
                     sg.Tab('Use', [
                         [
                             sg.Text("Match type:"),
