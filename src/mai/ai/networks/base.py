@@ -146,7 +146,6 @@ class NNModuleBase(ABC):
         tensor_dict = nnc.current_dict
         input = torch.cat([tensor_dict[i][0] for i in self.input_types])
         output: torch.Tensor = self._model(input) * self.power
-        print(output)
         for name, value in zip(self.output_types, output):
             if name not in tensor_dict:
                 tensor_dict[name] = []

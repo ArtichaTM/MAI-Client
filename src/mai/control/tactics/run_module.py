@@ -23,7 +23,6 @@ class RunModule(BaseTactic):
             self._nnc.module_enable(self._module)
 
     def react(self, state, context):
-        print('Reacting')
         controls = self._nnc.exchange(state)
         controls = controls.toNormalControls()
         controls = controls.toMAIControls()

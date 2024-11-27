@@ -66,7 +66,7 @@ class MainController:
             raise NotImplementedError()
 
     def play(self, nnc: 'NNController', params: RunParameters) -> None:
-        print(f'Play with {params}!')
+        raise NotImplementedError()
 
     def pause(self) -> bool:
         assert self._paused_tactics is None
