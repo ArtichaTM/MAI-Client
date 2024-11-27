@@ -4,7 +4,7 @@ from threading import Thread
 
 from .names import MAIControls, MAIGameState
 from .client import CapnPClient
-from .data_classes import AdditionalContext
+from .data_classes import Vector, AdditionalContext
 
 __all__ = ('Exchanger', 'register_for_exchange')
 
@@ -12,7 +12,7 @@ __all__ = ('Exchanger', 'register_for_exchange')
 class Exchanger:
     __slots__ = (
         '_listener', '_client', '_thread', '_exchanges_done',
-        'sleep_time', 'stop', '_context'
+        'sleep_time', 'stop', '_context', 'magnitude_update_requested',
     )
     _instance: Optional['Exchanger'] = None
     _listener_type = Callable[[MAIGameState, AdditionalContext], Optional[MAIControls]]
@@ -27,6 +27,11 @@ class Exchanger:
         self.stop = False
         self._exchanges_done = 1
         self._context: AdditionalContext | None = None
+        self.magnitude_update_requested = False
+
+    @property
+    def context(self) -> AdditionalContext | None:
+        return self._context
 
     @staticmethod
     def create_dummy_controls() -> MAIControls:
@@ -34,7 +39,21 @@ class Exchanger:
         message.skip = True
         return message
 
+    def update_magnitudes(self, state: MAIGameState) -> None:
+        if self._context is None: return
+        temp = Vector.from_mai(state.car.velocity).magnitude()
+        self._context.magnitude_offsets['car']['v'] = temp
+        temp = Vector.from_mai(state.car.angularVelocity).magnitude()
+        self._context.magnitude_offsets['car']['av'] = temp
+        temp = Vector.from_mai(state.ball.velocity).magnitude()
+        self._context.magnitude_offsets['ball']['v'] = temp
+        temp = Vector.from_mai(state.ball.angularVelocity).magnitude()
+        self._context.magnitude_offsets['ball']['av'] = temp
+
     def _update_context(self, state: MAIGameState) -> None:
+        if self.magnitude_update_requested:
+            self.update_magnitudes(state)
+            self.magnitude_update_requested = False
         if state.message == 'none':
             return
         elif state.message == 'gameExit':
@@ -48,6 +67,10 @@ class Exchanger:
                 self._context.team_multiplier = -1
             else:
                 self._context.team_multiplier = 1
+        elif state.message == 'kickoffTimerStarted':
+            if self._context is None:
+                self._context = AdditionalContext()
+            self.update_magnitudes(state)
 
         if self._context is not None:
             self._context.latest_message = state.message

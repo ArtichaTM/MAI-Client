@@ -51,6 +51,7 @@ class Constants(enum.IntEnum):
     DEBUG_JUMP_BUTTON = enum.auto()
     DEBUG_JUMP_INPUT = enum.auto()
     DEBUG_RESET_TRAINING = enum.auto()
+    DEBUG_UPDATE_MAGNITUDE_OFFSET = enum.auto()
     STATS_CAR_P_X = enum.auto()
     STATS_CAR_P_Y = enum.auto()
     STATS_CAR_P_Z = enum.auto()
@@ -244,12 +245,27 @@ class MainInterface:
         self._update(Constants.STATS_BALL_P_X          , self._fmt(state.ball.position.x           ))
         self._update(Constants.STATS_BALL_P_Y          , self._fmt(state.ball.position.y           ))
         self._update(Constants.STATS_BALL_P_Z          , self._fmt(state.ball.position.z           ))
-        self._update(Constants.STATS_MAGNITUDE_CAR_V   , self._fmt(magn(state.car.velocity)        ))
-        self._update(Constants.STATS_MAGNITUDE_CAR_AV  , self._fmt(magn(state.car.angularVelocity) ))
-        self._update(Constants.STATS_MAGNITUDE_BALL_V  , self._fmt(magn(state.ball.velocity)       ))
-        self._update(Constants.STATS_MAGNITUDE_BALL_AV , self._fmt(magn(state.ball.angularVelocity)))
         self._update(Constants.STATS_BOOST             ,       str(state.boostAmount               ))
         self._update(Constants.STATS_DEAD              ,       str(state.dead                      ))
+        assert Exchanger._instance is not None
+        context = Exchanger._instance.context
+        if context is not None:
+            self._update(
+                Constants.STATS_MAGNITUDE_CAR_V,
+                self._fmt(magn(state.car.velocity) - context.magnitude_offsets['car']['v'])
+            )
+            self._update(
+                Constants.STATS_MAGNITUDE_CAR_AV,
+                self._fmt(magn(state.car.angularVelocity) - context.magnitude_offsets['car']['av'])
+            )
+            self._update(
+                Constants.STATS_MAGNITUDE_BALL_V,
+                self._fmt(magn(state.ball.velocity) - context.magnitude_offsets['ball']['v'])
+            )
+            self._update(
+                Constants.STATS_MAGNITUDE_BALL_AV,
+                self._fmt(magn(state.ball.angularVelocity) - context.magnitude_offsets['ball']['av'])
+            )
         for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
             for i in range(len(array)):
                 car = array[i]
@@ -400,7 +416,8 @@ class MainInterface:
                             sg.Input('300', s=(4, 1), k=Constants.DEBUG_JUMP_INPUT),
                             sg.T('ticks')
                         ], [
-                            sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING)
+                            sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING),
+                            sg.Button("Update magnitude offset", k=Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET)
                         ]
                     ]),
                     sg.Tab('Modules', [
@@ -592,6 +609,11 @@ class MainInterface:
                     self._controller.add_reaction_tactic(SequencedCommands(
                         NormalControls(reset=True)
                     ))
+                case Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET:
+                    if Exchanger._instance is None:
+                        popup('Error', 'Exchanger instance is not found')
+                        break
+                    Exchanger._instance.magnitude_update_requested = True
                 case Constants.USE_BUTTON_TRAIN:
                     self._nnc.training = True
                     try:

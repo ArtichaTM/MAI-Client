@@ -1,4 +1,4 @@
-from typing import Literal, Type, NamedTuple
+from typing import Literal, Type, NamedTuple, TYPE_CHECKING
 import enum
 from dataclasses import dataclass, field
 
@@ -10,6 +10,10 @@ from mai.capnp.names import (
     MAIVector
 )
 
+if TYPE_CHECKING:
+    CAR_OR_BALL = Literal['car'] | Literal['ball']
+    V_OR_AV = Literal['v'] | Literal['av']
+    MAGNITUDE_OFFSET_TYPING = dict[CAR_OR_BALL, dict[V_OR_AV, float]]
 
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
@@ -155,3 +159,6 @@ class AdditionalContext:
     # If on car spawn y is negative, than we place here -1, else 1
     team_multiplier: Literal[-1, 1] = field(default=1)
     latest_message: MAIGameState.MessageType = field(default='none')
+    magnitude_offsets: 'MAGNITUDE_OFFSET_TYPING' = field(
+        default_factory=lambda: {'car': {'v': 0, 'av': 0}, 'ball': {'v': 0, 'av': 0}}
+    )
