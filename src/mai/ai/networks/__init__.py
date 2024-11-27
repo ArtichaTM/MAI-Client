@@ -22,5 +22,5 @@ def build_networks() -> dict[str, type[NNModuleBase]]:
         assert 'NNModule' in values
         module: type[NNModuleBase] = values['NNModule']
         assert issubclass(module, NNModuleBase), module
-        output[module.__module__.split('.')[-1]] = module
+        output[module.get_name()] = module
     return output
