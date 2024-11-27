@@ -1,6 +1,5 @@
 from typing import Generator, TYPE_CHECKING
 from torch import Tensor, tensor
-from tensordict.tensordict import TensorDict
 
 from mai.capnp.data_classes import FloatControls
 from .networks import build_modules, NNModuleBase
@@ -16,7 +15,7 @@ class NNController:
     )
     _all_modules: dict[str, NNModuleBase]
     _ordered_modules: list[NNModuleBase]
-    current_dict: TensorDict
+    current_dict: dict[str, list[Tensor]]
     state: 'MAIGameState'
     CONTROLS_KEYS = (
         'controls.throttle',
@@ -34,8 +33,7 @@ class NNController:
     def __init__(self) -> None:
         super().__init__()
         self._all_modules = {k: m() for k, m in build_modules().items()}
-        assert 'state' in self._all_modules, self._all_modules
-        self._ordered_modules = [self._all_modules['state']]
+        self._ordered_modules = []
         self.training = False
 
     @property
@@ -49,8 +47,10 @@ class NNController:
             model.set_training(value)
         self._training = value
 
-    def _avg_from_dict(self, name: str) -> float:
-        values: list[Tensor] = self.current_dict[name]
+    def _avg_from_dict(self, name: str) -> float | None:
+        values: list[Tensor] = self.current_dict.get(name, [])
+        if not values:
+            return None
         result = sum(values) / len(values)  # type: ignore
         assert isinstance(result, Tensor)
         return float(result)  # type: ignore
@@ -62,7 +62,12 @@ class NNController:
     def get_module(self, _module: NNModuleBase | str) -> NNModuleBase:
         if isinstance(_module, str):
             module = self._all_modules.get(_module, None)
-            raise KeyError(f"Module {_module} is not found")
+            if module is None:
+                raise KeyError(
+                    f"Module {_module} is not found. "
+                    "possible modules: "
+                    f"{', '.join((i for i in self._all_modules.keys()))}"
+                )
         else:
             module = _module
         return module
@@ -75,9 +80,11 @@ class NNController:
         """
         module = self.get_module(_module)
         assert module not in {i for i in self._ordered_modules}
+        if not module.loaded:
+            self.module_load(module)
         requirements = module.requires()
         requirements_indexes = []
-        index = 1
+        index = 0
         while requirements:
             required_module_name = requirements.pop()
             assert required_module_name in self._all_modules.keys()
@@ -96,6 +103,7 @@ class NNController:
         if requirements_indexes:
             index = max(requirements_indexes) + 1
         self._ordered_modules.insert(index, module)
+        module.enabled = True
         return index
 
     def module_disable(self, _module: NNModuleBase | str) -> None:
@@ -112,6 +120,7 @@ class NNController:
                 dependencies.append(next_module.name)
         for dependency_name in dependencies:
             self.module_disable(dependency_name)
+        module.enabled = False
 
     def module_load(self, _module: NNModuleBase | str) -> None:
         module = self.get_module(_module)
@@ -125,9 +134,9 @@ class NNController:
         save: bool | None = None
     ) -> None:
         module = self.get_module(_module)
-        assert module not in {i for i in self._ordered_modules}
         if module.enabled:
-            self.module_disable(module.name)
+            self.module_disable(module)
+        assert module not in {i for i in self._ordered_modules}
         module.unload(save=save)
 
     def unload_all_modules(
@@ -177,14 +186,15 @@ class NNController:
             d[name] = value
 
     def exchange(self, state: 'MAIGameState') -> FloatControls:
-        self.current_dict = TensorDict()  # type: ignore
+        self.current_dict = dict()  # type: ignore
         self.fill_tensor_dict(state)
 
         for module in self._ordered_modules:
             module.inference(self)
 
-        output = {i: self._avg_from_dict(
-            self.current_dict[i]
-        ) for i in self.CONTROLS_KEYS}
-
+        output = dict()
+        for i in self.CONTROLS_KEYS:
+            value = self._avg_from_dict(i)
+            if value is not None:
+                output[i] = value
         return FloatControls.from_dict(output)

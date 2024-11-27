@@ -25,7 +25,6 @@ class RunType(str, enum.Enum):
     v44 = '4v4'
 
 class RunParameters(NamedTuple):
-    __slots__ = ()
     type: RunType
     modules: list[str]
 
@@ -123,16 +122,16 @@ class FloatControls:
     @classmethod
     def from_dict[T:FloatControls](cls: Type[T], d: dict[str, float]) -> T:
         return cls(
-            throttle = d['throttle'],
-            steer = d['steer'],
-            pitch = d['pitch'],
-            yaw = d['yaw'],
-            roll = d['roll'],
-            boost = d['boost'],
-            jump = d['jump'],
-            handbrake = d['handbrake'],
-            dodgeVertical = d['dodgeVertical'],
-            dodgeStrafe = d['dodgeStrafe']
+            throttle = d.get('throttle', 0),
+            steer = d.get('steer', 0),
+            pitch = d.get('pitch', 0),
+            yaw = d.get('yaw', 0),
+            roll = d.get('roll', 0),
+            boost = d.get('boost', 0),
+            jump = d.get('jump', 0),
+            handbrake = d.get('handbrake', 0),
+            dodgeVertical = d.get('dodgeVertical', 0),
+            dodgeStrafe = d.get('dodgeStrafe', 0)
         )
 
 

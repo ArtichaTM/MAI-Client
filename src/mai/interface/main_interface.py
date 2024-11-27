@@ -1,4 +1,4 @@
-from typing import Any, Optional, Callable, Generator
+from typing import Optional, Callable, Generator
 from time import perf_counter
 from queue import Queue, Empty
 from functools import partial
@@ -19,6 +19,7 @@ from mai.capnp.data_classes import (
 )
 from mai.control.tactics.simple import SequencedCommands
 from mai.ai.controller import NNController, NNModuleBase
+from mai.functions import popup
 
 __all__ = ('MainInterface',)
 
@@ -239,6 +240,16 @@ class MainInterface:
             checkbox = self[Constants.MODULES_CHECKBOX.module(module)]
             checkbox_color = type(self).module_state_to_color[(module.loaded, module.enabled)]
             checkbox.update(checkbox_color=checkbox_color)
+
+    def handle_exception(self, exc: Exception) -> None:
+        assert isinstance(exc, Exception)
+        if isinstance(exc, ValueError):
+            popup("Error", exc.args[0])
+            return
+        import traceback
+        tb = traceback.format_exc()
+        popup(type(exc).__qualname__, tb)
+
 
     def _build_window(self) -> None:
         self._window = sg.Window('MAI', [
@@ -538,10 +549,16 @@ class MainInterface:
                     ))
                 case Constants.USE_BUTTON_TRAIN:
                     self._nnc.training = True
-                    self._controller.train(self._nnc, self.build_run_params())
+                    try:
+                        self._controller.train(self._nnc, self.build_run_params())
+                    except Exception as e:
+                        self.handle_exception(e)
                 case Constants.USE_BUTTON_PLAY:
                     self._nnc.training = False
-                    self._controller.play(self._nnc, self.build_run_params())
+                    try:
+                        self._controller.play(self._nnc, self.build_run_params())
+                    except Exception as e:
+                        self.handle_exception(e)
                 case Constants.USE_BUTTON_PAUSE:
                     result = self._controller.pause()
                     if result:

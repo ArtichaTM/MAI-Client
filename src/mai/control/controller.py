@@ -48,7 +48,9 @@ class MainController:
     def train(self, nnc: 'NNController', params: RunParameters) -> None:
         type = params.type
         modules = params.modules
-        if len(modules) == 1:
+        if len(modules) == 0:
+            raise ValueError("Select modules to train")
+        elif len(modules) == 1:
             module = modules[0]
             if type != RunType.CUSTOM_TRAINING:
                 raise ValueError(
@@ -60,6 +62,8 @@ class MainController:
             rm = RunModule(modules[0], nnc)
             self.add_reaction_tactic(rm)
             return
+        else:
+            raise NotImplementedError()
 
     def play(self, nnc: 'NNController', params: RunParameters) -> None:
         print(f'Play with {params}!')

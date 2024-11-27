@@ -19,7 +19,6 @@ dependencies = [
   'pycapnp~=2.0.0',
   'pysimplegui~=5.0.7',
   'torchrl~=0.6.0',
-  'gym~=0.26.2'
 ]
 classifiers = [
   "Development Status :: 4 - Beta"

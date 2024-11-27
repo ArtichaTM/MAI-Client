@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import torch
-from tensordict.tensordict import TensorDict
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState
@@ -20,7 +19,6 @@ class NNModuleBase(ABC):
         'current_output', 'power'
     )
     power: float
-    _path_to_model: str = ''
     output_types: tuple[str, ...] = ()
     input_types: tuple[str, ...] = ()
 
@@ -73,17 +71,23 @@ class NNModuleBase(ABC):
                 param.requires_grad = value
         self._training = value
 
+    @classmethod
+    def get_name(cls) -> str:
+        """
+        Display name of model
+        """
+        return cls.__module__.split('.')[-1]
+
     @property
     def name(self) -> str:
         """
         Display name of model
         """
-        return self.__module__.split('.')[-1]
+        return type(self).get_name()
 
     @classmethod
     def path_to_model(cls) -> Path:
-        assert cls._path_to_model
-        return Path(cls._path_to_model)
+        return Path(cls.get_name())
 
     def set_training(self, value: bool) -> None:
         assert isinstance(value, bool)
@@ -140,10 +144,13 @@ class NNModuleBase(ABC):
         assert self._enabled
         assert 0 <= self.power <= 1
         tensor_dict = nnc.current_dict
-        input = torch.tensor([tensor_dict[i][0] for i in self.input_types])
+        input = torch.cat([tensor_dict[i][0] for i in self.input_types])
         output: torch.Tensor = self._model(input) * self.power
+        print(output)
         for name, value in zip(self.output_types, output):
-            tensor_dict[name] = value
+            if name not in tensor_dict:
+                tensor_dict[name] = []
+            tensor_dict[name].append(value)
 
     @classmethod
     @abstractmethod
