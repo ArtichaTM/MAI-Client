@@ -10,6 +10,7 @@ from mai.capnp.exchanger import Exchanger
 from mai.capnp.names import MAIControls, MAIGameState
 from mai.control import MainController
 from mai.capnp.data_classes import (
+    Vector,
     NormalControls,
     DodgeVerticalType,
     DodgeStrafeType,
@@ -56,6 +57,16 @@ class Constants(enum.IntEnum):
     STATS_CAR_R_PITCH = enum.auto()
     STATS_CAR_R_YAW = enum.auto()
     STATS_CAR_R_ROLL = enum.auto()
+    STATS_CAR_V_X = enum.auto()
+    STATS_CAR_V_Y = enum.auto()
+    STATS_CAR_V_Z = enum.auto()
+    STATS_CAR_AV_X = enum.auto()
+    STATS_CAR_AV_Y = enum.auto()
+    STATS_CAR_AV_Z = enum.auto()
+    STATS_MAGNITUDE_BALL_V = enum.auto()
+    STATS_MAGNITUDE_BALL_AV = enum.auto()
+    STATS_MAGNITUDE_CAR_V = enum.auto()
+    STATS_MAGNITUDE_CAR_AV = enum.auto()
     STATS_BALL_P_X = enum.auto()
     STATS_BALL_P_Y = enum.auto()
     STATS_BALL_P_Z = enum.auto()
@@ -217,17 +228,28 @@ class MainInterface:
         if self._modules_update_enabled: self._modules_update()
 
     def _stats_update(self, state: MAIGameState) -> None:
-        self._update(Constants.STATS_CAR_P_X    , self._fmt(state.car.position.x    ))
-        self._update(Constants.STATS_CAR_P_Y    , self._fmt(state.car.position.y    ))
-        self._update(Constants.STATS_CAR_P_Z    , self._fmt(state.car.position.z    ))
-        self._update(Constants.STATS_CAR_R_PITCH, self._fmt(state.car.rotation.pitch))
-        self._update(Constants.STATS_CAR_R_YAW  , self._fmt(state.car.rotation.yaw  ))
-        self._update(Constants.STATS_CAR_R_ROLL , self._fmt(state.car.rotation.roll ))
-        self._update(Constants.STATS_BALL_P_X   , self._fmt(state.ball.position.x   ))
-        self._update(Constants.STATS_BALL_P_Y   , self._fmt(state.ball.position.y   ))
-        self._update(Constants.STATS_BALL_P_Z   , self._fmt(state.ball.position.z   ))
-        self._update(Constants.STATS_BOOST      ,       str(state.boostAmount       ))
-        self._update(Constants.STATS_DEAD       ,       str(state.dead              ))
+        magn = lambda x: Vector.from_mai(x).magnitude()
+        self._update(Constants.STATS_CAR_P_X           , self._fmt(state.car.position.x            ))
+        self._update(Constants.STATS_CAR_P_Y           , self._fmt(state.car.position.y            ))
+        self._update(Constants.STATS_CAR_P_Z           , self._fmt(state.car.position.z            ))
+        self._update(Constants.STATS_CAR_R_PITCH       , self._fmt(state.car.rotation.pitch        ))
+        self._update(Constants.STATS_CAR_R_YAW         , self._fmt(state.car.rotation.yaw          ))
+        self._update(Constants.STATS_CAR_R_ROLL        , self._fmt(state.car.rotation.roll         ))
+        self._update(Constants.STATS_CAR_V_X           , self._fmt(state.car.velocity.x            ))
+        self._update(Constants.STATS_CAR_V_Y           , self._fmt(state.car.velocity.y            ))
+        self._update(Constants.STATS_CAR_V_Z           , self._fmt(state.car.velocity.z            ))
+        self._update(Constants.STATS_CAR_AV_X          , self._fmt(state.car.angularVelocity.x     ))
+        self._update(Constants.STATS_CAR_AV_Y          , self._fmt(state.car.angularVelocity.y     ))
+        self._update(Constants.STATS_CAR_AV_Z          , self._fmt(state.car.angularVelocity.z     ))
+        self._update(Constants.STATS_BALL_P_X          , self._fmt(state.ball.position.x           ))
+        self._update(Constants.STATS_BALL_P_Y          , self._fmt(state.ball.position.y           ))
+        self._update(Constants.STATS_BALL_P_Z          , self._fmt(state.ball.position.z           ))
+        self._update(Constants.STATS_MAGNITUDE_CAR_V   , self._fmt(magn(state.car.velocity)        ))
+        self._update(Constants.STATS_MAGNITUDE_CAR_AV  , self._fmt(magn(state.car.angularVelocity) ))
+        self._update(Constants.STATS_MAGNITUDE_BALL_V  , self._fmt(magn(state.ball.velocity)       ))
+        self._update(Constants.STATS_MAGNITUDE_BALL_AV , self._fmt(magn(state.ball.angularVelocity)))
+        self._update(Constants.STATS_BOOST             ,       str(state.boostAmount               ))
+        self._update(Constants.STATS_DEAD              ,       str(state.dead                      ))
         for array, letter in zip((state.otherCars.allies, state.otherCars.enemies), ('A', 'E')):
             for i in range(len(array)):
                 car = array[i]
@@ -265,17 +287,37 @@ class MainInterface:
                         [
                             [
                                 sg.Text('Car'),
+                                sg.Text('Position:'),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_X, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_Y, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(FLOAT_MAX_SIZE,1)),
+                                sg.Text('Rotation:'),
                                 sg.StatusBar('', k=Constants.STATS_CAR_R_PITCH, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_R_YAW, size=(FLOAT_MAX_SIZE,1)),
-                                sg.StatusBar('', k=Constants.STATS_CAR_R_ROLL, size=(FLOAT_MAX_SIZE,1))
+                                sg.StatusBar('', k=Constants.STATS_CAR_R_ROLL, size=(FLOAT_MAX_SIZE,1)),
+                            ], [
+                                sg.Text(' '*5),
+                                sg.Text('Velocity:'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_V_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_V_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_V_Z, size=(FLOAT_MAX_SIZE,1)),
+                                sg.Text('Angular velocity:'),
+                                sg.StatusBar('', k=Constants.STATS_CAR_AV_X, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_AV_Y, size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_CAR_AV_Z, size=(FLOAT_MAX_SIZE,1)),
                             ], [
                                 sg.Text('Ball'),
                                 sg.StatusBar('', k=Constants.STATS_BALL_P_X, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_BALL_P_Y, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_BALL_P_Z, size=(FLOAT_MAX_SIZE,1))
+                            ], [
+                                sg.Text('Magnitudes'),
+                                sg.Text('Car:'),
+                                sg.StatusBar('', k=Constants.STATS_MAGNITUDE_CAR_V , size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_MAGNITUDE_CAR_AV, size=(FLOAT_MAX_SIZE,1)),
+                                sg.Text('Ball:'),
+                                sg.StatusBar('', k=Constants.STATS_MAGNITUDE_BALL_V , size=(FLOAT_MAX_SIZE,1)),
+                                sg.StatusBar('', k=Constants.STATS_MAGNITUDE_BALL_AV, size=(FLOAT_MAX_SIZE,1)),
                             ], [
                                 sg.Text('Boost'),
                                 sg.StatusBar('', k=Constants.STATS_BOOST, size=(6, 1)),
@@ -361,9 +403,9 @@ class MainInterface:
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING)
                         ]
                     ]),
-                    # sg.Tab('Modules', [
-                    #     self._build_module_row(nn) for nn in self._nnc.get_all_modules()
-                    # ]),
+                    sg.Tab('Modules', [
+                        self._build_module_row(nn) for nn in self._nnc.get_all_modules()
+                    ]),
                     sg.Tab('Use', [
                         [
                             sg.Text("Match type:"),
