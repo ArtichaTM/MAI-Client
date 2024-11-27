@@ -48,6 +48,7 @@ class MainController:
     def train(self, nnc: 'NNController', params: RunParameters) -> None:
         type = params.type
         modules = params.modules
+        rewards = params.rewards
         if len(modules) == 0:
             raise ValueError("Select modules to train")
         elif len(modules) == 1:

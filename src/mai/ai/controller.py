@@ -3,6 +3,7 @@ from torch import Tensor, tensor
 
 from mai.capnp.data_classes import FloatControls
 from .networks import build_networks, NNModuleBase
+from .rewards import build_rewards, NNRewardBase
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState, MAIVector, MAIRotator
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
 class NNController:
     __slots__ = (
         '_all_modules', '_ordered_modules', '_training',
+        '_all_rewards', '_current_reward',
         'current_dict', 'state'
     )
     _all_modules: dict[str, NNModuleBase]
@@ -33,12 +35,17 @@ class NNController:
     def __init__(self) -> None:
         super().__init__()
         self._all_modules = {k: m() for k, m in build_networks().items()}
+        self._all_rewards = {k: m() for k, m in build_rewards().items()}
         self._ordered_modules = []
         self.training = False
 
     @property
     def training(self) -> bool:
         return self._training
+
+    @property
+    def current_reward(self) -> float:
+        return self.current_reward
 
     @training.setter
     def training(self, value: bool) -> None:
@@ -55,9 +62,13 @@ class NNController:
         assert isinstance(result, Tensor)
         return float(result)  # type: ignore
 
-    def get_all_modules(self) -> Generator[NNModuleBase, None, None]:
+    def get_all_modules(self) -> Generator[NNModuleBase , None, None]:
         for module in self._all_modules.values():
             yield module
+
+    def get_all_rewards(self) -> Generator[NNRewardBase, None, None]:
+        for reward in self._all_rewards.values():
+            yield reward
 
     def get_module(self, _module: NNModuleBase | str) -> NNModuleBase:
         if isinstance(_module, str):

@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Generator, TYPE_CHECKING
+from typing import Optional, Callable, Generator, Iterable, TYPE_CHECKING
 from time import perf_counter
 from queue import Queue, Empty
 from functools import partial
@@ -26,7 +26,7 @@ __all__ = ('MainInterface',)
 FLOAT_MAX_SIZE = 6
 
 if TYPE_CHECKING:
-    from mai.ai.controller import NNModuleBase
+    from mai.ai.controller import NNModuleBase, NNRewardBase
 
 class Constants(enum.IntEnum):
     TABS = enum.auto()
@@ -94,6 +94,8 @@ class Constants(enum.IntEnum):
     STATS_CAR_E3_Z = enum.auto()
     MODULES_CHECKBOX = enum.auto()
     MODULES_POWER = enum.auto()
+    REWARDS_POWER_SLIDER = enum.auto()
+    REWARDS_POWER_PR = enum.auto()
     USE_MATCH_TYPE = enum.auto()
     USE_BUTTON_TRAIN = enum.auto()
     USE_BUTTON_PLAY = enum.auto()
@@ -104,9 +106,16 @@ class Constants(enum.IntEnum):
     def module(self, module: 'NNModuleBase') -> str:
         return f"{self}{module.name.replace('_', '-')}-"
 
-    def module_iter(self, modules: list['NNModuleBase']) -> Generator[str, None, None]:
+    def module_iter(self, modules: Iterable['NNModuleBase']) -> Generator[str, None, None]:
         for module in modules:
             yield self.module(module)
+
+    def reward(self, module: 'NNRewardBase') -> str:
+        return f"{self}{module.name.replace('_', '-')}-"
+
+    def reward_iter(self, modules: Iterable['NNRewardBase']) -> Generator[str, None, None]:
+        for module in modules:
+            yield self.reward(module)
 
 
 class MainInterface:
@@ -173,11 +182,36 @@ class MainInterface:
             Constants.USE_BUTTON_STOP,
             *module_checkbox_keys.keys()
         )
+        rewards_power = {
+            Constants.REWARDS_POWER_SLIDER.reward(m
+        ): m for m in self._nnc.get_all_rewards()}
+        rewards_power = {value.get_name(): self._values[
+            key
+        ] for key, value in rewards_power.items()}
         return RunParameters(
             type=RunType(match_type),
             modules=[v.name for k, v in module_checkbox_keys.items(
-            ) if self._values[k]]
+            ) if self._values[k]],
+            rewards=rewards_power
         )
+
+    def _build_reward_row(self, reward: 'NNRewardBase') -> list[sg.Element]:
+        return [
+            sg.Text(reward.name[:15].rjust(15,), p=(0, 0)),
+            sg.Slider(
+                range=(0, 1),
+                default_value=1,
+                resolution=0.01,
+                orientation='horizontal',
+                enable_events=False,
+                k=Constants.REWARDS_POWER_SLIDER.reward(reward),
+            ),
+            sg.Progress(
+                max_value=100,
+                s=(10, 10),
+                k=Constants.REWARDS_POWER_PR.reward(reward)
+            )
+        ]
 
     def _build_module_row(self, module: 'NNModuleBase') -> list[sg.Element]:
         return [
@@ -422,6 +456,9 @@ class MainInterface:
                     ]),
                     sg.Tab('Modules', [
                         self._build_module_row(nn) for nn in self._nnc.get_all_modules()
+                    ]),
+                    sg.Tab('Rewards', [
+                        self._build_reward_row(r) for r in self._nnc.get_all_rewards()
                     ]),
                     sg.Tab('Use', [
                         [

@@ -35,6 +35,7 @@ class RunType(str, enum.Enum):
 class RunParameters(NamedTuple):
     type: RunType
     modules: list[str]
+    rewards: dict[str, float]
 
 
 @dataclass(frozen=False, slots=True, kw_only=False)
