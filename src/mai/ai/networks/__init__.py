@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .base import NNModuleBase
 
-def build_modules() -> dict[str, type[NNModuleBase]]:
+def build_networks() -> dict[str, type[NNModuleBase]]:
     output: dict[str, type[NNModuleBase]] = dict()
     for file in Path(__file__).parent.iterdir():
         if file.name in {'base.py',} or file.name.startswith('_'):

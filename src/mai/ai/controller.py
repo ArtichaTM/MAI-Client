@@ -2,7 +2,7 @@ from typing import Generator, TYPE_CHECKING
 from torch import Tensor, tensor
 
 from mai.capnp.data_classes import FloatControls
-from .networks import build_modules, NNModuleBase
+from .networks import build_networks, NNModuleBase
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState, MAIVector, MAIRotator
@@ -32,7 +32,7 @@ class NNController:
 
     def __init__(self) -> None:
         super().__init__()
-        self._all_modules = {k: m() for k, m in build_modules().items()}
+        self._all_modules = {k: m() for k, m in build_networks().items()}
         self._ordered_modules = []
         self.training = False
 
