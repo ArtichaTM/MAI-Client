@@ -4,7 +4,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from mai.capnp.names import MAIControls, MAIGameState
+from mai.capnp.names import (
+    MAIControls,
+    MAIGameState,
+    MAIVector
+)
 
 
 class DodgeVerticalType(enum.IntEnum):
@@ -34,6 +38,13 @@ class Vector:
     x: float = field(default=0)  # (0, 1)
     y: float = field(default=0)  # (0, 1)
     z: float = field(default=0)  # (0, 1)
+
+    def magnitude(self) -> float:
+        return (self.x**2 + self.y**2 + self.z**2)**0.5
+
+    @classmethod
+    def from_mai[T:Vector](cls: Type[T], v: MAIVector) -> T:
+        return cls(v.x, v.y, v.z)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
