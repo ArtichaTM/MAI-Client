@@ -154,8 +154,10 @@ class NNController:
                 else:
                     assert isinstance(exc, NNModuleBase)
                     exceptions.add(exc)
-        for module in self._ordered_modules[::-1]:
+        for module in self._ordered_modules[::-1].copy():
             if module.name in exceptions:
+                continue
+            if not module.loaded:
                 continue
             self.module_unload(module, save=save)
 
