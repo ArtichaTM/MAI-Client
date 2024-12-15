@@ -13,6 +13,9 @@
         "capnp",
         "magn",
         "tensordict",
-        "torchrl"
+        "torchrl",
+        "wapi",
+        "wcon",
+        "wgui"
     ]
 }

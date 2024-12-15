@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Generator
 from abc import ABC, abstractmethod
 from pathlib import Path
 
 import torch
 
 if TYPE_CHECKING:
-    from mai.capnp.names import MAIGameState
     from ..controller import NNController
 
 
@@ -15,17 +14,19 @@ class NNModuleBase(ABC):
     Base class for all modules, hidden or not
     """
     __slots__ = (
-        '_enabled', '_model', '_training',
+        '_enabled', '_model', '_training', '_nnc',
         'current_output', 'power'
     )
     power: float
     output_types: tuple[str, ...] = ()
     input_types: tuple[str, ...] = ()
 
-    def __init__(self) -> None:
+    def __init__(self, nnc: 'NNController') -> None:
+        assert type(nnc).__qualname__ == 'NNController'
         self._enabled: bool = False
         self._training = False
         self._model: torch.nn.Sequential | None = None
+        self._nnc = nnc
         self.current_output: Any = None
         self.power = 0
 
@@ -56,7 +57,6 @@ class NNModuleBase(ABC):
         assert isinstance(value, bool)
         self._enabled = value
 
-
     @property
     def training(self) -> bool:
         """
@@ -71,13 +71,6 @@ class NNModuleBase(ABC):
                 param.requires_grad = value
         self._training = value
 
-    @classmethod
-    def get_name(cls) -> str:
-        """
-        Display name of model
-        """
-        return cls.__module__.split('.')[-1]
-
     @property
     def name(self) -> str:
         """
@@ -85,15 +78,36 @@ class NNModuleBase(ABC):
         """
         return type(self).get_name()
 
+
+    @classmethod
+    def get_name(cls) -> str:
+        """
+        Display name of model
+        """
+        return cls.__module__.split('.')[-1]
+
     @classmethod
     def path_to_model(cls) -> Path:
         return Path(cls.get_name())
+
+    def enabled_parameters(self) -> Generator[torch.nn.Parameter, None, None]:
+        assert self._model is not None
+        for parameter in self._model.parameters(recurse):
+            if parameter.requires_grad:
+                yield parameter
+
+    def set_device(self, device: torch.device) -> None:
+        assert isinstance(device, torch.device)
+        assert self._model is not None
+        self._model.to(device)
 
     def set_training(self, value: bool) -> None:
         assert isinstance(value, bool)
         if not self.loaded: return
         assert self._model is not None
         self._model.training = value
+        for parameter in self._model.parameters():
+            parameter.requires_grad = value
 
     def _load(self) -> None:
         path = type(self).path_to_model()
@@ -101,14 +115,13 @@ class NNModuleBase(ABC):
             self._model = torch.load(path)
         else:
             self._model = self._create()
+        self._model.to(self._nnc._device)
         assert self._model
         for param in self._model.parameters():
             param.requires_grad = self.training
 
     def load(self) -> None:
-        """
-        Loads model into CPU/GPU memory
-        """
+        """ Loads model into CPU/GPU memory """
         assert self._model is None
         assert not self.loaded
         self._load()
@@ -116,7 +129,6 @@ class NNModuleBase(ABC):
     def unload(self, save: bool | None) -> None:
         """
         Unloads model from CPU/GPU memory
-
         :param save: if True, new weights saved into module path
         """
         assert save is None or isinstance(save, bool)

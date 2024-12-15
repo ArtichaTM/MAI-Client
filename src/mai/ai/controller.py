@@ -1,9 +1,10 @@
-from typing import Generator, TYPE_CHECKING
-from torch import Tensor, tensor
+from typing import Any, Generator, Callable, TYPE_CHECKING
+import torch
 
-from mai.capnp.data_classes import FloatControls
+from mai.capnp.data_classes import FloatControls, AdditionalContext
 from .networks import build_networks, NNModuleBase
 from .rewards import build_rewards, NNRewardBase
+from .transition import Transition
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState, MAIVector, MAIRotator
@@ -11,14 +12,28 @@ if TYPE_CHECKING:
 
 class NNController:
     __slots__ = (
-        '_all_modules', '_ordered_modules', '_training',
+        # 
+        '_all_modules', '_ordered_modules',
         '_all_rewards', '_current_reward',
-        'current_dict', 'state'
+
+        # Torch mandatory variables
+        '_replay_buffer', '_training',
+        '_device', '_batch_size', '_sub_transition',
+        '_reward', '_optimizer', '_reward_lr',
+
+        'current_dict', 'state', 'exchange',
     )
     _all_modules: dict[str, NNModuleBase]
     _ordered_modules: list[NNModuleBase]
-    current_dict: dict[str, list[Tensor]]
+    _device: torch.device
+    _batch_size: int
+    _sub_transition: Transition | None
+    _reward: float
+    _reward_lr: float
+    _optimizer: torch.optim.Optimizer | None
+    current_dict: dict[str, list[torch.Tensor]]
     state: 'MAIGameState'
+    exchange: Callable[['MAIGameState', AdditionalContext], FloatControls]
     CONTROLS_KEYS = (
         'controls.throttle',
         'controls.steer',
@@ -32,35 +47,98 @@ class NNController:
         'controls.dodgeStrafe',
     )
 
-    def __init__(self) -> None:
+    def __init__(self, _device: torch.device | None = None) -> None:
         super().__init__()
-        self._all_modules = {k: m() for k, m in build_networks().items()}
+        # from torchrl.data import ReplayBuffer, LazyTensorStorage
+        self._all_modules = {k: m(self) for k, m in build_networks().items()}
         self._all_rewards = {k: m() for k, m in build_rewards().items()}
         self._ordered_modules = []
-        self.training = False
+        if _device is None:
+            _device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self._device = _device
+        self._batch_size = 32
+        # self._replay_buffer = ReplayBuffer(
+        #     storage = LazyTensorStorage(
+        #         max_size=1000,
+        #         device=_device
+        #     ),
+        #     collate_fn = lambda x: x,
+        #     batch_size = self._batch_size
+        # )
+        self._sub_transition = None
+        self._reward = 0.0
+        self._reward_lr = 1/5
+        self._optimizer = None
+        self._training = False
+
+    @property
+    def batch_size(self) -> int:
+        assert isinstance(self._batch_size, int)
+        assert self._batch_size >= 8
+        return self._batch_size
+
+    @batch_size.setter
+    def batch_size(self, value: int) -> None:
+        assert isinstance(value, int)
+        assert value >= 8
+        self._batch_size = value
+        self._replay_buffer._batch_size = value
 
     @property
     def training(self) -> bool:
         return self._training
 
+    @training.setter
+    def training(self, value: bool) -> None:
+        assert isinstance(value, bool)
+        if self._training == value: return
+        for model in self.get_all_modules():
+            model.set_training(value)
+        self._training = value
+        if value:
+            self.exchange = self._exchange_train
+        else:
+            self.exchange = self._exchange_run
+
     @property
     def current_reward(self) -> float:
         return self.current_reward
 
-    @training.setter
-    def training(self, value: bool) -> None:
-        assert isinstance(value, bool)
-        for model in self.get_all_modules():
-            model.set_training(value)
-        self._training = value
+    @property
+    def device(self) -> torch.device:
+        return self._device
 
-    def _avg_from_dict(self, name: str) -> float | None:
-        values: list[Tensor] = self.current_dict.get(name, [])
+    @device.setter
+    def device(self, value: torch.device) -> None:
+        assert isinstance(value, torch.device)
+        if self._device == value: return
+        self._device = value
+        for module in self.get_all_modules():
+            module.set_device(value)
+
+    def _avg_from_dict(self, name: str) -> torch.Tensor | None:
+        values: list[torch.Tensor] = self.current_dict.get(name, [])
         if not values:
             return None
-        result = sum(values) / len(values)  # type: ignore
-        assert isinstance(result, Tensor)
-        return float(result)  # type: ignore
+        tensors = torch.cat(values)
+        result = tensors.mean()  # type: ignore
+        assert isinstance(result, torch.Tensor)
+        return result
+
+    def prepare_for_training(
+        self,
+        **kwargs: Any
+    ) -> None:
+        self.training = True
+        self._optimizer = torch.optim.Adam(
+            list(self.enabled_parameters()),
+            **kwargs
+        )
+
+    def enabled_parameters(self) -> Generator[torch.nn.Parameter, None, None]:
+        for module in self.get_all_modules():
+            for parameter in module.enabled_parameters():
+                yield parameter
 
     def get_all_modules(self) -> Generator[NNModuleBase , None, None]:
         for module in self._all_modules.values():
@@ -173,12 +251,12 @@ class NNController:
             self.module_unload(module, save=save)
 
     @staticmethod
-    def vector_to_tensor(vector: 'MAIVector') -> Tensor:
-        return tensor(list(vector.to_dict().values()))
+    def vector_to_tensor(vector: 'MAIVector') -> torch.Tensor:
+        return torch.tensor(list(vector.to_dict().values()))
 
     @staticmethod
-    def rotator_to_tensor(vector: 'MAIRotator') -> Tensor:
-        return tensor(list(vector.to_dict().values()))
+    def rotator_to_tensor(vector: 'MAIRotator') -> torch.Tensor:
+        return torch.tensor(list(vector.to_dict().values()))
 
     def fill_tensor_dict(self, s: 'MAIGameState') -> None:
         d = self.current_dict
@@ -188,7 +266,7 @@ class NNController:
             ('state.car.position', [vtt(s.car.position)]),
             ('state.car.velocity', [vtt(s.car.velocity)]),
             ('state.car.rotation', [rtt(s.car.rotation)]),
-            ('state.car.angularVelocity', [vtt(s.car.angularVelocity)]),    
+            ('state.car.angularVelocity', [vtt(s.car.angularVelocity)]),
             ('state.ball.position', [vtt(s.car.position)]),
             ('state.ball.velocity', [vtt(s.car.velocity)]),
             ('state.ball.rotation', [rtt(s.car.rotation)]),
@@ -198,16 +276,52 @@ class NNController:
         ]:
             d[name] = value
 
-    def exchange(self, state: 'MAIGameState') -> FloatControls:
+    def calculate_reward(
+        self,
+        state: 'MAIGameState',
+        context: AdditionalContext
+    ) -> None:
+        c: float = 0.0
+        for reward in self._all_rewards.values():
+            c += reward(state, context)
+        p = self._reward
+        self._reward = p + (c-p)*self._reward_lr
+
+    def _exchange_run(self, state: 'MAIGameState', context: AdditionalContext) -> FloatControls:
         self.current_dict = dict()  # type: ignore
         self.fill_tensor_dict(state)
 
-        for module in self._ordered_modules:
-            module.inference(self)
-
-        output = dict()
+        output: dict[str, torch.Tensor] = dict()
         for i in self.CONTROLS_KEYS:
             value = self._avg_from_dict(i)
             if value is not None:
                 output[i] = value
-        return FloatControls.from_dict(output)
+        return FloatControls.from_dict_tensor(output)
+
+    def _exchange_train(self, state: 'MAIGameState', context: AdditionalContext) -> FloatControls:
+        self.current_dict = dict()  # type: ignore
+        self.fill_tensor_dict(state)
+
+        input_tensor = torch.cat([t[0].view(-1) for t in self.current_dict.values()])
+
+        for module in self._ordered_modules:
+            module.inference(self)
+
+        output: dict[str, torch.Tensor] = dict()
+        for i in self.CONTROLS_KEYS:
+            value = self._avg_from_dict(i)
+            if value is not None:
+                output[i] = value
+
+        self.calculate_reward(state, context)
+
+        if self._sub_transition is not None:
+            previous_transition = self._sub_transition.complete(input_tensor)
+            self._replay_buffer.add(previous_transition)
+
+        self._sub_transition = Transition(
+            input=input_tensor,
+            reward=self._reward,
+            actions_taken=torch.cat(list(output.values()))
+        )
+        return FloatControls.from_dict_tensor(output)

@@ -11,9 +11,16 @@ from mai.capnp.names import (
 )
 
 if TYPE_CHECKING:
+    import torch
     CAR_OR_BALL = Literal['car'] | Literal['ball']
     V_OR_AV = Literal['v'] | Literal['av']
     MAGNITUDE_OFFSET_TYPING = dict[CAR_OR_BALL, dict[V_OR_AV, float]]
+
+
+def clamp(num: float) -> float:
+    num = max(min(num, 1.0), 0.0)
+    return num
+
 
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
@@ -45,11 +52,18 @@ class Vector:
     z: float = field(default=0)  # (0, 1)
 
     def magnitude(self) -> float:
+        assert 0 <= self.x <= 1, self.x
+        assert 0 <= self.y <= 1, self.y
+        assert 0 <= self.z <= 1, self.z
         return (self.x**2 + self.y**2 + self.z**2)**0.5
 
     @classmethod
     def from_mai[T:Vector](cls: Type[T], v: MAIVector) -> T:
-        return cls(v.x, v.y, v.z)
+        return cls(
+            clamp(v.x),
+            clamp(v.y),
+            clamp(v.z)
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -64,7 +78,6 @@ class NormalControls:
     handbrake: bool = field(default=False)
     dodgeVertical: DodgeVerticalType = field(default=DodgeVerticalType.NONE)
     dodgeStrafe: DodgeStrafeType = field(default=DodgeStrafeType.NONE)
-    reset: bool = field(default=False)
 
     def toMAIControls(self) -> MAIControls:
         controls = MAIControls.new_message()
@@ -78,7 +91,6 @@ class NormalControls:
         if self.handbrake: controls.handbrake = True
         if self.dodgeVertical.value != 0: controls.dodgeForward = float(self.dodgeVertical.value)
         if self.dodgeStrafe.value != 0: controls.dodgeStrafe = float(self.dodgeStrafe.value)
-        if self.reset: controls.reset = True
         return controls
 
 
@@ -136,7 +148,7 @@ class FloatControls:
         )
 
     @classmethod
-    def from_dict[T:FloatControls](cls: Type[T], d: dict[str, float]) -> T:
+    def from_dict_float[T:FloatControls](cls: Type[T], d: dict[str, float]) -> T:
         return cls(
             throttle = d.get('throttle', 0),
             steer = d.get('steer', 0),
@@ -148,6 +160,21 @@ class FloatControls:
             handbrake = d.get('handbrake', 0),
             dodgeVertical = d.get('dodgeVertical', 0),
             dodgeStrafe = d.get('dodgeStrafe', 0)
+        )
+
+    @classmethod
+    def from_dict_tensor[T:FloatControls](cls: Type[T], d: dict[str, 'torch.Tensor']) -> T:
+        return cls(
+            throttle = float(d.get('throttle', 0.0)),
+            steer = float(d.get('steer', 0.0)),
+            pitch = float(d.get('pitch', 0.0)),
+            yaw = float(d.get('yaw', 0.0)),
+            roll = float(d.get('roll', 0.0)),
+            boost = float(d.get('boost', 0.0)),
+            jump = float(d.get('jump', 0.0)),
+            handbrake = float(d.get('handbrake', 0.0)),
+            dodgeVertical = float(d.get('dodgeVertical', 0.0)),
+            dodgeStrafe = float(d.get('dodgeStrafe', 0.0))
         )
 
 

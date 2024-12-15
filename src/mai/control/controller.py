@@ -49,6 +49,7 @@ class MainController:
         type = params.type
         modules = params.modules
         rewards = params.rewards
+
         if len(modules) == 0:
             raise ValueError("Select modules to train")
         elif len(modules) == 1:
@@ -60,9 +61,9 @@ class MainController:
                     "Add more modules for complete training or set "
                     f"training type to {RunType.CUSTOM_TRAINING.value}"
                 )
-            rm = RunModule(modules[0], nnc)
+            assert rewards
+            rm = RunModule(modules[0], rewards, nnc)
             self.add_reaction_tactic(rm)
-            return
         else:
             raise NotImplementedError()
 

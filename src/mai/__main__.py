@@ -6,6 +6,7 @@ from mai.functions import popup
 from .interface import getAddressPort, runMainInterface
 from .capnp.client import CapnPClient
 from .capnp.exchanger import Exchanger
+from .windows import WindowController
 
 def check_socket(address: str, port: int, client: CapnPClient, no_popup: bool = False) -> bool:
     try:

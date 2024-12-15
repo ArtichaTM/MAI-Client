@@ -1,9 +1,13 @@
-import capnp # type: ignore
+"""This is an automatically generated stub for `data.capnp`."""
 
-from mai.settings import Settings
-module = capnp.load(str(
-    Settings.path_to_capnp_schemes / 'data.capnp'
-))
+import os
+
+import capnp  # type: ignore
+
+capnp.remove_import_hook()
+here = os.path.dirname(os.path.abspath(__file__))
+module_file = os.path.abspath(os.path.join(here, "data.capnp"))
+module = capnp.load(module_file)  # pylint: disable=no-member
 MAIVector = module.MAIVector
 MAIVectorBuilder = MAIVector
 MAIVectorReader = MAIVector

@@ -8,7 +8,6 @@ import PySimpleGUI as sg
 
 from mai.capnp.exchanger import Exchanger
 from mai.capnp.names import MAIControls, MAIGameState
-from mai.control import MainController
 from mai.capnp.data_classes import (
     Vector,
     NormalControls,
@@ -18,15 +17,20 @@ from mai.capnp.data_classes import (
     RunType,
     RunParameters
 )
-from mai.control.tactics.simple import SequencedCommands
+from mai.control import MainController
+from mai.windows import WindowController
+from mai.control.tactics.simple import (
+    SequencedCommands,
+    ButtonPress
+)
 from mai.functions import popup
+
+if TYPE_CHECKING:
+    from mai.ai.controller import NNModuleBase, NNRewardBase
 
 __all__ = ('MainInterface',)
 
 FLOAT_MAX_SIZE = 6
-
-if TYPE_CHECKING:
-    from mai.ai.controller import NNModuleBase, NNRewardBase
 
 class Constants(enum.IntEnum):
     TABS = enum.auto()
@@ -123,7 +127,7 @@ class MainInterface:
         '_window', '_latest_exchange', '_exchange_func',
         '_stats_update_enabled', '_modules_update_enabled',
         '_controller', '_latest_message', '_epc_update', '_epc',
-        '_nnc', '_values',
+        '_nnc', '_wc', '_values',
         'call_functions',
     )
     _window: sg.Window | None
@@ -144,6 +148,7 @@ class MainInterface:
         self._epc_update = self.epc_update_fast
         from mai.ai.controller import NNController
         self._nnc = NNController()
+        self._wc = WindowController()
         self._build_window()
 
     def __getitem__(self, value: Constants | str) -> sg.Element:
@@ -324,6 +329,8 @@ class MainInterface:
         tb = traceback.format_exc()
         popup(type(exc).__qualname__, tb)
 
+    def close(self) -> None:
+        pass
 
     def _build_window(self) -> None:
         self._window = sg.Window('MAI', [
@@ -527,6 +534,7 @@ class MainInterface:
                         pass
                 self._values: dict | None
             if event == sg.WIN_CLOSED:
+                self.close()
                 return 0
             if self._values is None:
                 continue
@@ -643,9 +651,7 @@ class MainInterface:
                         NormalControls(jump=False)
                     ))
                 case Constants.DEBUG_RESET_TRAINING:
-                    self._controller.add_reaction_tactic(SequencedCommands(
-                        NormalControls(reset=True)
-                    ))
+                    self._controller.add_reaction_tactic(ButtonPress(5))
                 case Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET:
                     if Exchanger._instance is None:
                         popup('Error', 'Exchanger instance is not found')
