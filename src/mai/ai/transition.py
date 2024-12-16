@@ -16,6 +16,13 @@ class Transition:
         self.reward = reward
         self.actions = actions_taken
 
+    def __repr__(self) -> str:
+        return (
+            f"> Transition ({self.reward})"
+            f"\n\t{[round(float(i), 2) for i in self.input]}"
+            f"\n\t{[round(float(i), 2) for i in self.actions]}"
+        )
+
     def complete[T:Transition](self: T, next_input: torch.Tensor) -> T:
         assert isinstance(next_input, torch.Tensor)
         self.next_input = next_input
