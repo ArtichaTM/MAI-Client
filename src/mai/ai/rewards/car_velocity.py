@@ -13,7 +13,6 @@ class NNReward(NNRewardBase):
 
     def _calculate(self, state, context) -> float:
         car_velocity = Vector.from_mai(state.car.velocity)
-        print(car_velocity)
         magnitude = car_velocity.magnitude() - context.magnitude_offsets['car']['v']
         magnitude -= self.addition
         magnitude *= self.multiplier

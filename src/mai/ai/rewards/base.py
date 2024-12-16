@@ -29,8 +29,6 @@ class NNRewardBase(ABC):
         state: MAIGameState,
         context: AdditionalContext
     ) -> float:
-        assert isinstance(state, MAIGameState)
-        assert isinstance(context, AdditionalContext)
         assert self.enabled
         if self.power == 0:
             return 0

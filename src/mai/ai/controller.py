@@ -34,6 +34,7 @@ class NNController:
     _reward: float
     _reward_decay: float
     _optimizer: torch.optim.Optimizer | None
+    _replay_buffer: list[Transition]
     current_dict: dict[str, list[torch.Tensor]]
     state: 'MAIGameState'
     exchange: Callable[['MAIGameState', AdditionalContext], FloatControls]
@@ -52,7 +53,7 @@ class NNController:
 
     def __init__(self, _device: torch.device | None = None) -> None:
         super().__init__()
-        # from torchrl.data import ReplayBuffer, LazyTensorStorage
+        from torchrl.data import ReplayBuffer, LazyTensorStorage
         self._all_modules = {k: m(self) for k, m in build_networks().items()}
         self._ordered_modules = []
         self._all_rewards = {k: m() for k, m in build_rewards().items()}
@@ -65,6 +66,7 @@ class NNController:
         self._reward_decay = 1/5
         self._training = False
         self._optimizer = None
+        self._replay_buffer = []
 
         # Loop variables
         self._sub_transition = None
@@ -81,7 +83,6 @@ class NNController:
         assert isinstance(value, int)
         assert value >= 8
         self._batch_size = value
-        self._replay_buffer._batch_size = value
 
     @property
     def training(self) -> bool:
@@ -119,7 +120,7 @@ class NNController:
         values: list[torch.Tensor] = self.current_dict.get(name, [])
         if not values:
             return None
-        tensors = torch.cat(values)
+        tensors = torch.tensor(values)
         result = tensors.mean()  # type: ignore
         assert isinstance(result, torch.Tensor)
         return result
@@ -287,6 +288,9 @@ class NNController:
         # self._reward = prev + (current - prev) * self._reward_decay
         self._reward = current
 
+    def _train_epoch(self) -> None:
+        pass
+
     def _exchange_run(self, state: 'MAIGameState', context: AdditionalContext) -> FloatControls:
         self.current_dict = dict()  # type: ignore
         self.fill_tensor_dict(state)
@@ -317,11 +321,11 @@ class NNController:
 
         if self._sub_transition is not None:
             previous_transition = self._sub_transition.complete(input_tensor)
-            self._replay_buffer.add(previous_transition)
+            self._replay_buffer.append(previous_transition)
 
         self._sub_transition = Transition(
             input=input_tensor,
             reward=self._reward,
-            actions_taken=torch.cat(list(output.values()))
+            actions_taken=torch.tensor(list(output.values()))
         )
         return FloatControls.from_dict_tensor(output)
