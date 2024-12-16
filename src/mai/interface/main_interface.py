@@ -5,6 +5,11 @@ from functools import partial
 import enum
 
 import PySimpleGUI as sg
+from live_plotter import (
+    FastLivePlotter,
+    SeparateProcessLivePlotter
+)
+import numpy as np
 
 from mai.capnp.exchanger import Exchanger
 from mai.capnp.names import MAIControls, MAIGameState
@@ -24,6 +29,7 @@ from mai.control.tactics.simple import (
     ButtonPress
 )
 from mai.functions import popup
+from mai.settings import Settings
 
 if TYPE_CHECKING:
     from mai.ai.controller import NNModuleBase, NNRewardBase
@@ -56,6 +62,7 @@ class Constants(enum.IntEnum):
     DEBUG_JUMP_INPUT = enum.auto()
     DEBUG_RESET_TRAINING = enum.auto()
     DEBUG_UPDATE_MAGNITUDE_OFFSET = enum.auto()
+    DEBUG_REWARDS_TRACK = enum.auto()
     STATS_CAR_P_X = enum.auto()
     STATS_CAR_P_Y = enum.auto()
     STATS_CAR_P_Z = enum.auto()
@@ -125,9 +132,13 @@ class Constants(enum.IntEnum):
 class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
-        '_stats_update_enabled', '_modules_update_enabled',
         '_controller', '_latest_message', '_epc_update', '_epc',
         '_nnc', '_wc', '_values',
+
+        # Heavy updates
+        '_stats_update_enabled', '_modules_update_enabled',
+        '_rewards_tracker_gen',
+
         'call_functions',
     )
     _window: sg.Window | None
@@ -144,11 +155,12 @@ class MainInterface:
         self._exchange_func = None
         self._stats_update_enabled = False
         self._modules_update_enabled = False
+        self._rewards_tracker_gen: Generator[None, MAIGameState, None] | None = None
         self.call_functions = Queue(1)
         self._epc_update = self.epc_update_fast
         from mai.ai.controller import NNController
         self._nnc = NNController()
-        self._wc = WindowController()
+        self._wc = WindowController() if WindowController._instance is None else WindowController._instance
         self._build_window()
 
     def __getitem__(self, value: Constants | str) -> sg.Element:
@@ -266,6 +278,8 @@ class MainInterface:
         self._latest_exchange =  perf_counter()
         if self._stats_update_enabled: self._stats_update(state)
         if self._modules_update_enabled: self._modules_update()
+        if self._rewards_tracker_gen is not None:
+            self._rewards_tracker_gen.send(state)
 
     def _stats_update(self, state: MAIGameState) -> None:
         magn = lambda x: Vector.from_mai(x).magnitude()
@@ -319,6 +333,43 @@ class MainInterface:
             checkbox = self[Constants.MODULES_CHECKBOX.module(module)]
             checkbox_color = type(self).module_state_to_color[(module.loaded, module.enabled)]
             checkbox.update(checkbox_color=checkbox_color)
+
+    def _rewards_tracker_debug(self) -> Generator[None, MAIGameState, None]:
+        live_plotter = FastLivePlotter(
+            n_plots=1,
+            titles=["Rewards"],
+            xlabels=['i'],
+            ylabels=["Reward"],
+            xlims=[(0, 200)],
+            ylims=[(0, 200)],
+            legends=[[i.name for i in self._nnc.get_all_rewards()]]
+        )
+
+        def on_close(_):
+            nonlocal self
+            assert self._rewards_tracker_gen is not None
+            self._rewards_tracker_gen = None
+        live_plotter.fig.canvas.mpl_connect('close_event', on_close)
+
+        all_rewards: list[list[float]] = []
+        while True:
+            state = yield
+            assert Exchanger._instance is not None
+            context = Exchanger._instance.context
+            assert context is not None
+
+            all_rewards.append([])
+            for cl in self._nnc.get_all_rewards():
+                all_rewards[-1].append(cl._calculate(state, context))
+            if len(all_rewards) > 200:
+                all_rewards.pop(0)
+            y_data = np.array(all_rewards)
+            if self._rewards_tracker_gen is None:
+                break
+            live_plotter.plot(
+                y_data_list=[y_data],
+            )
+        self._rewards_tracker_gen = None
 
     def handle_exception(self, exc: Exception) -> None:
         assert isinstance(exc, Exception)
@@ -458,7 +509,8 @@ class MainInterface:
                             sg.T('ticks')
                         ], [
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING),
-                            sg.Button("Update magnitude offset", k=Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET)
+                            sg.Button("Update magnitude offset", k=Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET),
+                            sg.Button("Rewards tracker", k=Constants.DEBUG_REWARDS_TRACK)
                         ]
                     ]),
                     sg.Tab('Modules', [
@@ -651,12 +703,17 @@ class MainInterface:
                         NormalControls(jump=False)
                     ))
                 case Constants.DEBUG_RESET_TRAINING:
-                    self._controller.add_reaction_tactic(ButtonPress(5))
+                    self._controller.add_reaction_tactic(ButtonPress(
+                        Settings.button_restart_training
+                    ))
                 case Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET:
                     if Exchanger._instance is None:
                         popup('Error', 'Exchanger instance is not found')
                         break
                     Exchanger._instance.magnitude_update_requested = True
+                case Constants.DEBUG_REWARDS_TRACK:
+                    self._rewards_tracker_gen = self._rewards_tracker_debug()
+                    next(self._rewards_tracker_gen)
                 case Constants.USE_BUTTON_TRAIN:
                     self._nnc.training = True
                     try:

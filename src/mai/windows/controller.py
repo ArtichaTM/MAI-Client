@@ -46,6 +46,7 @@ class WindowController:
     def _press_key_str(self, key: str) -> None:
         assert self._hwnd is not None
         assert isinstance(key, str)
+        raise NotImplementedError()
 
     def press_key(self, key: int | str) -> None:
         assert self._hwnd is not None

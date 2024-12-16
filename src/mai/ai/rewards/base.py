@@ -32,6 +32,8 @@ class NNRewardBase(ABC):
         assert isinstance(state, MAIGameState)
         assert isinstance(context, AdditionalContext)
         assert self.enabled
+        if self.power == 0:
+            return 0
         output = self._calculate(state, context)
         output *= self.power
         self.latest_reward = output

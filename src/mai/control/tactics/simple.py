@@ -20,14 +20,16 @@ class SequencedCommands(BaseTactic):
 
 
 class ButtonPress(BaseTactic):
-    __slots__ = ('key',)
+    __slots__ = ('key', 'skip_frame')
     key: int | None
 
-    def __init__(self, key: int) -> None:
+    def __init__(self, key: int, skip_frame: bool = True) -> None:
         super().__init__()
         assert isinstance(key, int)
         assert 1 <= key <= 254
+        assert isinstance(skip_frame, bool)
         self.key = key
+        self.skip_frame = skip_frame
 
     def react(self, state, context) -> MAIControls:
         """
@@ -39,5 +41,8 @@ class ButtonPress(BaseTactic):
             self.finished = True
             return MAIControls()
         win.press_key(self.key)
-        self.key = None
+        if self.skip_frame:
+            self.key = None
+        else:
+            self.finished = True
         return MAIControls()

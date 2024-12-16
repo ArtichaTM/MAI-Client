@@ -17,11 +17,6 @@ if TYPE_CHECKING:
     MAGNITUDE_OFFSET_TYPING = dict[CAR_OR_BALL, dict[V_OR_AV, float]]
 
 
-def clamp(num: float) -> float:
-    num = max(min(num, 1.0), 0.0)
-    return num
-
-
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
     NONE = 0
@@ -52,18 +47,11 @@ class Vector:
     z: float = field(default=0)  # (0, 1)
 
     def magnitude(self) -> float:
-        assert 0 <= self.x <= 1, self.x
-        assert 0 <= self.y <= 1, self.y
-        assert 0 <= self.z <= 1, self.z
         return (self.x**2 + self.y**2 + self.z**2)**0.5
 
     @classmethod
     def from_mai[T:Vector](cls: Type[T], v: MAIVector) -> T:
-        return cls(
-            clamp(v.x),
-            clamp(v.y),
-            clamp(v.z)
-        )
+        return cls(v.x, v.y, v.z)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

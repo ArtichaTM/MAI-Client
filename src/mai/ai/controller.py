@@ -14,22 +14,25 @@ class NNController:
     __slots__ = (
         # 
         '_all_modules', '_ordered_modules',
-        '_all_rewards', '_current_reward',
+        '_all_rewards',
 
         # Torch mandatory variables
         '_replay_buffer', '_training',
         '_device', '_batch_size', '_sub_transition',
-        '_reward', '_optimizer', '_reward_lr',
+        '_reward', '_optimizer', '_reward_decay',
 
+        # public:
         'current_dict', 'state', 'exchange',
     )
     _all_modules: dict[str, NNModuleBase]
     _ordered_modules: list[NNModuleBase]
+    _all_rewards: dict[str, NNRewardBase]
+    _ordered_rewards: list[NNRewardBase]
     _device: torch.device
     _batch_size: int
     _sub_transition: Transition | None
     _reward: float
-    _reward_lr: float
+    _reward_decay: float
     _optimizer: torch.optim.Optimizer | None
     current_dict: dict[str, list[torch.Tensor]]
     state: 'MAIGameState'
@@ -51,25 +54,21 @@ class NNController:
         super().__init__()
         # from torchrl.data import ReplayBuffer, LazyTensorStorage
         self._all_modules = {k: m(self) for k, m in build_networks().items()}
-        self._all_rewards = {k: m() for k, m in build_rewards().items()}
         self._ordered_modules = []
+        self._all_rewards = {k: m() for k, m in build_rewards().items()}
         if _device is None:
-            _device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            _device = torch.device(
+                'cuda' if torch.cuda.is_available() else 'cpu'
+            )
         self._device = _device
         self._batch_size = 32
-        # self._replay_buffer = ReplayBuffer(
-        #     storage = LazyTensorStorage(
-        #         max_size=1000,
-        #         device=_device
-        #     ),
-        #     collate_fn = lambda x: x,
-        #     batch_size = self._batch_size
-        # )
+        self._reward_decay = 1/5
+        self._training = False
+        self._optimizer = None
+
+        # Loop variables
         self._sub_transition = None
         self._reward = 0.0
-        self._reward_lr = 1/5
-        self._optimizer = None
-        self._training = False
 
     @property
     def batch_size(self) -> int:
@@ -102,7 +101,7 @@ class NNController:
 
     @property
     def current_reward(self) -> float:
-        return self.current_reward
+        return self._reward
 
     @property
     def device(self) -> torch.device:
@@ -281,11 +280,12 @@ class NNController:
         state: 'MAIGameState',
         context: AdditionalContext
     ) -> None:
-        c: float = 0.0
+        current: float = 0.0
         for reward in self._all_rewards.values():
-            c += reward(state, context)
-        p = self._reward
-        self._reward = p + (c-p)*self._reward_lr
+            current += reward(state, context)
+        # prev = self._reward
+        # self._reward = prev + (current - prev) * self._reward_decay
+        self._reward = current
 
     def _exchange_run(self, state: 'MAIGameState', context: AdditionalContext) -> FloatControls:
         self.current_dict = dict()  # type: ignore

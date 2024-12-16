@@ -41,7 +41,9 @@ class Exchanger:
 
     def update_magnitudes(self, state: MAIGameState) -> None:
         print('Updating magnitudes')
-        assert self._context is not None
+        if self._context is None:
+            print("Can't update magnitudes: context is None")
+            return
         temp = Vector.from_mai(state.car.velocity).magnitude()
         self._context.magnitude_offsets['car']['v'] = temp
         temp = Vector.from_mai(state.car.angularVelocity).magnitude()
