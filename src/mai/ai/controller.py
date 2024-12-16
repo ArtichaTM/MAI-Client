@@ -251,28 +251,54 @@ class NNController:
             self.module_unload(module, save=save)
 
     @staticmethod
-    def vector_to_tensor(vector: 'MAIVector') -> torch.Tensor:
-        return torch.tensor(list(vector.to_dict().values()))
+    def vector_to_tensors(vector: 'MAIVector') -> list[torch.Tensor]:
+        return [torch.tensor(i) for i in vector.to_dict().values()]
 
     @staticmethod
-    def rotator_to_tensor(vector: 'MAIRotator') -> torch.Tensor:
-        return torch.tensor(list(vector.to_dict().values()))
+    def rotator_to_tensors(rotator: 'MAIRotator') -> list[torch.Tensor]:
+        return [torch.tensor(i) for i in rotator.to_dict().values()]
 
     def fill_tensor_dict(self, s: 'MAIGameState') -> None:
         d = self.current_dict
-        vtt = self.vector_to_tensor
-        rtt = self.rotator_to_tensor
+        vtt = self.vector_to_tensors
+        rtt = self.rotator_to_tensors
+        car_position = self.vector_to_tensors(s.car.position)
+        car_velocity = self.vector_to_tensors(s.car.velocity)
+        car_rotation = self.rotator_to_tensors(s.car.rotation)
+        car_angularVelocity = self.vector_to_tensors(s.car.angularVelocity)
+        ball_position = self.vector_to_tensors(s.ball.position)
+        ball_velocity = self.vector_to_tensors(s.ball.velocity)
+        ball_rotation = self.rotator_to_tensors(s.ball.rotation)
+        ball_angularVelocity = self.vector_to_tensors(s.ball.angularVelocity)
+        dead = torch.tensor(s.dead)
+        boostAmount = torch.tensor(s.boostAmount)
         for name, value in [
-            ('state.car.position', [vtt(s.car.position)]),
-            ('state.car.velocity', [vtt(s.car.velocity)]),
-            ('state.car.rotation', [rtt(s.car.rotation)]),
-            ('state.car.angularVelocity', [vtt(s.car.angularVelocity)]),
-            ('state.ball.position', [vtt(s.car.position)]),
-            ('state.ball.velocity', [vtt(s.car.velocity)]),
-            ('state.ball.rotation', [rtt(s.car.rotation)]),
-            ('state.ball.angularVelocity', [vtt(s.car.angularVelocity)]),
-            ('state.dead', [vtt(s.car.angularVelocity)]),
-            ('state.boostAmount', [vtt(s.car.angularVelocity)]),
+            ('state.car.position.x', [car_position[0]]),
+            ('state.car.position.y', [car_position[1]]),
+            ('state.car.position.z', [car_position[2]]),
+            ('state.car.velocity.x', [car_velocity[0]]),
+            ('state.car.velocity.y', [car_velocity[1]]),
+            ('state.car.velocity.z', [car_velocity[2]]),
+            ('state.car.rotation.pitch', [car_rotation[0]]),
+            ('state.car.rotation.roll', [car_rotation[1]]),
+            ('state.car.rotation.yaw', [car_rotation[2]]),
+            ('state.car.angularVelocity.x', [car_angularVelocity[0]]),
+            ('state.car.angularVelocity.y', [car_angularVelocity[1]]),
+            ('state.car.angularVelocity.z', [car_angularVelocity[2]]),
+            ('state.ball.position.x', [ball_position[0]]),
+            ('state.ball.position.y', [ball_position[1]]),
+            ('state.ball.position.z', [ball_position[2]]),
+            ('state.ball.velocity.x', [ball_velocity[0]]),
+            ('state.ball.velocity.y', [ball_velocity[1]]),
+            ('state.ball.velocity.z', [ball_velocity[2]]),
+            ('state.ball.rotation.pitch', [ball_rotation[0]]),
+            ('state.ball.rotation.roll', [ball_rotation[1]]),
+            ('state.ball.rotation.yaw', [ball_rotation[2]]),
+            ('state.ball.angularVelocity.x', [ball_angularVelocity[0]]),
+            ('state.ball.angularVelocity.y', [ball_angularVelocity[1]]),
+            ('state.ball.angularVelocity.z', [ball_angularVelocity[2]]),
+            ('state.dead', [dead]),
+            ('state.boostAmount', [boostAmount]),
         ]:
             d[name] = value
 
@@ -306,7 +332,7 @@ class NNController:
         self.current_dict = dict()  # type: ignore
         self.fill_tensor_dict(state)
 
-        input_tensor = torch.cat([t[0].view(-1) for t in self.current_dict.values()])
+        input_tensor = torch.cat([t[0] for t in self.current_dict.values()])
 
         for module in self._ordered_modules:
             module.inference(self)
@@ -329,3 +355,7 @@ class NNController:
             actions_taken=torch.tensor(list(output.values()))
         )
         return FloatControls.from_dict_tensor(output)
+
+    def save(self) -> None:
+        for module in self.get_all_modules():
+            module.save()

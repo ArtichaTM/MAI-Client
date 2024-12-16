@@ -732,17 +732,18 @@ class MainInterface:
                         self._set_disabled(True, Constants.USE_BUTTON_PAUSE)
                         self._set_disabled(False, Constants.USE_BUTTON_RESUME)
                 case Constants.USE_BUTTON_RESUME:
-                    self._controller.resume()
                     self._set_disabled(True, Constants.USE_BUTTON_RESUME)
+                    self._controller.resume()
                     self._set_disabled(False, Constants.USE_BUTTON_PAUSE)
                 case Constants.USE_BUTTON_STOP:
-                    self._controller.stop()
                     self._set_disabled(
                         True,
                         Constants.USE_BUTTON_RESUME,
                         Constants.USE_BUTTON_PAUSE,
                         Constants.USE_BUTTON_STOP,
                     )
+                    self._controller.stop()
+                    self._nnc.save()
                     self._set_disabled(
                         False,
                         Constants.USE_BUTTON_PLAY,

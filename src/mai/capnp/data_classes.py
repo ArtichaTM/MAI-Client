@@ -9,6 +9,7 @@ from mai.capnp.names import (
     MAIGameState,
     MAIVector
 )
+from mai.settings import Settings
 
 if TYPE_CHECKING:
     import torch
@@ -29,6 +30,7 @@ class DodgeStrafeType(enum.IntEnum):
 
 class RunType(str, enum.Enum):
     CUSTOM_TRAINING = 'Custom training'
+    FREEPLAY = 'Freeplay'
     v11 = '1v1'
     v22 = '2v2'
     v33 = '3v3'
@@ -68,12 +70,29 @@ class NormalControls:
     dodgeStrafe: DodgeStrafeType = field(default=DodgeStrafeType.NONE)
 
     def toMAIControls(self) -> MAIControls:
+        assert -1 <= self.throttle      <= 1
+        assert -1 <= self.steer         <= 1
+        assert -1 <= self.pitch         <= 1
+        assert -1 <= self.yaw           <= 1
+        assert -1 <= self.roll          <= 1
+        assert isinstance(self.boost, bool)
+        assert isinstance(self.jump, bool)
+        assert isinstance(self.handbrake, bool)
+        assert isinstance(self.dodgeVertical, DodgeVerticalType)
+        assert isinstance(self.dodgeStrafe, DodgeStrafeType)
+
         controls = MAIControls.new_message()
-        if abs(self.throttle) > 0.01: controls.throttle = self.throttle
-        if abs(self.steer) > 0.01: controls.steer = self.steer
-        if abs(self.pitch) > 0.01: controls.pitch = self.pitch
-        if abs(self.yaw) > 0.01: controls.yaw = self.yaw
-        if abs(self.roll) > 0.01: controls.roll = self.roll
+        print(f"Throttle: {self.throttle: .1f}, steer: {self.steer: .1f}, jump: {self.jump: .1f}")
+        if abs(self.throttle) > Settings.control_apply_threshold:
+            controls.throttle = self.throttle
+        if abs(self.steer) > Settings.control_apply_threshold:
+            controls.steer = self.steer
+        if abs(self.pitch) > Settings.control_apply_threshold:
+            controls.pitch = self.pitch
+        if abs(self.yaw) > Settings.control_apply_threshold:
+            controls.yaw = self.yaw
+        if abs(self.roll) > Settings.control_apply_threshold:
+            controls.roll = self.roll
         if self.boost: controls.boost = True
         if self.jump: controls.jump = True
         if self.handbrake: controls.handbrake = True

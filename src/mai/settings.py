@@ -5,7 +5,7 @@ __all__ = ("Settings",)
 class _Settings(dict):
     __slots__ = (
         'server_address', 'timeout_seconds',
-        'max_speed_magnitude',
+        'max_speed_magnitude', 'control_apply_threshold',
 
         # Buttons
         'button_restart_training', 'button_skip_replay'
@@ -20,6 +20,7 @@ class _Settings(dict):
     max_speed_magnitude: float
     button_restart_training: int
     button_skip_replay: int
+    control_apply_threshold: float
 
     def __init__(self) -> None:
         self.server_address = ('localhost', 11545)
@@ -27,5 +28,6 @@ class _Settings(dict):
         self.max_speed_magnitude = 0.32
         self.button_restart_training = 5
         self.button_skip_replay = 2
+        self.control_apply_threshold = 1e-06
 
 Settings = _Settings()

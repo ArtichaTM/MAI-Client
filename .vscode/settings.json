@@ -16,6 +16,7 @@
         "torchrl",
         "wapi",
         "wcon",
-        "wgui"
+        "wgui",
+        "MAIRL"
     ]
 }

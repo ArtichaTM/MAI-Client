@@ -92,7 +92,20 @@ class NNModuleBase(ABC):
 
     @classmethod
     def path_to_model(cls) -> Path:
-        return Path(cls.get_name())
+        return Path(cls.get_name() + '.pt')
+
+    def _init_weights(self, module: torch.nn.Module):
+        if isinstance(module, torch.nn.Linear):
+            torch.nn.init.uniform_(module.weight, -1, 1)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, torch.nn.ReLU):
+            pass
+        elif isinstance(module, torch.nn.Sequential):
+            for child in module.children():
+                self._init_weights(child)
+        else:
+            raise RuntimeError(f"Can't initialize layer {module}")
 
     def enabled_parameters(self) -> Generator[torch.nn.Parameter, None, None]:
         assert self._model is not None
@@ -116,13 +129,16 @@ class NNModuleBase(ABC):
     def _load(self) -> None:
         path = type(self).path_to_model()
         if path.exists():
-            self._model = torch.load(path)
+            self._model = torch.load(path, weights_only=False)
             if self._model is None:
                 raise RuntimeError(
                     f"Model {path} points to incorrect model"
                 )
         else:
             self._model = self._create()
+            with torch.no_grad():
+                self._model.apply(self._init_weights)
+            self.save()
         self._model.to(self._nnc._device)
         assert self._model
         for param in self._model.parameters():
@@ -163,15 +179,27 @@ class NNModuleBase(ABC):
         assert self._model is not None
         assert self._enabled
         assert 0 <= self.power <= 1
+        # from pprint import pp
+        # print('Before: ', end='')
+        # pp(nnc.current_dict)
         tensor_dict = nnc.current_dict
-        input = torch.cat([tensor_dict[i][0] for i in self.input_types])
+        _input = [tensor_dict[i][0] for i in self.input_types]
+        print(_input)
+        input = torch.tensor(_input)
+        print(input)
         output: torch.Tensor = self._model(input) * self.power
         for name, value in zip(self.output_types, output):
             if name not in tensor_dict:
                 tensor_dict[name] = []
             tensor_dict[name].append(value)
+        # print('After: ', end='')
+        # pp(nnc.current_dict)
 
     @classmethod
     @abstractmethod
     def _create(cls) -> torch.nn.Module:
         raise NotImplementedError()
+
+    def save(self) -> None:
+        path = type(self).path_to_model()
+        torch.save(self._model, path)

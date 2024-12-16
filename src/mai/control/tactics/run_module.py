@@ -27,6 +27,7 @@ class RunModule(BaseTactic):
         self._nnc.training = True
         if not self._module.enabled:
             self._nnc.module_enable(self._module)
+            self._module.power = 1
 
         for reward in self._nnc.get_all_rewards():
             power = self._rewards.get(reward.name, 0.0)
