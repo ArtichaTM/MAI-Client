@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Any, TYPE_CHECKING, Generator
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -17,7 +16,12 @@ class NNModuleBase(ABC):
         '_enabled', '_model', '_training', '_nnc',
         'current_output', 'power'
     )
+    _enabled: bool
+    _model: torch.nn.Module | None
+    _training: bool
+    _nnc: 'NNController'
     power: float
+
     output_types: tuple[str, ...] = ()
     input_types: tuple[str, ...] = ()
 
@@ -25,7 +29,7 @@ class NNModuleBase(ABC):
         assert type(nnc).__qualname__ == 'NNController'
         self._enabled: bool = False
         self._training = False
-        self._model: torch.nn.Sequential | None = None
+        self._model: torch.nn.Module | None = None
         self._nnc = nnc
         self.current_output: Any = None
         self.power = 0
@@ -92,7 +96,7 @@ class NNModuleBase(ABC):
 
     def enabled_parameters(self) -> Generator[torch.nn.Parameter, None, None]:
         assert self._model is not None
-        for parameter in self._model.parameters(recurse):
+        for parameter in self._model.parameters(recurse=True):
             if parameter.requires_grad:
                 yield parameter
 
@@ -113,6 +117,10 @@ class NNModuleBase(ABC):
         path = type(self).path_to_model()
         if path.exists():
             self._model = torch.load(path)
+            if self._model is None:
+                raise RuntimeError(
+                    f"Model {path} points to incorrect model"
+                )
         else:
             self._model = self._create()
         self._model.to(self._nnc._device)
@@ -146,7 +154,7 @@ class NNModuleBase(ABC):
         """
         return set()
 
-    def inference(self, nnc: NNController) -> None:
+    def inference(self, nnc: 'NNController') -> None:
         """
         Inference some input values
             based on `input_types()`
@@ -165,5 +173,5 @@ class NNModuleBase(ABC):
 
     @classmethod
     @abstractmethod
-    def _create(cls) -> torch.nn.Sequential:
+    def _create(cls) -> torch.nn.Module:
         raise NotImplementedError()
