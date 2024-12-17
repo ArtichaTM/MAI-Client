@@ -7,7 +7,6 @@ import enum
 import PySimpleGUI as sg
 from live_plotter import (
     FastLivePlotter,
-    SeparateProcessLivePlotter
 )
 import numpy as np
 
@@ -29,7 +28,7 @@ from mai.control.tactics.simple import (
     ButtonPress
 )
 from mai.functions import popup
-from mai.settings import Settings
+from mai.settings import Settings, WinButtons
 
 if TYPE_CHECKING:
     from mai.ai.controller import NNModuleBase, NNRewardBase
@@ -149,14 +148,16 @@ class MainInterface:
         (True, False): 'yellow',
         (True, True): 'green',
     }
+    _instance: 'MainInterface | None' = None
 
     def __init__(self):
+        type(self)._instance = self
         self._latest_exchange = perf_counter()
         self._exchange_func = None
         self._stats_update_enabled = False
         self._modules_update_enabled = False
         self._rewards_tracker_gen: Generator[None, MAIGameState, None] | None = None
-        self.call_functions = Queue(1)
+        self.call_functions = Queue(2)
         self._epc_update = self.epc_update_fast
         from mai.ai.controller import NNController
         self._nnc = NNController()
@@ -249,7 +250,7 @@ class MainInterface:
         assert Exchanger._instance is not None
         assert self._window is not None
         controls = self._controller.react(state, context)
-        if not self.call_functions.full():
+        if self.call_functions.empty():
             self.call_functions.put(partial(self._status_bars_update, state, controls))
         return controls
 
@@ -579,11 +580,10 @@ class MainInterface:
                 if not alive:
                     self._window.close()
                     return 1
-                if self.call_functions.not_empty:
-                    try:
-                        self.call_functions.get(timeout=0)()
-                    except Empty:
-                        pass
+                try:
+                    self.call_functions.get(block=False)()
+                except Empty:
+                    pass
                 self._values: dict | None
             if event == sg.WIN_CLOSED:
                 self.close()
@@ -704,7 +704,7 @@ class MainInterface:
                     ))
                 case Constants.DEBUG_RESET_TRAINING:
                     self._controller.add_reaction_tactic(ButtonPress(
-                        Settings.button_restart_training
+                        WinButtons.RESTART_TRAINING
                     ))
                 case Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET:
                     if Exchanger._instance is None:

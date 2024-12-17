@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from ..bases import BaseTactic
 from mai.capnp.data_classes import RunParameters
+from mai.functions import popup
 
 if TYPE_CHECKING:
     from mai.ai.controller import NNController
@@ -30,11 +31,20 @@ class ModuleTrainingTactic(BaseTrainingTactic):
         super().prepare()
         modules = self._run_parameters.modules
         if len(modules) == 0:
-            raise ValueError("Select modules to train")
+            popup("Error during training startup", (
+                "No modules selected for training"
+            ))
+            self.finished = True
+            return
         elif len(modules) == 1:
             pass
         else:
-            raise ValueError("Only one module training allowed in ModuleTraining")
+            popup(
+                "Error during training startup",
+                "This training allows only 1 module to train"
+            )
+            self.finished = True
+            return
 
         _module = modules[0]
         module = self._nnc.get_module(_module)

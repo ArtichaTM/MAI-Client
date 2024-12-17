@@ -1,6 +1,13 @@
 from pathlib import Path
+from enum import IntEnum
 
-__all__ = ("Settings",)
+__all__ = ('WinButtons', 'Settings')
+
+class WinButtons(IntEnum):
+    SKIP_REPLAY = 2
+    RESTART_TRAINING = 5
+    FORWARD = 87
+
 
 class _Settings(dict):
     __slots__ = (
@@ -18,16 +25,12 @@ class _Settings(dict):
     server_address: tuple[str, int]
     timeout_seconds: float  # Seconds
     max_speed_magnitude: float
-    button_restart_training: int
-    button_skip_replay: int
     control_apply_threshold: float
 
     def __init__(self) -> None:
         self.server_address = ('localhost', 11545)
         self.timeout_seconds = 2.0
         self.max_speed_magnitude = 0.32
-        self.button_restart_training = 5
-        self.button_skip_replay = 2
         self.control_apply_threshold = 1e-06
 
 Settings = _Settings()
