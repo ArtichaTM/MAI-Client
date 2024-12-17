@@ -50,13 +50,14 @@ class Exchanger:
     def _create_context(self, state: MAIGameState) -> None:
         if self._context is None:
             self._context = AdditionalContext()
+            self._context.latest_message = state.message
 
     def _update_context(self, state: MAIGameState) -> None:
         if self.magnitude_update_requested:
             self.update_magnitudes(state)
             self.magnitude_update_requested = False
         if state.message == 'none':
-            return
+            pass
         elif state.message == 'gameExit':
             self._context = None
             return
@@ -72,6 +73,7 @@ class Exchanger:
             self._create_context(state)
             self.update_magnitudes(state)
 
+        self._create_context(state)
         assert self._context is not None, state.message
         self._context.latest_message = state.message
 

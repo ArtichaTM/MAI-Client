@@ -18,6 +18,7 @@ class CustomTraining(ModuleTrainingTactic):
         context: 'AdditionalContext'
 
         if context is None:
+            print(context)
             popup("Error during context evaluation", (
                 "For some reason no context is available. That usually\n"
                 "happens when user starting training immediately after\n"
@@ -25,7 +26,7 @@ class CustomTraining(ModuleTrainingTactic):
             ))
             return
 
-        if not str(context.latest_message).startswith('kickoffTimer'):
+        if not context.latest_message != 'kickoffTimerStarted':
             print(context.latest_message)
             popup("Error during training startup", (
                 "Trying to run training without entering custom training. \n"
@@ -40,16 +41,19 @@ class CustomTraining(ModuleTrainingTactic):
         keys.press_key(WinButtons.FORWARD)
         state, context = yield
 
-        print('Starting!')
-        start_time = perf_counter()
-        while not self.is_restarting(
-            state,
-            context,
-            time_since_start=start_time
-        ):
-            controls = self._nnc.exchange(state, context)
-            yield controls
+        while True:
+            print('Starting!')
+            start_time = perf_counter()
+            while not self.is_restarting(
+                state,
+                context,
+                time_since_start=start_time
+            ):
+                controls = self._nnc.exchange(state, context)
+                yield controls.toNormalControls().toMAIControls()
 
-        print('Restart!')
-        keys.press_key(WinButtons.RESTART_TRAINING)
+            self._nnc.
+
+            print('Restart!')
+            keys.press_key(WinButtons.RESTART_TRAINING)
 
