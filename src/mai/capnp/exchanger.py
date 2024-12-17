@@ -2,6 +2,7 @@ from typing import Callable, Optional
 from time import sleep
 from threading import Thread
 
+from mai.functions import create_dummy_controls
 from .names import MAIControls, MAIGameState
 from .client import CapnPClient
 from .data_classes import Vector, AdditionalContext
@@ -32,12 +33,6 @@ class Exchanger:
     @property
     def context(self) -> AdditionalContext | None:
         return self._context
-
-    @staticmethod
-    def create_dummy_controls() -> MAIControls:
-        message = MAIControls.new_message()
-        message.skip = True
-        return message
 
     def update_magnitudes(self, state: MAIGameState) -> None:
         if self._context is None:
@@ -83,10 +78,10 @@ class Exchanger:
     def exchange(self, state: MAIGameState) -> MAIControls:
         self._update_context(state)
         if self._listener is None:
-            return self.create_dummy_controls()
+            return create_dummy_controls()
         controls = self._listener(state, self._context)
         if controls is None:
-            return self.create_dummy_controls()
+            return create_dummy_controls()
         return controls
 
     @classmethod

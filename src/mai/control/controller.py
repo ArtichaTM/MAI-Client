@@ -4,8 +4,8 @@ from queue import Queue
 from mai.capnp.names import MAIControls, MAIGameState
 from mai.capnp.data_classes import RunType, RunParameters
 
+from mai.functions import create_dummy_controls
 from .tactics.bases import BaseTactic
-from .tactics.run_module import RunModule
 from .tactics import trainings
 
 if TYPE_CHECKING:
@@ -28,14 +28,12 @@ class MainController:
     def react(self, state: MAIGameState, context: 'AdditionalContext') -> MAIControls:
         if self._current_tactic is None:
             if self._tactics.empty():
-                controls = MAIControls.new_message()
-                controls.skip = True
-                return controls
+                return create_dummy_controls()
             self._current_tactic = self._tactics.get_nowait()
             self._current_tactic.prepare()
             if self._current_tactic.finished:
                 self._current_tactic = None
-                return
+                return create_dummy_controls()
         controls = self._current_tactic.react(state, context)
         if self._current_tactic.finished:
             self._current_tactic = None
@@ -50,12 +48,12 @@ class MainController:
         self._current_tactic = None
 
     def train(self, nnc: 'NNController', params: RunParameters) -> None:
-        reaction = None
+        tactic = None
         match params.type:
             case RunType.CUSTOM_TRAINING:
-                reaction = trainings.CustomTraining(nnc, params)
+                tactic = trainings.CustomTraining(nnc, params)
             case RunType.FREEPLAY:
-                reaction = trainings.CustomTraining(nnc, params)
+                tactic = trainings.FreeplayTraining(nnc, params)
             case RunType.v11:
                 pass
             case RunType.v22:
@@ -64,13 +62,15 @@ class MainController:
                 pass
             case RunType.v44:
                 pass
-        if reaction is None:
+
+        if tactic is None:
             raise ValueError(
                 f"Can't run module training "
                 f"with type != `{RunType.CUSTOM_TRAINING.value}`. "
                 "Add more modules for complete training or set "
                 f"training type to {RunType.CUSTOM_TRAINING.value}"
             )
+        self.add_reaction_tactic(tactic)
 
     def play(self, nnc: 'NNController', params: RunParameters) -> None:
         raise NotImplementedError()
