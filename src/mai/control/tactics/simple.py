@@ -5,14 +5,13 @@ from mai.windows import WindowController
 
 
 class SequencedCommands(BaseTactic):
-    __slots__ = ('commands',)
+    __slots__ = ('start', 'commands')
 
     def __init__(self, *commands: NormalControls) -> None:
         super().__init__()
-        self.commands = list(reversed(commands))
+        self.commands = commands
 
     def react_gen(self):
-        _ = yield
         for command in self.commands:
             assert isinstance(command, NormalControls)
             yield command.toMAIControls()
@@ -35,9 +34,8 @@ class ButtonPress(BaseTactic):
         """
         Presses key and waits one exchange before reset is complete
         """
-        _ = yield
         win = WindowController._instance
         assert win is not None
         win.press_key(self.key)
         if self.skip_frame:
-            yield create_dummy_controls()
+            yield

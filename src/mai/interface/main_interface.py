@@ -621,7 +621,7 @@ class MainInterface:
                         NormalControls(jump=True, pitch=-1.),
                         NormalControls(jump=True, pitch= 0.),
                         NormalControls(jump=True, pitch= 1.),
-                        *[NormalControls()] * 5
+                        *[NormalControls()] * 3
                     ))
                 case Constants.DEBUG_YAW:
                     self._controller.add_reaction_tactic(SequencedCommands(
@@ -629,7 +629,7 @@ class MainInterface:
                         NormalControls(jump=True, yaw=-1.),
                         NormalControls(jump=True, yaw= 0.),
                         NormalControls(jump=True, yaw= 1.),
-                        *[NormalControls()] * 5
+                        *[NormalControls()] * 3
                     ))
                 case Constants.DEBUG_ROLL:
                     self._controller.add_reaction_tactic(SequencedCommands(
@@ -637,7 +637,7 @@ class MainInterface:
                         NormalControls(jump=True, roll=-1.),
                         NormalControls(jump=True, roll= 0.),
                         NormalControls(jump=True, roll= 1.),
-                        *[NormalControls()] * 5
+                        *[NormalControls()] * 3
                     ))
                 case Constants.DEBUG_JUMP_D_L:
                     self._controller.add_reaction_tactic(SequencedCommands(
@@ -646,7 +646,7 @@ class MainInterface:
                         NormalControls(jump=False),
                         NormalControls(jump=True,
                                        dodgeStrafe=DodgeStrafeType.LEFT),
-                        *[NormalControls()] * 6
+                        *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_JUMP_D_F:
                     self._controller.add_reaction_tactic(SequencedCommands(
@@ -655,7 +655,7 @@ class MainInterface:
                         NormalControls(jump=False),
                         NormalControls(jump=True,
                                        dodgeVertical=DodgeVerticalType.FORWARD),
-                        *[NormalControls()] * 6
+                        *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_JUMP_D_R:
                     self._controller.add_reaction_tactic(SequencedCommands(
@@ -664,7 +664,7 @@ class MainInterface:
                         NormalControls(jump=False),
                         NormalControls(jump=True,
                                        dodgeStrafe=DodgeStrafeType.RIGHT),
-                        *[NormalControls()] * 6
+                        *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_JUMP_D_B:
                     self._controller.add_reaction_tactic(SequencedCommands(
@@ -673,7 +673,7 @@ class MainInterface:
                         NormalControls(jump=False),
                         NormalControls(jump=True,
                                        dodgeVertical=DodgeVerticalType.BACKWARD),
-                        *[NormalControls()] * 6
+                        *[NormalControls()] * 5
                     ))
                 case Constants.DEBUG_BOOST_BUTTON:
                     boost_input = self[
