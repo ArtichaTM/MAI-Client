@@ -52,6 +52,10 @@ class Exchanger:
         temp = Vector.from_mai(state.ball.angularVelocity).magnitude()
         self._context.magnitude_offsets['ball']['av'] = temp
 
+    def _create_context(self, state: MAIGameState) -> None:
+        if self._context is None:
+            self._context = AdditionalContext()
+
     def _update_context(self, state: MAIGameState) -> None:
         if self.magnitude_update_requested:
             self.update_magnitudes(state)
@@ -62,20 +66,19 @@ class Exchanger:
             self._context = None
             return
         elif state.message == 'kickoffTimerEnded':
-            if self._context is None:
-                self._context = AdditionalContext()
+            self._create_context(state)
+            assert self._context is not None
             car_y = state.car.position.y
             if car_y < 0:
                 self._context.team_multiplier = -1
             else:
                 self._context.team_multiplier = 1
         elif state.message == 'kickoffTimerStarted':
-            if self._context is None:
-                self._context = AdditionalContext()
+            self._create_context(state)
             self.update_magnitudes(state)
 
-        if self._context is not None:
-            self._context.latest_message = state.message
+        assert self._context is not None
+        self._context.latest_message = state.message
 
     def exchange(self, state: MAIGameState) -> MAIControls:
         self._update_context(state)

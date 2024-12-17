@@ -160,7 +160,7 @@ class MAIGameState:
         def write_packed(file: BufferedWriter) -> None: ...
 
     MessageType = Literal[
-        "none", "ballExplode", "gameExit", "kickoffTimerStarted", "kickoffTimerEnded", "replayStarted"
+        "none", "ballExplode", "gameExit", "kickoffTimerStarted", "kickoffTimerEnded", "replayStarted", "ballTouched"
     ]
     car: MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader
     ball: MAIRLObjectState | MAIRLObjectStateBuilder | MAIRLObjectStateReader
@@ -221,7 +221,6 @@ class MAIControls:
     dodgeForward: float
     dodgeStrafe: float
     skip: bool
-    reset: bool
     @staticmethod
     @contextmanager
     def from_bytes(

@@ -6,6 +6,7 @@ from mai.capnp.data_classes import RunType, RunParameters
 
 from .tactics.bases import BaseTactic
 from .tactics.run_module import RunModule
+from .tactics import trainings
 
 if TYPE_CHECKING:
     from mai.capnp.data_classes import AdditionalContext
@@ -46,26 +47,27 @@ class MainController:
         self._current_tactic = None
 
     def train(self, nnc: 'NNController', params: RunParameters) -> None:
-        type = params.type
-        modules = params.modules
-        rewards = params.rewards
-
-        if len(modules) == 0:
-            raise ValueError("Select modules to train")
-        elif len(modules) == 1:
-            module = modules[0]
-            if type != RunType.CUSTOM_TRAINING:
-                raise ValueError(
-                    f"Can't run module ({module}) train "
-                    f"with type != `{RunType.CUSTOM_TRAINING.value}`. "
-                    "Add more modules for complete training or set "
-                    f"training type to {RunType.CUSTOM_TRAINING.value}"
-                )
-            assert rewards
-            rm = RunModule(modules[0], rewards, nnc)
-            self.add_reaction_tactic(rm)
-        else:
-            raise NotImplementedError()
+        reaction = None
+        match params.type:
+            case RunType.CUSTOM_TRAINING:
+                reaction = trainings.CustomTraining(nnc, params)
+            case RunType.FREEPLAY:
+                reaction = trainings.CustomTraining(nnc, params)
+            case RunType.v11:
+                pass
+            case RunType.v22:
+                pass
+            case RunType.v33:
+                pass
+            case RunType.v44:
+                pass
+        if reaction is None:
+            raise ValueError(
+                f"Can't run module training "
+                f"with type != `{RunType.CUSTOM_TRAINING.value}`. "
+                "Add more modules for complete training or set "
+                f"training type to {RunType.CUSTOM_TRAINING.value}"
+            )
 
     def play(self, nnc: 'NNController', params: RunParameters) -> None:
         raise NotImplementedError()
