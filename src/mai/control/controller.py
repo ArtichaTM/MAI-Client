@@ -33,6 +33,9 @@ class MainController:
                 return controls
             self._current_tactic = self._tactics.get_nowait()
             self._current_tactic.prepare()
+            if self._current_tactic.finished:
+                self._current_tactic = None
+                return
         controls = self._current_tactic.react(state, context)
         if self._current_tactic.finished:
             self._current_tactic = None
