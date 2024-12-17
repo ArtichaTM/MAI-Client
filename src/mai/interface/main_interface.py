@@ -19,7 +19,8 @@ from mai.capnp.data_classes import (
     DodgeStrafeType,
     AdditionalContext,
     RunType,
-    RunParameters
+    RunParameters,
+    RestartReason
 )
 from mai.control import MainController
 from mai.windows import WindowController
@@ -107,6 +108,8 @@ class Constants(enum.IntEnum):
     REWARDS_POWER_SLIDER = enum.auto()
     REWARDS_POWER_PR = enum.auto()
     USE_MATCH_TYPE = enum.auto()
+    USE_RESTART_REASON = enum.auto()
+    USE_RESTART_TIMEOUT = enum.auto()
     USE_BUTTON_TRAIN = enum.auto()
     USE_BUTTON_PLAY = enum.auto()
     USE_BUTTON_PAUSE = enum.auto()
@@ -126,6 +129,13 @@ class Constants(enum.IntEnum):
     def reward_iter(self, modules: Iterable['NNRewardBase']) -> Generator[str, None, None]:
         for module in modules:
             yield self.reward(module)
+
+    def restart_reason(self, reason: RestartReason) -> str:
+        return f"{self}{reason.value}"
+
+    def restart_reason_iter(self) -> Generator[str, None, None]:
+        for reason in RestartReason:
+            yield f"{self}{reason.value}"
 
 
 class MainInterface:
@@ -191,9 +201,11 @@ class MainInterface:
             Constants.USE_BUTTON_PLAY,
             Constants.USE_BUTTON_TRAIN
         )
-        module_checkbox_keys = {
-            Constants.MODULES_CHECKBOX.module(m
-        ): m for m in self._nnc.get_all_modules()}
+        module_checkbox_keys = dict()
+        for m in self._nnc.get_all_modules():
+            module_checkbox_keys[
+                Constants.MODULES_CHECKBOX.module(m)
+            ] = m
         self._set_disabled(
             False,
             Constants.USE_BUTTON_PAUSE,
@@ -206,11 +218,23 @@ class MainInterface:
         rewards_power = {value.get_name(): self._values[
             key
         ] for key, value in rewards_power.items()}
+
+        restart_reasons = set()
+        for reason in RestartReason:
+            key = Constants.USE_RESTART_REASON.restart_reason(reason)
+            if self._values[key]:
+                restart_reasons.add(reason)
+
+        restart_timeout_str: str = self._values[Constants.USE_RESTART_TIMEOUT]
+        restart_timeout = int(''.join((i for i in restart_timeout_str if i.isdigit())))
+
         return RunParameters(
             type=RunType(match_type),
             modules=[v.name for k, v in module_checkbox_keys.items(
             ) if self._values[k]],
-            rewards=rewards_power
+            rewards=rewards_power,
+            restart_reasons=restart_reasons,
+            restart_timeout=restart_timeout
         )
 
     def _build_reward_row(self, reward: 'NNRewardBase') -> list[sg.Element]:
@@ -245,6 +269,18 @@ class MainInterface:
                 k=Constants.MODULES_POWER.module(module)
             )
         ]
+
+    def _build_restart_reason(self) -> list[sg.Checkbox]:
+        output: list[sg.Checkbox] = []
+        default = True
+        for i in RestartReason:
+            output.append(sg.Checkbox(
+                i.value,
+                k=Constants.USE_RESTART_REASON.restart_reason(i),
+                default=default
+            ))
+            default = False
+        return output
 
     def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         assert Exchanger._instance is not None
@@ -530,14 +566,23 @@ class MainInterface:
                                 s=(20, 1),
                                 default_value=RunType.CUSTOM_TRAINING.value,
                                 enable_events=False
-                            ),
+                            )
+                        ], [
+                            sg.Text("Restart reason:"),
+                            *self._build_restart_reason()
+                        ], [
+                            sg.Text("Restart timeout:"),
+                            sg.Input(
+                                default_text='5',
+                                k=Constants.USE_RESTART_TIMEOUT
+                            )
                         ], [
                             sg.Button("Train", k=Constants.USE_BUTTON_TRAIN),
                             sg.Button("Play", k=Constants.USE_BUTTON_PLAY),
                             sg.Button('Pause', k=Constants.USE_BUTTON_PAUSE, disabled=True),
                             sg.Button('Resume', k=Constants.USE_BUTTON_RESUME, disabled=True),
                             sg.Button('Stop', k=Constants.USE_BUTTON_STOP, disabled=True)
-                        ]
+                        ], 
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
             ], [

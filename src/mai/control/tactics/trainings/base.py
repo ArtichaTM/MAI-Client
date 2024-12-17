@@ -1,8 +1,17 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Mapping
+from time import perf_counter
+
+from mai.ai.controller import NNController
+from mai.capnp.data_classes import RunParameters
 
 from ..bases import BaseTactic
-from mai.capnp.data_classes import RunParameters
 from mai.functions import popup
+from mai.capnp.data_classes import (
+    RunParameters,
+    MAIGameState,
+    AdditionalContext,
+    RestartReason
+)
 
 if TYPE_CHECKING:
     from mai.ai.controller import NNController
@@ -25,7 +34,7 @@ class BaseTrainingTactic(BaseTactic):
 
 
 class ModuleTrainingTactic(BaseTrainingTactic):
-    __slots__ = ()
+    __slots__ = ('reasons_to_func_map',)
 
     def prepare(self) -> None:
         super().prepare()
@@ -59,3 +68,33 @@ class ModuleTrainingTactic(BaseTrainingTactic):
         for reward in self._nnc.get_all_rewards():
             power = rewards.get(reward.name, 0.0)
             reward.power = power
+
+        self.reasons_to_func_map: Mapping[RestartReason, Callable[[
+            MAIGameState, AdditionalContext
+        ], bool]] = {
+            RestartReason.BALL_TOUCH: self._check_restart_hit,
+            RestartReason.SCORE: self._check_restart_score,
+            RestartReason.TIMEOUT: self._check_restart_timeout,
+        }
+
+    def _check_restart_hit(self, state, context: 'AdditionalContext', **kwargs) -> bool:
+        return context.latest_message == 'ballTouched'
+
+    def _check_restart_score(self, state, context: 'AdditionalContext', **kwargs) -> bool:
+        return context.latest_message == 'ballExplode'
+
+    def _check_restart_timeout(
+        self,
+        state,
+        context: 'AdditionalContext',
+        time_since_start: float | None = None
+    ) -> bool:
+        assert isinstance(time_since_start, float), "Pass time_since_start to kwargs"
+        return (perf_counter() - time_since_start) > self._run_parameters.restart_timeout
+
+    def is_restarting(self, state: 'MAIGameState', context: 'AdditionalContext', **kwargs) -> bool:
+        for reason in self._run_parameters.restart_reasons:
+            result = self.reasons_to_func_map[reason](state, context, **kwargs)
+            if result:
+                return True
+        return False

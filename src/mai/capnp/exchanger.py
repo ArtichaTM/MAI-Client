@@ -72,7 +72,7 @@ class Exchanger:
             self._create_context(state)
             self.update_magnitudes(state)
 
-        assert self._context is not None
+        assert self._context is not None, state.message
         self._context.latest_message = state.message
 
     def exchange(self, state: MAIGameState) -> MAIControls:

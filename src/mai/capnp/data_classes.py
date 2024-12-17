@@ -36,11 +36,17 @@ class RunType(str, enum.Enum):
     v33 = '3v3'
     v44 = '4v4'
 
+class RestartReason(str, enum.Enum):
+    BALL_TOUCH = 'Ball touch'
+    SCORE = 'Goal score'
+    TIMEOUT = 'Timeout'
+
 class RunParameters(NamedTuple):
     type: RunType
     modules: list[str]
     rewards: dict[str, float]
-
+    restart_reasons: set[RestartReason]
+    restart_timeout: int
 
 @dataclass(frozen=False, slots=True, kw_only=False)
 class Vector:
@@ -54,7 +60,6 @@ class Vector:
     @classmethod
     def from_mai[T:Vector](cls: Type[T], v: MAIVector) -> T:
         return cls(v.x, v.y, v.z)
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NormalControls:
@@ -98,7 +103,6 @@ class NormalControls:
         if self.dodgeVertical.value != 0: controls.dodgeForward = float(self.dodgeVertical.value)
         if self.dodgeStrafe.value != 0: controls.dodgeStrafe = float(self.dodgeStrafe.value)
         return controls
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class FloatControls:
@@ -182,7 +186,6 @@ class FloatControls:
             dodgeVertical = float(d.get('dodgeVertical', 0.0)),
             dodgeStrafe = float(d.get('dodgeStrafe', 0.0))
         )
-
 
 @dataclass(frozen=False, slots=True, kw_only=True)
 class AdditionalContext:

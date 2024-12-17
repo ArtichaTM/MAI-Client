@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
+from time import perf_counter
 
-from .base import ModuleTrainingTactic
 from mai.functions import popup
 from mai.windows import WindowController
 from mai.settings import WinButtons
+from .base import ModuleTrainingTactic
 
 if TYPE_CHECKING:
     from mai.capnp.data_classes import MAIGameState, AdditionalContext
@@ -37,3 +38,18 @@ class CustomTraining(ModuleTrainingTactic):
         assert keys is not None
         keys.update_window()
         keys.press_key(WinButtons.FORWARD)
+        state, context = yield
+
+        print('Starting!')
+        start_time = perf_counter()
+        while not self.is_restarting(
+            state,
+            context,
+            time_since_start=start_time
+        ):
+            controls = self._nnc.exchange(state, context)
+            yield controls
+
+        print('Restart!')
+        keys.press_key(WinButtons.RESTART_TRAINING)
+
