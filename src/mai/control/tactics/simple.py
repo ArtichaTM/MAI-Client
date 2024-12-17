@@ -1,5 +1,5 @@
-from mai.capnp.names import MAIControls
 from .bases import BaseTactic
+from mai.functions import create_dummy_controls
 from mai.capnp.data_classes import NormalControls
 from mai.windows import WindowController
 
@@ -11,17 +11,17 @@ class SequencedCommands(BaseTactic):
         super().__init__()
         self.commands = list(reversed(commands))
 
-    def react(self, state, context):
-        command = self.commands.pop()
-        assert isinstance(command, NormalControls)
-        if not len(self.commands):
-            self.finished = True
-        return command.toMAIControls()
+    def react_gen(self):
+        _ = yield
+        for command in self.commands:
+            assert isinstance(command, NormalControls)
+            yield command.toMAIControls()
 
 
 class ButtonPress(BaseTactic):
     __slots__ = ('key', 'skip_frame')
-    key: int | None
+    key: int
+    skip_frame: bool
 
     def __init__(self, key: int, skip_frame: bool = True) -> None:
         super().__init__()
@@ -31,18 +31,13 @@ class ButtonPress(BaseTactic):
         self.key = key
         self.skip_frame = skip_frame
 
-    def react(self, state, context) -> MAIControls:
+    def react_gen(self):
         """
         Presses key and waits one exchange before reset is complete
         """
+        _ = yield
         win = WindowController._instance
         assert win is not None
-        if self.key is None:
-            self.finished = True
-            return MAIControls()
         win.press_key(self.key)
         if self.skip_frame:
-            self.key = None
-        else:
-            self.finished = True
-        return MAIControls()
+            yield create_dummy_controls()

@@ -1,17 +1,10 @@
 from typing import TYPE_CHECKING
-from abc import abstractmethod
 
 from ..bases import BaseTactic
 from mai.capnp.data_classes import RunParameters
 
 if TYPE_CHECKING:
-    from mai.ai.networks import NNModuleBase
     from mai.ai.controller import NNController
-    from mai.capnp.data_classes import (
-        MAIGameState,
-        FloatControls,
-        AdditionalContext
-    )
 
 
 __all__ = ('BaseTrainingTactic',)
@@ -29,27 +22,12 @@ class BaseTrainingTactic(BaseTactic):
         self._nnc = nnc
         self._run_parameters = run_parameters
 
-    @abstractmethod
-    def prepare(self) -> None:
-        raise NotImplementedError()
-
-    def react(self, state, context):
-        _controls = self.sub_react(state, context)
-        if _controls is not None:
-            controls = _controls
-        else:
-            controls = self._nnc.exchange(state, context)
-        return controls.toNormalControls().toMAIControls()
-
-    @abstractmethod
-    def sub_react(self, state: 'MAIGameState', context: 'AdditionalContext') -> 'FloatControls | None':
-        raise NotImplementedError()
-
 
 class ModuleTrainingTactic(BaseTrainingTactic):
     __slots__ = ()
 
     def prepare(self) -> None:
+        super().prepare()
         modules = self._run_parameters.modules
         if len(modules) == 0:
             raise ValueError("Select modules to train")
