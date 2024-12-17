@@ -11,12 +11,13 @@
     "python.analysis.typeCheckingMode": "standard",
     "cSpell.words": [
         "capnp",
+        "Freeplay",
         "magn",
+        "MAIRL",
         "tensordict",
         "torchrl",
         "wapi",
         "wcon",
-        "wgui",
-        "MAIRL"
+        "wgui"
     ]
 }

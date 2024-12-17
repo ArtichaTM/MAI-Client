@@ -82,7 +82,6 @@ class NormalControls:
         assert isinstance(self.dodgeStrafe, DodgeStrafeType)
 
         controls = MAIControls.new_message()
-        print(f"Throttle: {self.throttle: .1f}, steer: {self.steer: .1f}, jump: {self.jump: .1f}")
         if abs(self.throttle) > Settings.control_apply_threshold:
             controls.throttle = self.throttle
         if abs(self.steer) > Settings.control_apply_threshold:

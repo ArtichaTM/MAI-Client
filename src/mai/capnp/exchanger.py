@@ -40,7 +40,6 @@ class Exchanger:
         return message
 
     def update_magnitudes(self, state: MAIGameState) -> None:
-        print('Updating magnitudes')
         if self._context is None:
             print("Can't update magnitudes: context is None")
             return

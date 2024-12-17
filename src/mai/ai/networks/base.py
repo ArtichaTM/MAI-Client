@@ -179,21 +179,14 @@ class NNModuleBase(ABC):
         assert self._model is not None
         assert self._enabled
         assert 0 <= self.power <= 1
-        # from pprint import pp
-        # print('Before: ', end='')
-        # pp(nnc.current_dict)
         tensor_dict = nnc.current_dict
         _input = [tensor_dict[i][0] for i in self.input_types]
-        print(_input)
         input = torch.tensor(_input)
-        print(input)
         output: torch.Tensor = self._model(input) * self.power
         for name, value in zip(self.output_types, output):
             if name not in tensor_dict:
                 tensor_dict[name] = []
             tensor_dict[name].append(value)
-        # print('After: ', end='')
-        # pp(nnc.current_dict)
 
     @classmethod
     @abstractmethod
