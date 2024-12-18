@@ -1,10 +1,12 @@
 from typing import TYPE_CHECKING, Any, Callable, Generator
 from threading import current_thread
 from functools import partial
+from multiprocessing import Queue
 
 import numpy as np
 import PySimpleGUI as sg
-from live_plotter import FastLivePlotter
+
+from .plotter import ProcessPlotter
 
 if TYPE_CHECKING:
     from mai.ai.rewards.base import NNRewardBase
@@ -46,42 +48,25 @@ def create_dummy_controls(skip: bool = True) -> 'MAIControls':
 def rewards_tracker(
     rewards: list['NNRewardBase'],
     on_close: Callable[[], Any] = lambda: ...
-) -> Generator[None, 'MAIGameState', None]:
+) -> Generator[None, 'MAIGameState | None', None]:
     from mai.capnp.exchanger import Exchanger
-    live_plotter = FastLivePlotter(
-        n_plots=1,
-        titles=["Rewards"],
-        xlabels=['i'],
-        ylabels=["Reward"],
-        xlims=[(0, 200)],
-        ylims=[(-1, 1)],
-        legends=[[i.name for i in rewards]]
-    )
-
-    stopping = False
-
-    def _on_close(_):
-        nonlocal on_close, stopping
-        stopping = True
-        on_close()
-    live_plotter.fig.canvas.mpl_connect('close_event', _on_close)
-
-    all_rewards: list[list[float]] = []
+    process_plotter = ProcessPlotter(tuple((r.name for r in rewards)))
     while True:
         state = yield
+        if state is None:
+            process_plotter.finish()
+            return
         assert Exchanger._instance is not None
         context = Exchanger._instance.context
         if context is None:
             continue
 
-        all_rewards.append([])
+        to_send = []
         for cl in rewards:
-            all_rewards[-1].append(cl._calculate(state, context))
-        if len(all_rewards) > 200:
-            all_rewards.pop(0)
-        y_data = np.array(all_rewards)
-        if stopping:
-            break
-        live_plotter.plot(
-            y_data_list=[y_data],
-        )
+            reward = cl._calculate(state, context)
+            to_send.append(reward)
+        try:
+            process_plotter.plot(tuple(to_send))
+        except BrokenPipeError:
+            on_close()
+            return

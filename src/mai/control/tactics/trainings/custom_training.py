@@ -11,6 +11,7 @@ from mai.capnp.data_classes import (
     ModulesOutputMapping,
     NormalControls
 )
+from mai.functions import rewards_tracker
 from .base import ModuleTrainingTactic
 
 if TYPE_CHECKING:
@@ -53,6 +54,16 @@ class CustomTraining(ModuleTrainingTactic):
         self._mc.module_enable(module_str)
         module.training = True
 
+        def on_rewards_plot_closed() -> None:
+            nonlocal rewards_plot
+            rewards_plot = None
+
+        rewards_plot = rewards_tracker(
+            self._rewards,
+            on_close=on_rewards_plot_closed
+        )
+        next(rewards_plot)
+
         with Trainer(self._mc) as trainer:
             keys = WindowController._instance
             assert keys is not None
@@ -65,6 +76,8 @@ class CustomTraining(ModuleTrainingTactic):
                     context,
                     time_since_start=start_time
                 ):
+                    if rewards_plot is not None:
+                        rewards_plot.send(state)
                     reward = self.calculate_reward(state, context)
                     output = trainer.inference(
                         ModulesOutputMapping.fromMAIGameState(state),
