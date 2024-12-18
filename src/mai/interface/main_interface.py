@@ -316,7 +316,10 @@ class MainInterface:
         if self._stats_update_enabled: self._stats_update(state)
         if self._modules_update_enabled: self._modules_update()
         if self._rewards_tracker_gen is not None:
-            self._rewards_tracker_gen.send(state)
+            try:
+                self._rewards_tracker_gen.send(state)
+            except StopIteration:
+                self._rewards_tracker_gen = None
 
     def _stats_update(self, state: MAIGameState) -> None:
         magn = lambda x: Vector.from_mai(x).magnitude()
