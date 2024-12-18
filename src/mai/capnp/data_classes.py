@@ -1,8 +1,9 @@
-from typing import Any, Callable, Literal, Type, NamedTuple, Mapping, MutableMapping, TYPE_CHECKING
+from typing import Literal, Type, NamedTuple, Mapping, MutableMapping, TYPE_CHECKING
 import enum
 from dataclasses import dataclass, field
+from math import tanh, exp
 
-import numpy as np
+from numpy import mean
 import torch
 
 from mai.capnp.names import (
@@ -194,12 +195,6 @@ class FloatControls:
             dodgeStrafe = d.get('dodgeStrafe', 0)
         )
 
-    @classmethod
-    def from_tensor[T: FloatControls](cls: Type[T], tensor: 'torch.Tensor') -> T:
-        return cls(
-
-        )
-
 @dataclass(frozen=False, slots=True, kw_only=True)
 class AdditionalContext:
     """
@@ -215,25 +210,33 @@ class AdditionalContext:
 
 class ModulesOutputMapping(dict, MutableMapping):
     @classmethod
-    def create_random_controls[T: ModulesOutputMapping](cls: Type[T]) -> T:
+    def create_random_controls[T: ModulesOutputMapping](
+        cls: Type[T], requires_grad: bool = True
+    ) -> T:
         output = cls({
-            key: [torch.rand(())] for key in CONTROLS_KEYS
+            key: [torch.rand((), requires_grad=requires_grad)] for key in CONTROLS_KEYS
         })
         return output
 
     @classmethod
-    def fromMAIGameState[T: ModulesOutputMapping](cls: Type[T], s: MAIGameState) -> T:
+    def fromMAIGameState[T: ModulesOutputMapping](
+        cls: Type[T],
+        s: MAIGameState,
+        requires_grad: bool = True
+    ) -> T:
         d = dict()
-        car_position = cls._vector_to_tensors(s.car.position)
-        car_velocity = cls._vector_to_tensors(s.car.velocity)
-        car_rotation = cls._rotator_to_tensors(s.car.rotation)
-        car_angularVelocity = cls._vector_to_tensors(s.car.angularVelocity)
-        ball_position = cls._vector_to_tensors(s.ball.position)
-        ball_velocity = cls._vector_to_tensors(s.ball.velocity)
-        ball_rotation = cls._rotator_to_tensors(s.ball.rotation)
-        ball_angularVelocity = cls._vector_to_tensors(s.ball.angularVelocity)
-        dead = torch.tensor(s.dead)
-        boostAmount = torch.tensor(s.boostAmount)
+        vtt = cls._vector_to_tensors
+        rtt = cls._rotator_to_tensors
+        car_position = vtt(s.car.position)
+        car_velocity = vtt(s.car.velocity)
+        car_rotation = rtt(s.car.rotation)
+        car_angularVelocity = vtt(s.car.angularVelocity)
+        ball_position = vtt(s.ball.position)
+        ball_velocity = vtt(s.ball.velocity)
+        ball_rotation = rtt(s.ball.rotation)
+        ball_angularVelocity = vtt(s.ball.angularVelocity)
+        dead = torch.tensor(float(s.dead), requires_grad=requires_grad)
+        boostAmount = torch.tensor(float(s.boostAmount), requires_grad=requires_grad)
         for name, value in [
             ('state.car.position.x', [car_position[0]]),
             ('state.car.position.y', [car_position[1]]),
@@ -298,52 +301,84 @@ class ModulesOutputMapping(dict, MutableMapping):
         ])
 
     @staticmethod
-    def _vector_to_tensors(vector: MAIVector) -> list['torch.Tensor']:
-        return [torch.tensor(i) for i in vector.to_dict().values()]
+    def _vector_to_tensors(
+        vector: MAIVector,
+        requires_grad: bool = True
+    ) -> list['torch.Tensor']:
+        return [torch.tensor(
+            i, requires_grad=requires_grad
+        ) for i in vector.to_dict().values()]
 
     @staticmethod
-    def _rotator_to_tensors(rotator: MAIRotator) -> list['torch.Tensor']:
-        return [torch.tensor(i) for i in rotator.to_dict().values()]
+    def _rotator_to_tensors(
+        rotator: MAIRotator,
+        requires_grad: bool = True
+    ) -> list['torch.Tensor']:
+        return [torch.tensor(
+            i, requires_grad=requires_grad
+        ) for i in rotator.to_dict().values()]
 
-    def _avg_from_dict(self, name: str) -> 'torch.Tensor | None':
+    def _avg_from_dict(
+        self, name: str, requires_grad: bool = True
+    ) -> 'torch.Tensor | None':
         values: list['torch.Tensor'] = self.get(name, [])
         if not values:
             return None
-        tensors = torch.tensor(values)
+        tensors = torch.tensor(values, requires_grad=requires_grad)
         result = tensors.mean()  # type: ignore
         return result
 
-    def extract_controls[T: ModulesOutputMapping](self: T) -> T:
+    def extract_controls[T: ModulesOutputMapping](
+        self: T,
+        requires_grad: bool = True
+    ) -> T:
         output: Mapping[str, list[torch.Tensor]] = dict()
         for i in CONTROLS_KEYS:
-            value = self._avg_from_dict(i)
+            value = self._avg_from_dict(i, requires_grad=requires_grad)
             if value is not None:
                 output[i] = [value]
             else:
-                output[i] = [torch.tensor(0)]
+                output[i] = [torch.tensor(0, requires_grad=requires_grad)]
         return type(self)(output)
+
+    def getNormalizedNegative(self, key: str):
+        assert isinstance(key, str)
+        v = self.get(key, (0.0,))
+
+        return tanh(float(
+            sum(v)/len(v)
+        ))
+
+    def getNormalizedPositive(self, key: str):
+        assert isinstance(key, str)
+        v = self.get(key, (0.0,))
+        return 1 / (1 + exp(-float(
+            sum(v)/len(v)
+        )))
 
     def toFloatControls(self) -> FloatControls:
         return FloatControls(
-            throttle = float(self.get('throttle', 0.0)),
-            steer = float(self.get('steer', 0.0)),
-            pitch = float(self.get('pitch', 0.0)),
-            yaw = float(self.get('yaw', 0.0)),
-            roll = float(self.get('roll', 0.0)),
-            boost = float(self.get('boost', 0.0)),
-            jump = float(self.get('jump', 0.0)),
-            handbrake = float(self.get('handbrake', 0.0)),
-            dodgeVertical = float(self.get('dodgeVertical', 0.0)),
-            dodgeStrafe = float(self.get('dodgeStrafe', 0.0))
+            throttle = self.getNormalizedNegative('controls.throttle'),
+            steer = self.getNormalizedNegative('controls.steer'),
+            pitch = self.getNormalizedNegative('controls.pitch'),
+            yaw = self.getNormalizedNegative('controls.yaw'),
+            roll = self.getNormalizedNegative('controls.roll'),
+            boost = self.getNormalizedPositive('controls.boost'),
+            jump = self.getNormalizedPositive('controls.jump'),
+            handbrake = self.getNormalizedPositive('controls.handbrake'),
+            dodgeVertical = self.getNormalizedNegative('controls.dodgeVertical'),
+            dodgeStrafe = self.getNormalizedNegative('controls.dodgeStrafe')
         )
 
-    def toTensor(self) -> 'torch.Tensor':
+    def toTensor(self, requires_grad: bool = True) -> 'torch.Tensor':
         values = [
             sum(i)/len(i) if len(i) > 1 else i[0].item() for i in self.values()
         ]
-        return torch.tensor(values)
+        return torch.tensor(values, requires_grad=requires_grad)
 
-    def randomize[T: ModulesOutputMapping](self: T) -> T:
+    def randomize[T: ModulesOutputMapping](
+        self: T, requires_grad: bool = True
+    ) -> T:
         for key in self:
-            self[key] = [torch.rand(())]
+            self[key] = [torch.rand((), requires_grad=requires_grad)]
         return self

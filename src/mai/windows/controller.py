@@ -1,4 +1,5 @@
 from typing import Callable
+from threading import Thread
 
 import win32gui as wgui
 import win32con as wcon
@@ -37,20 +38,21 @@ class WindowController:
     def update_window(self) -> None:
         self._hwnd = find_window(self.check_rl_name)
 
-    def _press_key_int(self, key: int) -> None:
+    def _press_key_int(self, key: int, hold_time: float = 0.0) -> None:
         assert self._hwnd is not None
         assert isinstance(key, int)
         wapi.PostMessage(self._hwnd, wcon.WM_KEYDOWN, key, 0)
+        
         wapi.PostMessage(self._hwnd, wcon.WM_KEYUP, key, 0)
 
-    def _press_key_str(self, key: str) -> None:
+    def _press_key_str(self, key: str, hold_time: float = 0.0) -> None:
         assert self._hwnd is not None
         assert isinstance(key, str)
         raise NotImplementedError()
 
-    def press_key(self, key: int | str) -> None:
+    def press_key(self, key: int | str, hold_time: float = 0.0) -> None:
         assert self._hwnd is not None
         if isinstance(key, int):
-            return self._press_key_int(key)
+            return self._press_key_int(key, hold_time=hold_time)
         if isinstance(key, str):
-            return self._press_key_str(key)
+            return self._press_key_str(key, hold_time=hold_time)

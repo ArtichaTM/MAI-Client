@@ -179,7 +179,11 @@ class NNModuleBase(ABC):
         """
         return set()
 
-    def inference(self, tensor_dict: 'ModulesOutputMapping') -> None:
+    def inference(
+        self,
+        tensor_dict: 'ModulesOutputMapping',
+        requires_grad: bool = False
+    ) -> None:
         """
         Inference some input values
             based on `input_types()`
@@ -189,7 +193,7 @@ class NNModuleBase(ABC):
         assert self._enabled
         assert 0 <= self.power <= 1
         _input = [tensor_dict[i][0] for i in self.input_types]
-        input = torch.tensor(_input)
+        input = torch.tensor(_input, requires_grad=requires_grad)
         output: torch.Tensor = self._model(input) * self.power
         for name, value in zip(self.output_types, output):
             if name not in tensor_dict:

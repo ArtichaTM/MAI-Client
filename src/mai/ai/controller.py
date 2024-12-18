@@ -1,11 +1,10 @@
-from typing import Any, Generator, Callable, Mapping, TYPE_CHECKING
+from typing import Generator, Mapping, TYPE_CHECKING
 from pathlib import Path
 
 import torch
 
-from mai.capnp.data_classes import FloatControls, AdditionalContext, ModulesOutputMapping
+from mai.capnp.data_classes import ModulesOutputMapping
 from .networks import build_networks, NNModuleBase
-from .rewards import build_rewards, NNRewardBase
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState
@@ -66,8 +65,6 @@ class ModulesController:
                 v = []
                 for i in value.view(-1, 26):
                     v.append(self.tensor_inference(i))
-                # for i in range(0, value.shape[0]//26):
-                    # v.append(self.tensor_inference(value[26*i:26*(i+1)]))
                 return torch.cat(v).reshape(-1, 10)  # type: ignore
             else:
                 raise RuntimeError()

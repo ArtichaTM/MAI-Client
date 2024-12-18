@@ -1,5 +1,6 @@
 from pathlib import Path
 from enum import IntEnum
+from typing import Callable
 
 __all__ = ('WinButtons', 'Settings')
 
@@ -15,7 +16,10 @@ class _Settings(dict):
         'max_speed_magnitude', 'control_apply_threshold',
 
         # Buttons
-        'button_restart_training', 'button_skip_replay'
+        'button_restart_training', 'button_skip_replay',
+
+        # Callables
+        'get_current_eps',
     )
     path_to_capnp_schemes = Path = (
         Path(__file__)
@@ -26,11 +30,13 @@ class _Settings(dict):
     timeout_seconds: float  # Seconds
     max_speed_magnitude: float
     control_apply_threshold: float
+    get_current_eps: Callable[[], float]
 
     def __init__(self) -> None:
         self.server_address = ('localhost', 11545)
         self.timeout_seconds = 2.0
         self.max_speed_magnitude = 0.32
         self.control_apply_threshold = 1e-06
+        self.get_current_eps = lambda: 1.0
 
 Settings = _Settings()

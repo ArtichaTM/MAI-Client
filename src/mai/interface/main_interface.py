@@ -29,11 +29,12 @@ from mai.control.tactics.simple import (
     ButtonPress
 )
 from mai.ai.rewards import build_rewards
-from mai.functions import popup
+from mai.functions import popup, rewards_tracker
 from mai.settings import Settings, WinButtons
 
 if TYPE_CHECKING:
-    from mai.ai.controller import NNModuleBase, NNRewardBase
+    from mai.ai.controller import NNModuleBase
+    from mai.ai.rewards import NNRewardBase
 
 __all__ = ('MainInterface',)
 
@@ -421,6 +422,7 @@ class MainInterface:
         pass
 
     def _build_window(self) -> None:
+        Settings.get_current_eps = lambda: self._epc
         self._window = sg.Window('MAI', [
             [
                 sg.TabGroup([[
@@ -757,7 +759,12 @@ class MainInterface:
                         break
                     Exchanger._instance.magnitude_update_requested = True
                 case Constants.DEBUG_REWARDS_TRACK:
-                    self._rewards_tracker_gen = self._rewards_tracker_debug()
+                    def on_close() -> None:
+                        self._rewards_tracker_gen = None
+                    self._rewards_tracker_gen = rewards_tracker(
+                        [m() for m in build_rewards().values()],
+                        on_close
+                    )
                     next(self._rewards_tracker_gen)
                 case Constants.USE_BUTTON_TRAIN:
                     self._mc.training = True

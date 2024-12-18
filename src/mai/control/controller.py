@@ -47,6 +47,9 @@ class MainController:
         self._tactics = Queue()
         self._current_tactic = None
 
+    def is_training(self) -> bool:
+        return isinstance(self._current_tactic, trainings.BaseTrainingTactic)
+
     def train(self, nnc: 'ModulesController', params: RunParameters) -> None:
         tactic = None
         match params.type:

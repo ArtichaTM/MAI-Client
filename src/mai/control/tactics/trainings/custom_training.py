@@ -1,13 +1,16 @@
 from typing import TYPE_CHECKING
 from time import perf_counter
 
-import torch
-
 from mai.functions import popup
 from mai.windows import WindowController
-from mai.settings import WinButtons
+from mai.settings import Settings, WinButtons
 from mai.ai.trainer import Trainer
-from mai.capnp.data_classes import MAIGameState, AdditionalContext, ModulesOutputMapping
+from mai.capnp.data_classes import (
+    MAIGameState,
+    AdditionalContext,
+    ModulesOutputMapping,
+    NormalControls
+)
 from .base import ModuleTrainingTactic
 
 if TYPE_CHECKING:
@@ -57,17 +60,31 @@ class CustomTraining(ModuleTrainingTactic):
             keys.press_key(WinButtons.FORWARD)
             while True:
                 start_time = perf_counter()
-                with torch.no_grad():
-                    while not self.is_restarting(
-                        state,
-                        context,
-                        time_since_start=start_time
-                    ):
-                        reward = self.calculate_reward(state, context)
-                        output = trainer.inference(
-                            ModulesOutputMapping.fromMAIGameState(state),
-                            reward
-                        )
-                        yield output.toFloatControls().toNormalControls().toMAIControls()
+                while not self.is_restarting(
+                    state,
+                    context,
+                    time_since_start=start_time
+                ):
+                    reward = self.calculate_reward(state, context)
+                    output = trainer.inference(
+                        ModulesOutputMapping.fromMAIGameState(state),
+                        reward
+                    )
+                    yield output.toFloatControls().toNormalControls().toMAIControls()
                 trainer.epoch_end()
                 keys.press_key(WinButtons.RESTART_TRAINING)
+                yield (
+                    ModulesOutputMapping
+                    .create_random_controls(requires_grad=False)
+                    .toFloatControls()
+                    .toNormalControls()
+                    .toMAIControls()
+                )
+                keys.press_key(WinButtons.FORWARD)
+                yield (
+                    ModulesOutputMapping
+                    .create_random_controls(requires_grad=False)
+                    .toFloatControls()
+                    .toNormalControls()
+                    .toMAIControls()
+                )

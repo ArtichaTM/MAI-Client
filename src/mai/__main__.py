@@ -35,6 +35,7 @@ def main():
             exchanger.run_forever_threaded()
             exit_code = runMainInterface()
             exchanger.join()
+            assert exit_code is not None
             if exit_code == 0:
                 return
 
