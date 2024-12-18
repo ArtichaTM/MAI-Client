@@ -75,7 +75,10 @@ class ModuleTrainingTactic(BaseTrainingTactic):
         _module = modules[0]
         module = self._mc.get_module(_module)
 
-        self._mc.unload_all_modules(_exceptions={module,})
+        self._mc.unload_all_modules(
+            _exceptions={module,},
+            save=True
+        )
         self._mc.training = True
         if not module.enabled:
             self._mc.module_enable(module)

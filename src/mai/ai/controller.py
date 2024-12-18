@@ -193,7 +193,7 @@ class ModulesController:
     def module_unload(
         self,
         _module: NNModuleBase | str,
-        save: bool | None = None
+        save: bool = False
     ) -> None:
         module = self.get_module(_module)
         if module.enabled:

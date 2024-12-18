@@ -127,6 +127,12 @@ class NNModuleBase(ABC):
         for param in self._model.parameters():
             param.requires_grad = self.training
 
+    def load(self) -> None:
+        """ Loads model into CPU/GPU memory """
+        assert self._model is None
+        assert not self.loaded
+        self._load()
+
     def copy[T: NNModuleBase](self: T, mc: 'ModulesController | None' = None) -> T:
         if mc is None:
             mc = self._mc
@@ -154,21 +160,14 @@ class NNModuleBase(ABC):
         assert self._model is not None
         self._model.to(device)
 
-    def load(self) -> None:
-        """ Loads model into CPU/GPU memory """
-        assert self._model is None
-        assert not self.loaded
-        self._load()
-
-    def unload(self, save: bool | None) -> None:
+    def unload(self, save: bool = True) -> None:
         """
         Unloads model from CPU/GPU memory
         :param save: if True, new weights saved into module path
         """
-        assert save is None or isinstance(save, bool)
+        assert isinstance(save, bool)
         assert self._model is not None
         assert self.loaded
-        if save is None: save = False
         if save:
             torch.save(self._model, self.path_to_model())
         self._model = None
