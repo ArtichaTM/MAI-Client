@@ -5,7 +5,8 @@ from mai.settings import Settings
 
 class NNReward(NNRewardBase):
     __slots__ = ('latest_distance',)
-    _multiplier = 100
+    _multiplier = 40
+    _difference_decay = 0.01
 
     def __init__(self) -> None:
         super().__init__()
@@ -18,5 +19,8 @@ class NNReward(NNRewardBase):
         if self.latest_distance is None:
             self.latest_distance = distance
             return 0
-        difference = distance - self.latest_distance
-        return difference * self._multiplier
+
+        difference = self.latest_distance-distance
+        self.latest_distance = distance
+
+        return difference

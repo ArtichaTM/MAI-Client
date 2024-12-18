@@ -54,7 +54,7 @@ def rewards_tracker(
         xlabels=['i'],
         ylabels=["Reward"],
         xlims=[(0, 200)],
-        ylims=[(0, 200)],
+        ylims=[(-1, 1)],
         legends=[[i.name for i in rewards]]
     )
 
