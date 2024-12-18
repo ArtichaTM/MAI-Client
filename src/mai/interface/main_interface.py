@@ -214,10 +214,14 @@ class MainInterface:
             Constants.USE_BUTTON_STOP,
             *module_checkbox_keys.keys()
         )
+
         rewards_power: dict[str, float] = dict()
         for reward_name in build_rewards():
             constant_name = Constants.REWARDS_POWER_SLIDER.reward(reward_name)
-            rewards_power[reward_name] = self._values[constant_name]
+            power = self._values[constant_name]
+            if power == 0:
+                continue
+            rewards_power[reward_name] = power
 
         restart_reasons = set()
         for reason in RestartReason:

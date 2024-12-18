@@ -44,8 +44,10 @@ class MainController:
         self._tactics.put_nowait(tactic)
 
     def clear_all_tactics(self) -> None:
+        if self._current_tactic is not None:
+            self._current_tactic.close()
+            self._current_tactic = None
         self._tactics = Queue()
-        self._current_tactic = None
 
     def is_training(self) -> bool:
         return isinstance(self._current_tactic, trainings.BaseTrainingTactic)

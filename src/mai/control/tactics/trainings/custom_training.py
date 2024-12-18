@@ -18,7 +18,11 @@ if TYPE_CHECKING:
     ...
 
 class CustomTraining(ModuleTrainingTactic):
-    __slots__ = ()
+    __slots__ = ('rewards_plot', )
+
+    def prepare(self) -> None:
+        self.rewards_plot = None
+        return super().prepare()
 
     def react_gen(self):
         state, context = yield
@@ -58,11 +62,14 @@ class CustomTraining(ModuleTrainingTactic):
             nonlocal rewards_plot
             rewards_plot = None
 
-        rewards_plot = rewards_tracker(
+        self.rewards_plot = rewards_tracker(
             self._rewards,
             on_close=on_rewards_plot_closed
         )
-        next(rewards_plot)
+        next(self.rewards_plot)
+
+        for reward in self._rewards:
+            print(f"reward has {reward.power}")
 
         with Trainer(self._mc) as trainer:
             keys = WindowController._instance
@@ -76,9 +83,9 @@ class CustomTraining(ModuleTrainingTactic):
                     context,
                     time_since_start=start_time
                 ):
-                    if rewards_plot is not None:
+                    if self.rewards_plot is not None:
                         try:
-                            rewards_plot.send(state)
+                            self.rewards_plot.send(state)
                         except StopIteration:
                             rewards_plot = None
                     reward = self.calculate_reward(state, context)
@@ -109,3 +116,11 @@ class CustomTraining(ModuleTrainingTactic):
                     .toNormalControls()
                     .toMAIControls()
                 )
+
+    def close(self) -> None:
+        if self.rewards_plot is not None:
+            try:
+                self.rewards_plot.send(None)
+            except StopIteration:
+                pass
+        return super().close()

@@ -37,3 +37,6 @@ class BaseTactic(ABC):
         self
     ) -> Generator['MAIControls | None', tuple[MAIGameState, AdditionalContext], None]:
         raise NotImplementedError()
+
+    def close(self) -> None:
+        pass
