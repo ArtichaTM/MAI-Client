@@ -23,6 +23,7 @@ def check_socket(address: str, port: int, client: CapnPClient, no_popup: bool = 
     return True
 
 def main():
+    restarts: int = 0
     while True:
         address, port = None, None
         client = CapnPClient()
@@ -38,6 +39,9 @@ def main():
             assert exit_code is not None
             if exit_code == 0:
                 return
+        restarts += 1
+        if restarts > 5:
+            raise RuntimeError("Too many restarts")
 
 if __name__ == '__main__':
     main()

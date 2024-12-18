@@ -45,7 +45,8 @@ class BaseTrainingTactic(BaseTactic):
     def calculate_reward(self, state: 'MAIGameState', context: 'AdditionalContext') -> float:
         output: float = 0
         for reward in self._rewards:
-            output += reward(state, context)
+            r = reward(state, context)
+            output += r
         return output
 
 

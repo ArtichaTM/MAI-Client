@@ -26,7 +26,6 @@ class MainController:
         self._paused_tactics = None
 
     def react(self, state: MAIGameState, context: 'AdditionalContext') -> MAIControls:
-        print(state.car.velocity)
         if self._current_tactic is None:
             if self._tactics.empty():
                 return create_dummy_controls()

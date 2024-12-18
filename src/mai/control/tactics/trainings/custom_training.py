@@ -64,9 +64,6 @@ class CustomTraining(ModuleTrainingTactic):
         )
         next(rewards_plot)
 
-        # for reward in self._rewards:
-        #     print(f"{reward} = {reward.power}")
-
         with Trainer(self._mc) as trainer:
             keys = WindowController._instance
             assert keys is not None
@@ -80,13 +77,21 @@ class CustomTraining(ModuleTrainingTactic):
                     time_since_start=start_time
                 ):
                     if rewards_plot is not None:
-                        rewards_plot.send(state)
+                        try:
+                            rewards_plot.send(state)
+                        except StopIteration:
+                            rewards_plot = None
                     reward = self.calculate_reward(state, context)
                     output = trainer.inference(
                         ModulesOutputMapping.fromMAIGameState(state),
                         reward
                     )
-                    yield output.toFloatControls().toNormalControls().toMAIControls()
+                    state, reward = yield (
+                        output
+                        .toFloatControls()
+                        .toNormalControls()
+                        .toMAIControls()
+                    )
                 trainer.epoch_end()
                 keys.press_key(WinButtons.RESTART_TRAINING)
                 yield (

@@ -422,7 +422,7 @@ class MainInterface:
         popup(type(exc).__qualname__, tb)
 
     def close(self) -> None:
-        pass
+        self._mc.save()
 
     def _build_window(self) -> None:
         Settings.get_current_eps = lambda: self._epc
@@ -798,7 +798,6 @@ class MainInterface:
                         Constants.USE_BUTTON_STOP,
                     )
                     self._controller.stop()
-                    self._mc.save()
                     self._set_disabled(
                         False,
                         Constants.USE_BUTTON_PLAY,
