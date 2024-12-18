@@ -1,13 +1,15 @@
-from typing import Literal, Type, NamedTuple, TYPE_CHECKING
+from typing import Any, Callable, Literal, Type, NamedTuple, Mapping, MutableMapping, TYPE_CHECKING
 import enum
 from dataclasses import dataclass, field
 
 import numpy as np
+import torch
 
 from mai.capnp.names import (
     MAIControls,
     MAIGameState,
-    MAIVector
+    MAIVector,
+    MAIRotator
 )
 from mai.settings import Settings
 
@@ -15,8 +17,21 @@ if TYPE_CHECKING:
     import torch
     CAR_OR_BALL = Literal['car'] | Literal['ball']
     V_OR_AV = Literal['v'] | Literal['av']
-    MAGNITUDE_OFFSET_TYPING = dict[CAR_OR_BALL, dict[V_OR_AV, float]]
+    MAGNITUDE_OFFSET_TYPING = MutableMapping[CAR_OR_BALL, MutableMapping[V_OR_AV, float]]
 
+
+CONTROLS_KEYS = (
+    'controls.throttle',
+    'controls.steer',
+    'controls.pitch',
+    'controls.yaw',
+    'controls.roll',
+    'controls.boost',
+    'controls.jump',
+    'controls.handbrake',
+    'controls.dodgeVertical',
+    'controls.dodgeStrafe',
+)
 
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
@@ -44,7 +59,7 @@ class RestartReason(str, enum.Enum):
 class RunParameters(NamedTuple):
     type: RunType
     modules: list[str]
-    rewards: dict[str, float]
+    rewards: Mapping[str, float]
     restart_reasons: set[RestartReason]
     restart_timeout: int
 
@@ -53,6 +68,13 @@ class Vector:
     x: float = field(default=0)  # (0, 1)
     y: float = field(default=0)  # (0, 1)
     z: float = field(default=0)  # (0, 1)
+
+    def __sub__(self: 'Vector', other: 'Vector') -> 'Vector':
+        return type(self)(
+            self.x - other.x,
+            self.y - other.y,
+            self.z - other.z
+        )
 
     def magnitude(self) -> float:
         return (self.x**2 + self.y**2 + self.z**2)**0.5
@@ -158,7 +180,7 @@ class FloatControls:
         )
 
     @classmethod
-    def from_dict_float[T:FloatControls](cls: Type[T], d: dict[str, float]) -> T:
+    def from_dict_float[T:FloatControls](cls: Type[T], d: Mapping[str, float]) -> T:
         return cls(
             throttle = d.get('throttle', 0),
             steer = d.get('steer', 0),
@@ -173,18 +195,9 @@ class FloatControls:
         )
 
     @classmethod
-    def from_dict_tensor[T:FloatControls](cls: Type[T], d: dict[str, 'torch.Tensor']) -> T:
+    def from_tensor[T: FloatControls](cls: Type[T], tensor: 'torch.Tensor') -> T:
         return cls(
-            throttle = float(d.get('throttle', 0.0)),
-            steer = float(d.get('steer', 0.0)),
-            pitch = float(d.get('pitch', 0.0)),
-            yaw = float(d.get('yaw', 0.0)),
-            roll = float(d.get('roll', 0.0)),
-            boost = float(d.get('boost', 0.0)),
-            jump = float(d.get('jump', 0.0)),
-            handbrake = float(d.get('handbrake', 0.0)),
-            dodgeVertical = float(d.get('dodgeVertical', 0.0)),
-            dodgeStrafe = float(d.get('dodgeStrafe', 0.0))
+
         )
 
 @dataclass(frozen=False, slots=True, kw_only=True)
@@ -199,3 +212,138 @@ class AdditionalContext:
     magnitude_offsets: 'MAGNITUDE_OFFSET_TYPING' = field(
         default_factory=lambda: {'car': {'v': 0, 'av': 0}, 'ball': {'v': 0, 'av': 0}}
     )
+
+class ModulesOutputMapping(dict, MutableMapping):
+    @classmethod
+    def create_random_controls[T: ModulesOutputMapping](cls: Type[T]) -> T:
+        output = cls({
+            key: [torch.rand(())] for key in CONTROLS_KEYS
+        })
+        return output
+
+    @classmethod
+    def fromMAIGameState[T: ModulesOutputMapping](cls: Type[T], s: MAIGameState) -> T:
+        d = dict()
+        car_position = cls._vector_to_tensors(s.car.position)
+        car_velocity = cls._vector_to_tensors(s.car.velocity)
+        car_rotation = cls._rotator_to_tensors(s.car.rotation)
+        car_angularVelocity = cls._vector_to_tensors(s.car.angularVelocity)
+        ball_position = cls._vector_to_tensors(s.ball.position)
+        ball_velocity = cls._vector_to_tensors(s.ball.velocity)
+        ball_rotation = cls._rotator_to_tensors(s.ball.rotation)
+        ball_angularVelocity = cls._vector_to_tensors(s.ball.angularVelocity)
+        dead = torch.tensor(s.dead)
+        boostAmount = torch.tensor(s.boostAmount)
+        for name, value in [
+            ('state.car.position.x', [car_position[0]]),
+            ('state.car.position.y', [car_position[1]]),
+            ('state.car.position.z', [car_position[2]]),
+            ('state.car.velocity.x', [car_velocity[0]]),
+            ('state.car.velocity.y', [car_velocity[1]]),
+            ('state.car.velocity.z', [car_velocity[2]]),
+            ('state.car.rotation.pitch', [car_rotation[0]]),
+            ('state.car.rotation.roll', [car_rotation[1]]),
+            ('state.car.rotation.yaw', [car_rotation[2]]),
+            ('state.car.angularVelocity.x', [car_angularVelocity[0]]),
+            ('state.car.angularVelocity.y', [car_angularVelocity[1]]),
+            ('state.car.angularVelocity.z', [car_angularVelocity[2]]),
+            ('state.ball.position.x', [ball_position[0]]),
+            ('state.ball.position.y', [ball_position[1]]),
+            ('state.ball.position.z', [ball_position[2]]),
+            ('state.ball.velocity.x', [ball_velocity[0]]),
+            ('state.ball.velocity.y', [ball_velocity[1]]),
+            ('state.ball.velocity.z', [ball_velocity[2]]),
+            ('state.ball.rotation.pitch', [ball_rotation[0]]),
+            ('state.ball.rotation.roll', [ball_rotation[1]]),
+            ('state.ball.rotation.yaw', [ball_rotation[2]]),
+            ('state.ball.angularVelocity.x', [ball_angularVelocity[0]]),
+            ('state.ball.angularVelocity.y', [ball_angularVelocity[1]]),
+            ('state.ball.angularVelocity.z', [ball_angularVelocity[2]]),
+            ('state.dead', [dead]),
+            ('state.boostAmount', [boostAmount]),
+        ]:
+            d[name] = value
+        return cls(d)
+
+    @classmethod
+    def fromTensor[T: ModulesOutputMapping](cls: Type[T], tensor: 'torch.Tensor') -> T:
+        assert tensor.shape == (26,), tensor
+        return cls([
+            ('state.car.position.x', [tensor[0]]),
+            ('state.car.position.y', [tensor[1]]),
+            ('state.car.position.z', [tensor[2]]),
+            ('state.car.velocity.x', [tensor[3]]),
+            ('state.car.velocity.y', [tensor[4]]),
+            ('state.car.velocity.z', [tensor[5]]),
+            ('state.car.rotation.pitch', [tensor[6]]),
+            ('state.car.rotation.roll', [tensor[7]]),
+            ('state.car.rotation.yaw', [tensor[8]]),
+            ('state.car.angularVelocity.x', [tensor[9]]),
+            ('state.car.angularVelocity.y', [tensor[10]]),
+            ('state.car.angularVelocity.z', [tensor[11]]),
+            ('state.ball.position.x', [tensor[12]]),
+            ('state.ball.position.y', [tensor[13]]),
+            ('state.ball.position.z', [tensor[14]]),
+            ('state.ball.velocity.x', [tensor[15]]),
+            ('state.ball.velocity.y', [tensor[16]]),
+            ('state.ball.velocity.z', [tensor[17]]),
+            ('state.ball.rotation.pitch', [tensor[18]]),
+            ('state.ball.rotation.roll', [tensor[19]]),
+            ('state.ball.rotation.yaw', [tensor[20]]),
+            ('state.ball.angularVelocity.x', [tensor[21]]),
+            ('state.ball.angularVelocity.y', [tensor[22]]),
+            ('state.ball.angularVelocity.z', [tensor[23]]),
+            ('state.dead', [tensor[24]]),
+            ('state.boostAmount', [tensor[25]]),
+        ])
+
+    @staticmethod
+    def _vector_to_tensors(vector: MAIVector) -> list['torch.Tensor']:
+        return [torch.tensor(i) for i in vector.to_dict().values()]
+
+    @staticmethod
+    def _rotator_to_tensors(rotator: MAIRotator) -> list['torch.Tensor']:
+        return [torch.tensor(i) for i in rotator.to_dict().values()]
+
+    def _avg_from_dict(self, name: str) -> 'torch.Tensor | None':
+        values: list['torch.Tensor'] = self.get(name, [])
+        if not values:
+            return None
+        tensors = torch.tensor(values)
+        result = tensors.mean()  # type: ignore
+        return result
+
+    def extract_controls[T: ModulesOutputMapping](self: T) -> T:
+        output: Mapping[str, list[torch.Tensor]] = dict()
+        for i in CONTROLS_KEYS:
+            value = self._avg_from_dict(i)
+            if value is not None:
+                output[i] = [value]
+            else:
+                output[i] = [torch.tensor(0)]
+        return type(self)(output)
+
+    def toFloatControls(self) -> FloatControls:
+        return FloatControls(
+            throttle = float(self.get('throttle', 0.0)),
+            steer = float(self.get('steer', 0.0)),
+            pitch = float(self.get('pitch', 0.0)),
+            yaw = float(self.get('yaw', 0.0)),
+            roll = float(self.get('roll', 0.0)),
+            boost = float(self.get('boost', 0.0)),
+            jump = float(self.get('jump', 0.0)),
+            handbrake = float(self.get('handbrake', 0.0)),
+            dodgeVertical = float(self.get('dodgeVertical', 0.0)),
+            dodgeStrafe = float(self.get('dodgeStrafe', 0.0))
+        )
+
+    def toTensor(self) -> 'torch.Tensor':
+        values = [
+            sum(i)/len(i) if len(i) > 1 else i[0].item() for i in self.values()
+        ]
+        return torch.tensor(values)
+
+    def randomize[T: ModulesOutputMapping](self: T) -> T:
+        for key in self:
+            self[key] = [torch.rand(())]
+        return self

@@ -1,11 +1,11 @@
 from functools import partial
-from threading import Thread
 import socket
 
 from mai.functions import popup
 from .interface import getAddressPort, runMainInterface
 from .capnp.client import CapnPClient
 from .capnp.exchanger import Exchanger
+
 
 def check_socket(address: str, port: int, client: CapnPClient, no_popup: bool = False) -> bool:
     try:
@@ -22,17 +22,7 @@ def check_socket(address: str, port: int, client: CapnPClient, no_popup: bool = 
         return False
     return True
 
-
-def load_torch() -> None:
-    from time import sleep
-    sleep(0.3)
-    import torch
-    pass
-
-
 def main():
-    torch_load_thread = Thread(target=load_torch, name='Torch preload')
-    torch_load_thread.start()
     while True:
         address, port = None, None
         client = CapnPClient()
@@ -43,9 +33,6 @@ def main():
             if address is None:
                 return
             exchanger.run_forever_threaded()
-            if torch_load_thread is not None:
-                torch_load_thread.join()
-                torch_load_thread = None
             exit_code = runMainInterface()
             exchanger.join()
             if exit_code == 0:

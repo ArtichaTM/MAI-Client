@@ -1,13 +1,17 @@
 from typing import TYPE_CHECKING
 from time import perf_counter
 
+import torch
+
 from mai.functions import popup
 from mai.windows import WindowController
 from mai.settings import WinButtons
+from mai.ai.trainer import Trainer
+from mai.capnp.data_classes import MAIGameState, AdditionalContext, ModulesOutputMapping
 from .base import ModuleTrainingTactic
 
 if TYPE_CHECKING:
-    from mai.capnp.data_classes import MAIGameState, AdditionalContext
+    ...
 
 class CustomTraining(ModuleTrainingTactic):
     __slots__ = ()
@@ -35,25 +39,35 @@ class CustomTraining(ModuleTrainingTactic):
             ))
             return
 
-        keys = WindowController._instance
-        assert keys is not None
-        keys.update_window()
-        keys.press_key(WinButtons.FORWARD)
         state, context = yield
 
-        while True:
-            print('Starting!')
-            start_time = perf_counter()
-            while not self.is_restarting(
-                state,
-                context,
-                time_since_start=start_time
-            ):
-                controls = self._nnc.exchange(state, context)
-                yield controls.toNormalControls().toMAIControls()
+        module_str = self._run_parameters.modules[0]
+        for module in self._mc.get_all_modules():
+            if module.enabled:
+                self._mc.module_disable(module)
 
-            self._nnc.
+        module = self._mc.get_module(module_str)
+        self._mc.module_enable(module_str)
+        module.training = True
 
-            print('Restart!')
-            keys.press_key(WinButtons.RESTART_TRAINING)
-
+        with Trainer(self._mc) as trainer:
+            keys = WindowController._instance
+            assert keys is not None
+            keys.update_window()
+            keys.press_key(WinButtons.FORWARD)
+            while True:
+                start_time = perf_counter()
+                with torch.no_grad():
+                    while not self.is_restarting(
+                        state,
+                        context,
+                        time_since_start=start_time
+                    ):
+                        reward = self.calculate_reward(state, context)
+                        output = trainer.inference(
+                            ModulesOutputMapping.fromMAIGameState(state),
+                            reward
+                        )
+                        yield output.toFloatControls().toNormalControls().toMAIControls()
+                trainer.epoch_end()
+                keys.press_key(WinButtons.RESTART_TRAINING)

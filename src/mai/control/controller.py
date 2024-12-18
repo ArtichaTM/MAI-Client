@@ -10,7 +10,7 @@ from .tactics import trainings
 
 if TYPE_CHECKING:
     from mai.capnp.data_classes import AdditionalContext
-    from mai.ai.controller import NNController
+    from mai.ai.controller import ModulesController
 
 class MainController:
     __slots__ = (
@@ -47,7 +47,7 @@ class MainController:
         self._tactics = Queue()
         self._current_tactic = None
 
-    def train(self, nnc: 'NNController', params: RunParameters) -> None:
+    def train(self, nnc: 'ModulesController', params: RunParameters) -> None:
         tactic = None
         match params.type:
             case RunType.CUSTOM_TRAINING:
@@ -72,7 +72,7 @@ class MainController:
             )
         self.add_reaction_tactic(tactic)
 
-    def play(self, nnc: 'NNController', params: RunParameters) -> None:
+    def play(self, nnc: 'ModulesController', params: RunParameters) -> None:
         raise NotImplementedError()
 
     def pause(self) -> bool:

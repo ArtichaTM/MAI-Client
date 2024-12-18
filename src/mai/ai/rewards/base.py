@@ -11,12 +11,11 @@ class NNRewardBase(ABC):
     """
     Base class for all rewards functions
     """
-    __slots__ = ('power', 'latest_reward')
+    __slots__ = ('power',)
     power: float
 
     def __init__(self) -> None:
         self.power: float = 0.0
-        self.latest_reward: float = 0.0
 
     def __repr__(self) -> str:
         return (
@@ -34,7 +33,6 @@ class NNRewardBase(ABC):
             return 0
         output = self._calculate(state, context)
         output *= self.power
-        self.latest_reward = output
         assert isinstance(output, float)
         return output 
 

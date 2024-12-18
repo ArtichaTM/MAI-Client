@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Callable, Mapping
 from time import perf_counter
 
-from mai.ai.controller import NNController
+from mai.ai.controller import ModulesController
 from mai.capnp.data_classes import RunParameters
 
 from ..bases import BaseTactic
@@ -12,25 +12,41 @@ from mai.capnp.data_classes import (
     AdditionalContext,
     RestartReason
 )
+from mai.ai.rewards import build_rewards, NNRewardBase
 
 if TYPE_CHECKING:
-    from mai.ai.controller import NNController
+    from mai.ai.controller import ModulesController
 
 
 __all__ = ('BaseTrainingTactic',)
 
 
 class BaseTrainingTactic(BaseTactic):
-    __slots__ = ('_nnc', '_run_parameters')
+    __slots__ = ('_mc', '_run_parameters', '_rewards')
 
     def __init__(
         self,
-        nnc: 'NNController',
+        nnc: 'ModulesController',
         run_parameters: RunParameters
     ) -> None:
         super().__init__()
-        self._nnc = nnc
+        self._mc = nnc
         self._run_parameters = run_parameters
+        self._rewards: list[NNRewardBase] = []
+
+    def prepare(self) -> None:
+        super().prepare()
+        rewards = build_rewards()
+        for reward_str, power in self._run_parameters.rewards.items():
+            reward = rewards[reward_str]()
+            reward.power = power
+            self._rewards.append(reward)
+
+    def calculate_reward(self, state: 'MAIGameState', context: 'AdditionalContext') -> float:
+        output: float = 0
+        for reward in self._rewards:
+            output += reward(state, context)
+        return output
 
 
 class ModuleTrainingTactic(BaseTrainingTactic):
@@ -56,18 +72,13 @@ class ModuleTrainingTactic(BaseTrainingTactic):
             return
 
         _module = modules[0]
-        module = self._nnc.get_module(_module)
-        rewards = self._run_parameters.rewards
+        module = self._mc.get_module(_module)
 
-        self._nnc.unload_all_modules(_exceptions={module,})
-        self._nnc.training = True
+        self._mc.unload_all_modules(_exceptions={module,})
+        self._mc.training = True
         if not module.enabled:
-            self._nnc.module_enable(module)
+            self._mc.module_enable(module)
             module.power = 1
-
-        for reward in self._nnc.get_all_rewards():
-            power = rewards.get(reward.name, 0.0)
-            reward.power = power
 
         self.reasons_to_func_map: Mapping[RestartReason, Callable[[
             MAIGameState, AdditionalContext

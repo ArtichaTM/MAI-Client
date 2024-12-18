@@ -28,6 +28,7 @@ from mai.control.tactics.simple import (
     SequencedCommands,
     ButtonPress
 )
+from mai.ai.rewards import build_rewards
 from mai.functions import popup
 from mai.settings import Settings, WinButtons
 
@@ -123,12 +124,12 @@ class Constants(enum.IntEnum):
         for module in modules:
             yield self.module(module)
 
-    def reward(self, module: 'NNRewardBase') -> str:
-        return f"{self}{module.name.replace('_', '-')}-"
+    def reward(self, module: str) -> str:
+        return f"{self}{module.replace('_', '-')}-"
 
     def reward_iter(self, modules: Iterable['NNRewardBase']) -> Generator[str, None, None]:
         for module in modules:
-            yield self.reward(module)
+            yield self.reward(module.name)
 
     def restart_reason(self, reason: RestartReason) -> str:
         return f"{self}{reason.value}"
@@ -142,7 +143,7 @@ class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
         '_controller', '_latest_message', '_epc_update', '_epc',
-        '_nnc', '_wc', '_values',
+        '_mc', '_wc', '_values',
 
         # Heavy updates
         '_stats_update_enabled', '_modules_update_enabled',
@@ -169,8 +170,8 @@ class MainInterface:
         self._rewards_tracker_gen: Generator[None, MAIGameState, None] | None = None
         self.call_functions = Queue(2)
         self._epc_update = self.epc_update_fast
-        from mai.ai.controller import NNController
-        self._nnc = NNController()
+        from mai.ai.controller import ModulesController
+        self._mc = ModulesController()
         self._wc = WindowController() if WindowController._instance is None else WindowController._instance
         self._build_window()
 
@@ -202,7 +203,7 @@ class MainInterface:
             Constants.USE_BUTTON_TRAIN
         )
         module_checkbox_keys = dict()
-        for m in self._nnc.get_all_modules():
+        for m in self._mc.get_all_modules():
             module_checkbox_keys[
                 Constants.MODULES_CHECKBOX.module(m)
             ] = m
@@ -212,12 +213,10 @@ class MainInterface:
             Constants.USE_BUTTON_STOP,
             *module_checkbox_keys.keys()
         )
-        rewards_power = {
-            Constants.REWARDS_POWER_SLIDER.reward(m
-        ): m for m in self._nnc.get_all_rewards()}
-        rewards_power = {value.get_name(): self._values[
-            key
-        ] for key, value in rewards_power.items()}
+        rewards_power: dict[str, float] = dict()
+        for reward_name in build_rewards():
+            constant_name = Constants.REWARDS_POWER_SLIDER.reward(reward_name)
+            rewards_power[reward_name] = self._values[constant_name]
 
         restart_reasons = set()
         for reason in RestartReason:
@@ -237,9 +236,9 @@ class MainInterface:
             restart_timeout=restart_timeout
         )
 
-    def _build_reward_row(self, reward: 'NNRewardBase') -> list[sg.Element]:
+    def _build_reward_row(self, reward: str) -> list:
         return [
-            sg.Text(reward.name[:15].rjust(15,), p=(0, 0)),
+            sg.Text(reward[:15].rjust(15,), p=(0, 0)),
             sg.Slider(
                 range=(0, 1),
                 default_value=1,
@@ -364,7 +363,7 @@ class MainInterface:
                 self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), self._fmt(car.position.z))
 
     def _modules_update(self) -> None:
-        for module in self._nnc.get_all_modules():
+        for module in self._mc.get_all_modules():
             progress_bar = self[Constants.MODULES_POWER.module(module)]
             progress_bar.update(round(module.power*100))
             checkbox = self[Constants.MODULES_CHECKBOX.module(module)]
@@ -372,6 +371,7 @@ class MainInterface:
             checkbox.update(checkbox_color=checkbox_color)
 
     def _rewards_tracker_debug(self) -> Generator[None, MAIGameState, None]:
+        reward_classes = [m() for m in build_rewards().values()]
         live_plotter = FastLivePlotter(
             n_plots=1,
             titles=["Rewards"],
@@ -379,7 +379,7 @@ class MainInterface:
             ylabels=["Reward"],
             xlims=[(0, 200)],
             ylims=[(0, 200)],
-            legends=[[i.name for i in self._nnc.get_all_rewards()]]
+            legends=[[i.name for i in reward_classes]]
         )
 
         def on_close(_):
@@ -396,7 +396,7 @@ class MainInterface:
             assert context is not None
 
             all_rewards.append([])
-            for cl in self._nnc.get_all_rewards():
+            for cl in reward_classes:
                 all_rewards[-1].append(cl._calculate(state, context))
             if len(all_rewards) > 200:
                 all_rewards.pop(0)
@@ -551,10 +551,10 @@ class MainInterface:
                         ]
                     ]),
                     sg.Tab('Modules', [
-                        self._build_module_row(nn) for nn in self._nnc.get_all_modules()
+                        self._build_module_row(nn) for nn in self._mc.get_all_modules()
                     ]),
                     sg.Tab('Rewards', [
-                        self._build_reward_row(r) for r in self._nnc.get_all_rewards()
+                        self._build_reward_row(r) for r in build_rewards()
                     ]),
                     sg.Tab('Use', [
                         [
@@ -760,15 +760,15 @@ class MainInterface:
                     self._rewards_tracker_gen = self._rewards_tracker_debug()
                     next(self._rewards_tracker_gen)
                 case Constants.USE_BUTTON_TRAIN:
-                    self._nnc.training = True
+                    self._mc.training = True
                     try:
-                        self._controller.train(self._nnc, self.build_run_params())
+                        self._controller.train(self._mc, self.build_run_params())
                     except Exception as e:
                         self.handle_exception(e)
                 case Constants.USE_BUTTON_PLAY:
-                    self._nnc.training = False
+                    self._mc.training = False
                     try:
-                        self._controller.play(self._nnc, self.build_run_params())
+                        self._controller.play(self._mc, self.build_run_params())
                     except Exception as e:
                         self.handle_exception(e)
                 case Constants.USE_BUTTON_PAUSE:
@@ -788,7 +788,7 @@ class MainInterface:
                         Constants.USE_BUTTON_STOP,
                     )
                     self._controller.stop()
-                    self._nnc.save()
+                    self._mc.save()
                     self._set_disabled(
                         False,
                         Constants.USE_BUTTON_PLAY,
