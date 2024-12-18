@@ -4,36 +4,51 @@ from typing import Generator, Mapping, TYPE_CHECKING
 
 import torch
 
-from mai.capnp.data_classes import MAIGameState, ModulesOutputMapping
+from mai.capnp.data_classes import ModulesOutputMapping
 from .memory import ReplayMemory, Transition
 from .rewards import NNRewardBase, build_rewards
 
 if TYPE_CHECKING:
     from .controller import ModulesController
 
+class Critic(torch.nn.Module):
+    def __init__(self, state_size, action_size):
+        super(Critic, self).__init__()
+        self.fc1 = torch.nn.Linear(state_size + action_size, 400)
+        self.fc2 = torch.nn.Linear(400, 300)
+        self.fc3 = torch.nn.Linear(300, 1)
+
+    def forward(self, state, action):
+        x = torch.relu(self.fc1(torch.cat([state, action], 1)))
+        x = torch.relu(self.fc2(x))
+        return self.fc3(x)
+
+
 class Trainer:
     __slots__ = (
-        '_policy_net', '_all_rewards',
+        '_actor', 'critic',
+        '_all_rewards',
         '_loaded', '_replay_memory',
         '_steps_done', '_gen',
 
         # Hyperparameters
         'batch_size', 'gamma',
         'eps_start', 'eps_end', 'eps_decay',
-        'tau', 'lr',
+        'tau', 'actor_lr', 'critic_lr',
 
         # Training parameters
-        '_optimizer', '_loss_func', '_target_net',
+        '_actor_optimizer', '_critic_optimizer',
+        '_loss_func',
     )
-    _policy_net: 'ModulesController'
-    _target_net: 'ModulesController'
+    _actor: 'ModulesController'
+    _critic: Critic
     _all_rewards: Mapping[str, 'NNRewardBase']
     _batch_size: int
     _optimizer: torch.optim.Optimizer
     _loss_func: torch.nn.modules.loss._Loss
 
     def __init__(self, mc: 'ModulesController') -> None:
-        self._policy_net = mc
+        self._actor = mc
         self._all_rewards = {k: m() for k, m in build_rewards().items()}
         self._loaded = False
         self._replay_memory = ReplayMemory(1000)
@@ -41,14 +56,16 @@ class Trainer:
 
     def __enter__[T: Trainer](self: T) -> T:
         self.hyperparameters_init()
-        self._optimizer = torch.optim.AdamW(
-            list(self._policy_net.enabled_parameters()),
-            lr=self.lr,
-            amsgrad=True
-        )
-        self._loss_func = torch.nn.SmoothL1Loss()
-        self._target_net = self._policy_net.copy()
-        self._target_net.device = self._policy_net.device
+        self._actor_optimizer = torch.optim.Adam(self._actor.enabled_parameters(), lr=self.actor_lr)
+        self._critic_optimizer = torch.optim.Adam(self._critic.parameters(), lr=self.critic_lr)
+        # self._optimizer = torch.optim.AdamW(
+        #     list(self._actor.enabled_parameters()),
+        #     lr=self.lr,
+        #     amsgrad=True
+        # )
+        # self._loss_func = torch.nn.SmoothL1Loss()
+        # self._target_net = self._actor.copy()
+        # self._target_net.device = self._actor.device
         self._loaded = True
         self._gen = self.inference_gen()
         next(self._gen)
@@ -64,7 +81,8 @@ class Trainer:
         self.eps_end = 0.05
         self.eps_decay = 1000
         self.tau = 0.005
-        self.lr = 1e-4
+        self.actor_lr = 1e-4
+        self.critic_lr = 2e-4
 
     def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
         eps_threshold = (
@@ -74,7 +92,7 @@ class Trainer:
         self._steps_done += 1
         if random.random() > eps_threshold:
             with torch.no_grad():
-                return self._policy_net(state)
+                return self._actor(state)
         else:
             return ModulesOutputMapping.create_random_controls()
 
@@ -83,42 +101,52 @@ class Trainer:
         if len(self._replay_memory) < self.batch_size:
             return
         transitions = self._replay_memory.sample(self.batch_size)
+        # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
+        # detailed explanation). This converts batch-array of Transitions
+        # to Transition of batch-arrays.
         batch = Transition(*zip(*transitions))
 
-        non_final_mask = torch.tensor(tuple(
-            map(lambda s: s is not None, batch.next_state)
-        ), device=self._target_net.device, dtype=torch.bool)
+        # Compute a mask of non-final states and concatenate the batch elements
+        # (a final state would've been the one after which simulation ended)
+        non_final_mask = torch.tensor(tuple(map(
+            lambda s: s is not None, batch.next_state
+        )), device=self._actor.device, dtype=torch.bool)
         non_final_next_states = torch.cat([
             s for s in batch.next_state if s is not None
         ])
-
-        assert len(set((tuple(i.shape) for i in batch.state))) == 1, \
-            f"{set([i.shape for i in batch.state])}"
-        assert len(set((tuple(i.shape) for i in batch.action))) == 1, \
-            f"{set([i.shape for i in batch.action])}"
-        assert len(set((tuple(i.shape) for i in batch.reward))) == 1, \
-            f"{set([i.shape for i in batch.reward])}"
         state_batch = torch.cat(batch.state)
+        assert (state_batch.shape[0] % 26) == 0
         action_batch = torch.cat(batch.action)
+        assert (action_batch.shape[0] % 10) == 0
         reward_batch = torch.cat(batch.reward)
 
-        action_batch = []
-        for state in state_batch:
-            action_batch.append(self._policy_net(state))
-        action_batch = torch.tensor(action_batch)
-        state_action_values = state_batch.gather(1, action_batch)
+        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
+        # columns of actions taken. These are the actions which would've been taken
+        # for each batch state according to policy_net
+        temp = self._actor(state_batch)
+        # if action_batch.dim() == 1:
+        #     action_batch = action_batch.unsqueeze(1)
+        state_action_values = temp.gather(1, action_batch)
 
-        next_state_values = torch.zeros(self.batch_size, device=self._target_net.device)
+        # Compute V(s_{t+1}) for all next states.
+        # Expected values of actions for non_final_next_states are computed based
+        # on the "older" target_net; selecting their best reward with max(1).values
+        # This is merged based on the mask, such that we'll have either the expected
+        # state value or 0 in case the state was final.
+        next_state_values = torch.zeros(self.batch_size, device=self._actor.device)
         with torch.no_grad():
             next_state_values[non_final_mask] = self._target_net(non_final_next_states).max(1).values
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
-        loss: torch.Tensor = self._loss_func(state_action_values, expected_state_action_values.unsqueeze(1))
+        # Compute Huber loss
+        loss = self._loss_func(state_action_values, expected_state_action_values.unsqueeze(1))
 
+        # Optimize the model
         self._optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_value_(self._policy_net.enabled_parameters(), 100)
+        # In-place gradient clipping
+        torch.nn.utils.clip_grad_value_(self._actor.enabled_parameters(), 100)
         self._optimizer.step()
 
     def inference(self, state_map: ModulesOutputMapping, reward: float) -> ModulesOutputMapping:
@@ -133,7 +161,7 @@ class Trainer:
             observation, reward_f = yield action
             next_state = observation.toTensor()
 
-            reward = torch.tensor([reward_f], device=self._policy_net.device)
+            reward = torch.tensor([reward_f], device=self._actor.device)
 
             self._replay_memory.push(Transition(
                 state=state,
@@ -145,7 +173,7 @@ class Trainer:
 
             self._optimize_model()
 
-            for policy, target in zip(self._policy_net.iter_models(), self._target_net.iter_models()):
+            for policy, target in zip(self._actor.iter_models(), self._target_net.iter_models()):
                 policy_dict = policy.state_dict()
                 target_dict = target.state_dict()
                 for key in policy_dict:

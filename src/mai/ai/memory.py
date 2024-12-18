@@ -47,6 +47,8 @@ class ReplayMemory:
     def push(self, transition: Transition):
         """Save a transition"""
         assert isinstance(transition, Transition)
+        if self.memory.maxlen == len(self.memory):
+            self.memory.pop()
         self.memory.append(transition)
 
     def sample(self, batch_size: int):

@@ -58,13 +58,29 @@ class ModulesController:
         else:
             assert isinstance(value, torch.Tensor)
             assert value.shape != (), value
-            assert value.shape == (26,), value
-            print(f"Got shape {value.shape}")
-            mapping = ModulesOutputMapping.fromTensor(value)
-            for module in self._ordered_modules:
-                module.inference(mapping)
-            output = mapping.extract_controls().toTensor()
-            return output  # type: ignore
+            assert len(value.shape) == 1
+            assert (value.shape[0] % 26) == 0, value.shape
+            if value.shape == (26,):
+                return self.tensor_inference(value)
+            elif (value.shape[0] % 26) == 0:
+                v = []
+                for i in value.view(-1, 26):
+                    v.append(self.tensor_inference(i))
+                # for i in range(0, value.shape[0]//26):
+                    # v.append(self.tensor_inference(value[26*i:26*(i+1)]))
+                return torch.cat(v).reshape(-1, 10)  # type: ignore
+            else:
+                raise RuntimeError()
+
+    def tensor_inference(self, value: torch.Tensor) -> torch.Tensor:
+        assert value.shape != (), value
+        assert value.shape == (26,), value.shape
+
+        mapping = ModulesOutputMapping.fromTensor(value)
+        for module in self._ordered_modules:
+            module.inference(mapping)
+        output = mapping.extract_controls().toTensor()
+        return output
 
     def save(self) -> None:
         for module in self.get_all_modules():
