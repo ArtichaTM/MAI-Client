@@ -56,26 +56,29 @@ class Exchanger:
         if self.magnitude_update_requested:
             self.update_magnitudes(state)
             self.magnitude_update_requested = False
-        if state.message == 'none':
-            pass
-        elif state.message == 'gameExit':
-            self._context = None
-            return
-        elif state.message == 'kickoffTimerEnded':
-            self._create_context(state)
-            assert self._context is not None
-            car_y = state.car.position.y
-            if car_y < 0:
-                self._context.team_multiplier = -1
-            else:
-                self._context.team_multiplier = 1
-        elif state.message == 'kickoffTimerStarted':
-            self._create_context(state)
-            self.update_magnitudes(state)
+        match state.message:
+            case 'none':
+                if self._context:
+                    self._context.exchanges_since_latest_message += 1
+                return
+            case 'gameExit':
+                self._context = None
+                return
 
         self._create_context(state)
         assert self._context is not None, state.message
         self._context.latest_message = state.message
+        self._context.exchanges_since_latest_message = 0
+
+        match state.message:
+            case 'kickoffTimerEnded':
+                car_y = state.car.position.y
+                if car_y < 0:
+                    self._context.team_multiplier = -1
+                else:
+                    self._context.team_multiplier = 1
+            case 'kickoffTimerStarted':
+                self.update_magnitudes(state)
 
     def exchange(self, state: MAIGameState) -> MAIControls:
         self._update_context(state)
