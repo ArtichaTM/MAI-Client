@@ -89,11 +89,3 @@ class ProcessPlotter:
         assert not self.closed
         self.closed = True
         self.plot_pipe.send(None)
-
-def main():
-    from random import random
-    pl = ProcessPlotter(('Vel', 'post'))
-    for i in range(10):
-        pl.plot((random(), random()))
-        time.sleep(0.5)
-    pl.finish()
