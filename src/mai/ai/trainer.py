@@ -71,7 +71,7 @@ class Trainer:
         self.eps_end = 0.05
         self.eps_decay = 1000
         self.tau = 0.005
-        self.lr = 1e-4
+        self.lr = 1e-6
 
     def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
         eps_threshold = (
