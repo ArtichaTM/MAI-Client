@@ -88,7 +88,7 @@ class MainController:
         self._paused_tactics = Queue()
         self._paused_tactics.put(self._current_tactic)
         self._current_tactic = None
-        while self._tactics.not_empty:
+        while not self._tactics.empty():
             self._paused_tactics.put(self._tactics.get(block=False))
         return True
 

@@ -22,7 +22,7 @@ class NNReward(NNRewardBase):
         ball_pos = Vector.from_mai(state.ball.position)
         if self.latest_distance is None:
             self.latest_distance = (car_pos - ball_pos).magnitude()
-            self.latest_answer = perf_counter()
+            self.latest_answer = perf_counter()-1
             return 0
 
         current = perf_counter()
