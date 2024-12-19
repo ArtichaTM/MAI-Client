@@ -230,9 +230,11 @@ class AdditionalContext:
     # If on car spawn y is negative, than we place here -1, else 1
     team_multiplier: Literal[-1, 1] = field(default=1)
     latest_message: MAIGameState.MessageType = field(default='none')
+    exchanges_since_latest_message: int = field(default=0)
     magnitude_offsets: 'MAGNITUDE_OFFSET_TYPING' = field(
         default_factory=lambda: {'car': {'v': 0, 'av': 0}, 'ball': {'v': 0, 'av': 0}}
     )
+
 
 class ModulesOutputMapping(dict, MutableMapping):
     @classmethod
