@@ -38,7 +38,7 @@ class CustomTraining(ModuleTrainingTactic):
             ))
             return
 
-        if not context.latest_message != 'kickoffTimerStarted':
+        if context.latest_message != 'kickoffTimerStarted':
             print(context.latest_message)
             popup("Error during training startup", (
                 "Trying to run training without entering custom training. \n"
