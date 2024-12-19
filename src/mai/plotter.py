@@ -34,6 +34,7 @@ class ChildProcessPlotter:
                     y.append(command[i])
                     self.ax.plot(self.x, y, label=self.plot_names[i])
                     self.ax.set_ylim(*self.ylim)
+                self.ax.grid(which='major', axis='y')
                 self.ax.legend()
         self.fig.canvas.draw()
         return True
@@ -54,7 +55,6 @@ class ChildProcessPlotter:
         self.ys = [[None] * xlim[1] for _ in range(len(plot_names))]
 
         self.fig, self.ax = plt.subplots()
-        self.ax.set_ylim(*ylim)
         timer = self.fig.canvas.new_timer(interval=0)
         timer.add_callback(self.call_back)
         timer.start()
@@ -73,7 +73,7 @@ class ProcessPlotter:
         self.plotter = ChildProcessPlotter()
         self.plot_process = mp.Process(
             target=self.plotter, args=(
-                plotter_pipe, plot_names, (0, 200), (-1, 1)
+                plotter_pipe, plot_names, (0, 200), (-1.1, 1.1)
             ), daemon=True
         )
         self.plot_process.start()
