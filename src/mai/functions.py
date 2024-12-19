@@ -50,7 +50,9 @@ def rewards_tracker(
     on_close: Callable[[], Any] = lambda: ...
 ) -> Generator[None, 'MAIGameState | None', None]:
     from mai.capnp.exchanger import Exchanger
-    process_plotter = ProcessPlotter(tuple((r.name for r in rewards)))
+    process_plotter = ProcessPlotter(tuple((
+        r.name.replace('_', ' ').title() for r in rewards
+    )))
     while True:
         state = yield
         if state is None:
