@@ -78,16 +78,6 @@ class CustomTraining(ModuleTrainingTactic):
             keys.press_key(WinButtons.FORWARD)
             while True:
                 start_time = perf_counter()
-                output = trainer.inference(
-                    ModulesOutputMapping.fromMAIGameState(state),
-                    0
-                )
-                state, reward = yield (
-                    output
-                    .toFloatControls()
-                    .toNormalControls()
-                    .toMAIControls()
-                )
                 while not self.is_restarting(
                     state,
                     context,
