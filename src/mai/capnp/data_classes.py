@@ -62,7 +62,7 @@ class RunType(str, enum.Enum):
 
 class RestartReason(str, enum.Enum):
     BALL_TOUCH = 'Ball touch'
-    SCORE = 'Goal score'
+    BALL_EXPLODE = 'Goal explode'
     TIMEOUT = 'Timeout'
 
 class RunParameters(NamedTuple):

@@ -88,14 +88,14 @@ class ModuleTrainingTactic(BaseTrainingTactic):
             MAIGameState, AdditionalContext
         ], bool]] = {
             RestartReason.BALL_TOUCH: self._check_restart_hit,
-            RestartReason.SCORE: self._check_restart_score,
+            RestartReason.BALL_EXPLODE: self._check_restart_explode,
             RestartReason.TIMEOUT: self._check_restart_timeout,
         }
 
     def _check_restart_hit(self, state, context: 'AdditionalContext', **kwargs) -> bool:
         return context.latest_message == 'ballTouched'
 
-    def _check_restart_score(self, state, context: 'AdditionalContext', **kwargs) -> bool:
+    def _check_restart_explode(self, state, context: 'AdditionalContext', **kwargs) -> bool:
         return context.latest_message == 'ballExplode'
 
     def _check_restart_timeout(
