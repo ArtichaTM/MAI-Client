@@ -1,9 +1,13 @@
-from typing import Literal, Type, NamedTuple, Mapping, MutableMapping, TYPE_CHECKING
+from typing import (
+    Literal, Type, NamedTuple, Annotated,
+    Mapping, MutableMapping, 
+    TYPE_CHECKING
+)
 import enum
 from dataclasses import dataclass, field
 from math import tanh, exp
 
-from numpy import mean
+import numpy as np
 import torch
 
 from mai.capnp.names import (
@@ -15,12 +19,16 @@ from mai.capnp.names import (
 from mai.settings import Settings
 
 if TYPE_CHECKING:
+    from numpy import typing as npt
     import torch
     CAR_OR_BALL = Literal['car'] | Literal['ball']
     V_OR_AV = Literal['v'] | Literal['av']
     MAGNITUDE_OFFSET_TYPING = MutableMapping[CAR_OR_BALL, MutableMapping[V_OR_AV, float]]
+    NumpyVector = Annotated[npt.NDArray[np.float32], Literal[3]]
 
 
+ARENA_SIZE: 'Vector'
+DENORMALIZATION_VECTOR: 'Vector'
 CONTROLS_KEYS = (
     'controls.throttle',
     'controls.steer',
@@ -64,25 +72,43 @@ class RunParameters(NamedTuple):
     restart_reasons: set[RestartReason]
     restart_timeout: int
 
-@dataclass(frozen=False, slots=True, kw_only=False)
 class Vector:
-    x: float = field(default=0)  # (0, 1)
-    y: float = field(default=0)  # (0, 1)
-    z: float = field(default=0)  # (0, 1)
+    __slots__ = ('_arr',)
+
+    def __init__(self, arr: 'NumpyVector') -> None:
+        self._arr = arr
 
     def __sub__(self: 'Vector', other: 'Vector') -> 'Vector':
-        return type(self)(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z
-        )
+        return type(self)(self._arr - other._arr)
+
+    def __mul__(self: 'Vector', other: 'Vector') -> 'Vector':
+        return type(self)(self._arr * other._arr)
+
+    def __getitem__(self, index: int) -> float:
+        assert isinstance(index, int)
+        assert 0 <= index <= 2
+        return self._arr[index]
+
+    @property
+    def x(self) -> float:
+        return self._arr[0]
+
+    @property
+    def y(self) -> float:
+        return self._arr[1]
+
+    @property
+    def z(self) -> float:
+        return self._arr[2]
 
     def magnitude(self) -> float:
-        return (self.x**2 + self.y**2 + self.z**2)**0.5
+        return (((
+            self._arr*DENORMALIZATION_VECTOR._arr
+        )**2).sum())**0.5
 
     @classmethod
     def from_mai[T:Vector](cls: Type[T], v: MAIVector) -> T:
-        return cls(v.x, v.y, v.z)
+        return cls(np.array((v.x, v.y, v.z)))
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NormalControls:
@@ -382,3 +408,14 @@ class ModulesOutputMapping(dict, MutableMapping):
         for key in self:
             self[key] = [torch.rand((), requires_grad=requires_grad)]
         return self
+
+
+#
+# Constant variables based on data classes
+#
+ARENA_SIZE = Vector(np.array((4096, 5120+880, 2044)))
+DENORMALIZATION_VECTOR = Vector(np.array((
+    1,
+    ARENA_SIZE.y / ARENA_SIZE.x,
+    ARENA_SIZE.z / ARENA_SIZE.z
+)))

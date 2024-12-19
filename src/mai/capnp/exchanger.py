@@ -5,7 +5,7 @@ from threading import Thread
 from mai.functions import create_dummy_controls
 from .names import MAIControls, MAIGameState
 from .client import CapnPClient
-from .data_classes import Vector, AdditionalContext
+from .data_classes import AdditionalContext, Vector
 
 __all__ = ('Exchanger', 'register_for_exchange')
 

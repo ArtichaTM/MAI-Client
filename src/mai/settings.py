@@ -21,7 +21,7 @@ class _Settings(dict):
         # Callables
         'get_current_eps',
     )
-    path_to_capnp_schemes = Path = (
+    path_to_capnp_schemes: Path = (
         Path(__file__)
         .parent.parent.parent.parent
         .joinpath('capnp').absolute()
