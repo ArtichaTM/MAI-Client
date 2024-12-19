@@ -15,7 +15,7 @@ class NNRewardBase(ABC):
     power: float
 
     def __init__(self) -> None:
-        self.power: float = 0.0
+        self.power: float = 1.0
 
     def __repr__(self) -> str:
         return (
@@ -29,8 +29,6 @@ class NNRewardBase(ABC):
         context: AdditionalContext
     ) -> float:
         assert self.enabled
-        if self.power == 0:
-            return 0
         output = self._calculate(state, context)
         output *= self.power
         assert isinstance(output, float)
@@ -50,7 +48,7 @@ class NNRewardBase(ABC):
         This property shows if reward function used in generating rewards
         """
         assert isinstance(self.power, float)
-        return self.power > 0.01
+        return self.power > 0.009
 
     @classmethod
     def get_name(cls) -> str:

@@ -68,9 +68,6 @@ class CustomTraining(ModuleTrainingTactic):
         )
         next(self.rewards_plot)
 
-        for reward in self._rewards:
-            print(f"reward has {reward.power}")
-
         with Trainer(self._mc) as trainer:
             keys = WindowController._instance
             assert keys is not None

@@ -53,6 +53,9 @@ def rewards_tracker(
     process_plotter = ProcessPlotter(tuple((
         r.name.replace('_', ' ').title() for r in rewards
     )))
+
+    for cl in rewards:
+        print(f"{cl.get_name()} has power {cl.power}")
     while True:
         state = yield
         if state is None:
@@ -65,7 +68,7 @@ def rewards_tracker(
 
         to_send = []
         for cl in rewards:
-            reward = cl._calculate(state, context)
+            reward = cl(state, context)
             to_send.append(reward)
         try:
             process_plotter.plot(tuple(to_send))
