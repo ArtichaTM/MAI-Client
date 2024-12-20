@@ -11,6 +11,8 @@ class NNReward(NNRewardBase):
 
     def __init__(self) -> None:
         super().__init__()
+
+    def reset(self) -> None:
         self.latest_answer = None
         self.start_speed: float = 0
         self.result: float = 0

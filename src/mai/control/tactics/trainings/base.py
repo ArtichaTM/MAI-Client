@@ -22,7 +22,10 @@ __all__ = ('BaseTrainingTactic',)
 
 
 class BaseTrainingTactic(BaseTactic):
-    __slots__ = ('_mc', '_run_parameters', '_rewards')
+    __slots__ = (
+        '_mc', '_run_parameters', '_rewards',
+        '_prev_reward',
+    )
 
     def __init__(
         self,
@@ -32,6 +35,7 @@ class BaseTrainingTactic(BaseTactic):
         super().__init__()
         self._mc = nnc
         self._run_parameters = run_parameters
+        self._prev_reward: float = 0.0
         self._rewards: list[NNRewardBase] = []
 
     def prepare(self) -> None:
@@ -43,11 +47,20 @@ class BaseTrainingTactic(BaseTactic):
             self._rewards.append(reward)
 
     def calculate_reward(self, state: 'MAIGameState', context: 'AdditionalContext') -> float:
-        output: float = 0
+        reward: float = 0
+        for reward_cl in self._rewards:
+            r = reward_cl(state, context)
+            reward += r
+        difference = reward - self._prev_reward
+        if abs(difference) > 0.2:
+            reward = self._prev_reward + min(0.2, max(difference, -0.2))
+        self._prev_reward = reward
+        return reward
+
+    def env_reset(self) -> None:
+        self._prev_reward = 0.0
         for reward in self._rewards:
-            r = reward(state, context)
-            output += r
-        return output
+            reward.reset()
 
 
 class ModuleTrainingTactic(BaseTrainingTactic):

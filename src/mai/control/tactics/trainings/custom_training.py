@@ -97,6 +97,7 @@ class CustomTraining(ModuleTrainingTactic):
                         .toMAIControls()
                     )
                 trainer.epoch_end()
+                self.env_reset()
                 keys.press_key(WinButtons.RESTART_TRAINING)
                 yield (
                     ModulesOutputMapping

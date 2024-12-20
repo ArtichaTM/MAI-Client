@@ -28,6 +28,7 @@ class Trainer:
     __slots__ = (
         '_loaded', '_gen', '_mc',
         '_all_rewards', '_steps_done',
+        '_loss',
 
         # Hyperparameters
         'batch_size', 'gamma',
@@ -109,8 +110,10 @@ class Trainer:
 
             # Optimize the model
             self._optimizer.zero_grad()
-            loss = action.toTensor() * rewarder.send((prev_reward, reward))
-            loss.mean().backward()
+            reward = rewarder.send((prev_reward, reward))
+            self._loss = action.toTensor() * reward
+            print(f"Reward = {reward:1.4f}, loss={str(self._loss).replace('\n ', '').replace('\t', '')}")
+            self._loss.mean().backward()
             # torch.nn.utils.clip_grad_value_(self._mc.enabled_parameters(), 100)
             self._optimizer.step()
 
@@ -119,4 +122,4 @@ class Trainer:
 
 
     def epoch_end(self) -> None:
-        pass
+        self._loss = None

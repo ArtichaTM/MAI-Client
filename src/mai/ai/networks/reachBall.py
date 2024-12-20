@@ -40,12 +40,17 @@ class NNModule(NNModuleBase):
 
     @classmethod
     def _create(cls):
+        inner_1 = 16
+        inner_2 = 32
+        inner_3 = 16
         return nn.Sequential(
-            nn.Linear(len(cls.input_types), 32),
+            nn.Linear(len(cls.input_types), inner_1),
             nn.ReLU(),
-            nn.Linear(32, 32),
+            nn.Linear(inner_1, inner_2),
             nn.ReLU(),
-            nn.Linear(32, len(cls.output_types))
+            nn.Linear(inner_2, inner_3),
+            nn.ReLU(),
+            nn.Linear(inner_3, len(cls.output_types))
         )
 
     def requires(self) -> set[str]:

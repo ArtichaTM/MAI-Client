@@ -16,6 +16,7 @@ class NNRewardBase(ABC):
 
     def __init__(self) -> None:
         self.power: float = 1.0
+        self.reset()
 
     def __repr__(self) -> str:
         return (
@@ -41,6 +42,10 @@ class NNRewardBase(ABC):
         context: AdditionalContext
     ) -> float:
         raise NotImplementedError()
+
+    def reset(self) -> None:
+        """Called when environment is reset or initiated"""
+        pass
 
     @property
     def enabled(self) -> bool:

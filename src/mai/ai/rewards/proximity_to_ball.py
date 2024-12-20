@@ -17,6 +17,10 @@ class NNReward(NNRewardBase):
         self.latest_distance = None
         self.multiplier = self._multiplier
 
+    def reset(self) -> None:
+        super().reset()
+        self.latest_distance = None
+
     def _calculate(self, state, context) -> float:
         car_pos = Vector.from_mai(state.car.position)
         ball_pos = Vector.from_mai(state.ball.position)
