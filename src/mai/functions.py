@@ -54,8 +54,6 @@ def rewards_tracker(
         r.name.replace('_', ' ').title() for r in rewards
     )))
 
-    for cl in rewards:
-        print(f"{cl.get_name()} has power {cl.power}")
     while True:
         state = yield
         if state is None:
