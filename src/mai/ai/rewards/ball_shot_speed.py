@@ -50,7 +50,7 @@ class NNReward(NNRewardBase):
         if self.start_speed != 0:
             current = perf_counter()
             if (current - self.latest_answer) > self._update_seconds:
-                self.start_speed *= 0.9
+                self.start_speed *= 0.96
                 if self.start_speed < 0.1:
                     self.start_speed = 0
                     self.result = 0

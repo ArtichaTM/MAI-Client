@@ -241,21 +241,21 @@ class MainInterface:
             restart_timeout=restart_timeout
         )
 
-    def _build_reward_row(self, reward: str) -> list:
+    def _build_reward_row(self, reward: type['NNRewardBase']) -> list:
         return [
-            sg.Text(reward[:15].rjust(15,), p=(0, 0)),
+            sg.Text(reward.get_pretty_name()[:20].rjust(15,), p=(0, 0)),
             sg.Slider(
                 range=(0, 1),
                 default_value=1,
                 resolution=0.01,
                 orientation='horizontal',
                 enable_events=False,
-                k=Constants.REWARDS_POWER_SLIDER.reward(reward),
+                k=Constants.REWARDS_POWER_SLIDER.reward(reward.get_name()),
             ),
             sg.Progress(
                 max_value=100,
                 s=(10, 10),
-                k=Constants.REWARDS_POWER_PR.reward(reward)
+                k=Constants.REWARDS_POWER_PR.reward(reward.get_name())
             )
         ]
 
@@ -563,7 +563,7 @@ class MainInterface:
                         self._build_module_row(nn) for nn in self._mc.get_all_modules()
                     ]),
                     sg.Tab('Rewards', [
-                        self._build_reward_row(r) for r in build_rewards()
+                        self._build_reward_row(r) for r in build_rewards().values()
                     ]),
                     sg.Tab('Use', [
                         [

@@ -1,21 +1,16 @@
-from typing import TYPE_CHECKING
 from time import perf_counter
 
 from mai.functions import popup
 from mai.windows import WindowController
-from mai.settings import Settings, WinButtons
+from mai.settings import WinButtons
 from mai.ai.trainer import Trainer
 from mai.capnp.data_classes import (
     MAIGameState,
     AdditionalContext,
-    ModulesOutputMapping,
-    NormalControls
+    ModulesOutputMapping
 )
 from mai.functions import rewards_tracker
 from .base import ModuleTrainingTactic
-
-if TYPE_CHECKING:
-    ...
 
 class CustomTraining(ModuleTrainingTactic):
     __slots__ = ('rewards_plot', )

@@ -112,7 +112,7 @@ class Trainer:
             self._optimizer.zero_grad()
             reward = rewarder.send((prev_reward, reward))
             self._loss = action.toTensor() * reward
-            print(f"Reward = {reward:1.4f}, loss={str(self._loss).replace('\n ', '').replace('\t', '')}")
+            # print(f"Reward = {reward:1.4f}")
             self._loss.mean().backward()
             # torch.nn.utils.clip_grad_value_(self._mc.enabled_parameters(), 100)
             self._optimizer.step()

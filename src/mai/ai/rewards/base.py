@@ -62,6 +62,10 @@ class NNRewardBase(ABC):
         """
         return cls.__module__.split('.')[-1]
 
+    @classmethod
+    def get_pretty_name(cls) -> str:
+        return cls.get_name().replace('_', ' ').title()
+
     @property
     def name(self) -> str:
         """
