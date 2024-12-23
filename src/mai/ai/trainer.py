@@ -1,6 +1,7 @@
+from typing import Generator, Mapping, TYPE_CHECKING
 from math import exp
 import random
-from typing import Generator, Mapping, TYPE_CHECKING
+from queue import Queue
 
 import torch
 
@@ -10,19 +11,6 @@ from .rewards import NNRewardBase, build_rewards
 
 if TYPE_CHECKING:
     from .controller import ModulesController
-
-class Critic(torch.nn.Module):
-    def __init__(self, state_size, action_size):
-        super(Critic, self).__init__()
-        self.fc1 = torch.nn.Linear(state_size + action_size, 400)
-        self.fc2 = torch.nn.Linear(400, 300)
-        self.fc3 = torch.nn.Linear(300, 1)
-
-    def forward(self, state, action):
-        x = torch.relu(self.fc1(torch.cat([state, action], 1)))
-        x = torch.relu(self.fc2(x))
-        return self.fc3(x)
-
 
 class Trainer:
     __slots__ = (
@@ -39,7 +27,7 @@ class Trainer:
         '_optimizer',
     )
     _mc: 'ModulesController'
-    _critic: Critic
+    _buffer: ReplayMemory
     _all_rewards: Mapping[str, 'NNRewardBase']
     _batch_size: int
     _optimizer: torch.optim.Optimizer
@@ -114,12 +102,10 @@ class Trainer:
             self._loss = action.toTensor() * reward
             # print(f"Reward = {reward:1.4f}")
             self._loss.mean().backward()
-            # torch.nn.utils.clip_grad_value_(self._mc.enabled_parameters(), 100)
             self._optimizer.step()
 
             # Marking current values as previous
             state_map, prev_reward = observation, reward
-
 
     def epoch_end(self) -> None:
         self._loss = None

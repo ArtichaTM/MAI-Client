@@ -1,4 +1,5 @@
-from collections import deque
+from typing import Generator
+from queue import SimpleQueue
 import random
 
 import torch
@@ -36,25 +37,28 @@ class Transition:
         return iter((self.state, self.action, self.next_state, self.reward))
 
 
+
 class ReplayMemory:
-    __slots__ = ('memory',)
+    __slots__ = ('q', '_max_size')
+    q: SimpleQueue[Transition]
+    _max_size: int
 
-    def __init__(self, capacity: int):
-        assert isinstance(capacity, int)
-        assert capacity > 1
-        self.memory = deque([], maxlen=capacity)
+    def __init__(self, max_size: int | None = None):
+        assert max_size is None or isinstance(max_size, int)
+        self._max_size = max_size if isinstance(max_size, int) else 0
+        self.q = SimpleQueue()
 
-    def push(self, transition: Transition):
-        """Save a transition"""
-        assert isinstance(transition, Transition)
-        if self.memory.maxlen == len(self.memory):
-            self.memory.pop()
-        self.memory.append(transition)
+    def add(self, transition: Transition) -> None:
+        if self.q.qsize == self._max_size:
+            self.q.get()
+        self.q.put(transition)
 
-    def sample(self, batch_size: int):
-        assert isinstance(batch_size, int)
-        assert batch_size > 0
-        return random.sample(self.memory, batch_size)
+    def calculate_loss(
+        self, /,
+        previous_actions_factoring_amount: int | None = None,
+        requires_grad: bool = True
+    ) -> Generator[torch.Tensor, None, None]:
+        raise NotImplementedError()
 
-    def __len__(self) -> int:
-        return len(self.memory)
+    def clear(self) -> None:
+        self.q = SimpleQueue()
