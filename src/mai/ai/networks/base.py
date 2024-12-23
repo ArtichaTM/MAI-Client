@@ -121,7 +121,6 @@ class NNModuleBase(ABC):
             self._model = self._create()
             with torch.no_grad():
                 self._model.apply(self._init_weights)
-            self.save()
         self._model.to(self._mc._device)
         assert self._model
         for param in self._model.parameters():
