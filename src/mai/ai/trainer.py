@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class Trainer:
     __slots__ = (
         '_loaded', '_gen', '_mc',
-        '_all_rewards', '_steps_done',
-        '_loss',
+        '_all_rewards',
+        '_loss', '_buffer',
 
         # Hyperparameters
         'batch_size', 'gamma',
@@ -39,8 +39,7 @@ class Trainer:
 
     def __enter__[T: Trainer](self: T) -> T:
         self.hyperparameters_init()
-        self._loaded = True
-        self._steps_done: int = 0
+        self._buffer = ReplayMemory()
         self._optimizer = torch.optim.Adam(
             list(self._mc.enabled_parameters()),
             lr=self.lr,
@@ -48,6 +47,7 @@ class Trainer:
         )
         self._gen = self.inference_gen()
         next(self._gen)
+        self._loaded = True
         return self
 
     def __exit__(self, *args) -> None:
@@ -56,22 +56,17 @@ class Trainer:
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
         self.gamma = 0.99
-        self.eps_start = 0.9
-        self.eps_end = 0.05
-        self.eps_decay = 1000
+        # self.eps_start = 0.9
+        # self.eps_end = 0.05
+        # self.eps_decay = 1000
         self.tau = 0.005
         self.lr = 1e-6
 
     def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
-        eps_threshold = (
-            self.eps_end + (self.eps_start - self.eps_end) *
-            exp(-1. * self._steps_done / self.eps_decay)
-        )
-        self._steps_done += 1
-        if random.random() > eps_threshold:
+        # if random.random() > 0.3:
             return self._mc(state)
-        else:
-            return ModulesOutputMapping.create_random_controls()
+        # else:
+        #     return ModulesOutputMapping.create_random_controls()
 
     def _optimize_model(self) -> None:
         assert self._loaded
@@ -104,8 +99,13 @@ class Trainer:
             self._loss.mean().backward()
             self._optimizer.step()
 
+            self._buffer.add(Transition(state_map, action, observation, reward))
+
             # Marking current values as previous
             state_map, prev_reward = observation, reward
 
     def epoch_end(self) -> None:
         self._loss = None
+        reward_avg = sum([i.reward for i in self._buffer.q])
+        print(f"Reward avg: {reward_avg}")
+        self._buffer.clear()

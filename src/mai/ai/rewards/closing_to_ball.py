@@ -27,6 +27,7 @@ class NNReward(NNRewardBase):
         if self.latest_distance is None:
             self.latest_distance = (car_pos - ball_pos).magnitude()
             self.latest_answer = perf_counter()-1
+            self.result = 0
             return 0
 
         current = perf_counter()

@@ -54,22 +54,26 @@ def rewards_tracker(
         r.name.replace('_', ' ').title() for r in rewards
     )))
 
-    while True:
-        state = yield
-        if state is None:
-            process_plotter.finish()
-            return
-        assert Exchanger._instance is not None
-        context = Exchanger._instance.context
-        if context is None:
-            continue
+    try:
+        while True:
+            state = yield
+            assert Exchanger._instance is not None
+            context = Exchanger._instance.context
+            if context is None:
+                continue
+            if state is None:
+                to_send = [None] * len(rewards)
+            else:
+                to_send = []
+                for cl in rewards:
+                    reward = cl(state, context)
+                    to_send.append(reward)
 
-        to_send = []
-        for cl in rewards:
-            reward = cl(state, context)
-            to_send.append(reward)
-        try:
-            process_plotter.plot(tuple(to_send))
-        except BrokenPipeError:
-            on_close()
-            return
+            try:
+                process_plotter.plot(tuple(to_send))
+            except BrokenPipeError:
+                on_close()
+                return
+    except GeneratorExit:
+        process_plotter.finish()
+

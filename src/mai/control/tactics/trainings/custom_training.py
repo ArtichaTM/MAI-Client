@@ -1,5 +1,7 @@
 from time import perf_counter
 
+from regex import F
+
 from mai.functions import popup
 from mai.windows import WindowController
 from mai.settings import WinButtons
@@ -93,6 +95,8 @@ class CustomTraining(ModuleTrainingTactic):
                     )
                 trainer.epoch_end()
                 self.env_reset()
+                if self.rewards_plot:
+                    self.rewards_plot.send(None)
                 keys.press_key(WinButtons.RESTART_TRAINING)
                 yield (
                     ModulesOutputMapping
@@ -102,7 +106,7 @@ class CustomTraining(ModuleTrainingTactic):
                     .toMAIControls()
                 )
                 keys.press_key(WinButtons.FORWARD)
-                yield (
+                state, reward = yield (
                     ModulesOutputMapping
                     .create_random_controls(requires_grad=False)
                     .toFloatControls()
@@ -112,8 +116,9 @@ class CustomTraining(ModuleTrainingTactic):
 
     def close(self) -> None:
         if self.rewards_plot is not None:
-            try:
-                self.rewards_plot.send(None)
-            except StopIteration:
-                pass
+            self.rewards_plot.close()
+            # try:
+            #     self.rewards_plot.send(None)
+            # except StopIteration:
+            #     pass
         return super().close()

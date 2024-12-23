@@ -109,20 +109,22 @@ class NNModuleBase(ABC):
         else:
             raise RuntimeError(f"Can't initialize layer {module}")
 
+    def _create_empty(self):
+        self._model = self._create()
+        with torch.no_grad():
+            self._model.apply(self._init_weights)
+
     def _load(self) -> None:
         path = self.path_to_model()
         if path.exists():
             self._model = torch.load(path, weights_only=False)
             if self._model is None:
-                raise RuntimeError(
-                    f"Model {path} points to incorrect model"
-                )
+                print(f"Model {path} points to incorrect model")
+                self._create_empty()
         else:
-            self._model = self._create()
-            with torch.no_grad():
-                self._model.apply(self._init_weights)
+            self._create_empty()
+        assert self._model is not None
         self._model.to(self._mc._device)
-        assert self._model
         for param in self._model.parameters():
             param.requires_grad = self.training
 

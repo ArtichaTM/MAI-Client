@@ -1,5 +1,4 @@
 from typing import Generator
-from queue import SimpleQueue
 import random
 
 import torch
@@ -40,18 +39,18 @@ class Transition:
 
 class ReplayMemory:
     __slots__ = ('q', '_max_size')
-    q: SimpleQueue[Transition]
+    q: list[Transition]
     _max_size: int
 
     def __init__(self, max_size: int | None = None):
         assert max_size is None or isinstance(max_size, int)
-        self._max_size = max_size if isinstance(max_size, int) else 0
-        self.q = SimpleQueue()
+        self._max_size = max_size if isinstance(max_size, int) else 9999
+        self.q = []
 
     def add(self, transition: Transition) -> None:
-        if self.q.qsize == self._max_size:
-            self.q.get()
-        self.q.put(transition)
+        if len(self.q) == self._max_size:
+            self.q.pop(0)
+        self.q.append(transition)
 
     def calculate_loss(
         self, /,
@@ -61,4 +60,4 @@ class ReplayMemory:
         raise NotImplementedError()
 
     def clear(self) -> None:
-        self.q = SimpleQueue()
+        self.q = []
