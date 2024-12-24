@@ -79,7 +79,7 @@ class ProcessPlotter:
         self.plot_process.start()
         self.closed = False
 
-    def plot(self, data: tuple[float, ...]):
+    def plot(self, data: tuple[float | None, ...]):
         assert not self.closed
         if self.plot_pipe.closed:
             self.closed = True
