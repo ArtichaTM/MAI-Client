@@ -1,4 +1,4 @@
-from time import perf_counter
+from time import perf_counter, sleep
 
 
 from mai.functions import popup
@@ -61,8 +61,8 @@ class CustomTraining(ModuleTrainingTactic):
         module.training = True
 
         def on_rewards_plot_closed() -> None:
-            nonlocal rewards_plot
-            rewards_plot = None
+            nonlocal self
+            self.rewards_plot = None
 
         self.rewards_plot = rewards_tracker(
             self._rewards,
@@ -83,7 +83,7 @@ class CustomTraining(ModuleTrainingTactic):
                         try:
                             self.rewards_plot.send(state)
                         except StopIteration:
-                            rewards_plot = None
+                            self.rewards_plot = None
                     reward = self.calculate_reward(state, context)
                     output = trainer.inference(
                         ModulesOutputMapping.fromMAIGameState(state),
@@ -98,7 +98,10 @@ class CustomTraining(ModuleTrainingTactic):
                 trainer.epoch_end()
                 self.env_reset()
                 if self.rewards_plot:
-                    self.rewards_plot.send(None)
+                    try:
+                        self.rewards_plot.send(None)
+                    except StopIteration:
+                        self.rewards_plot = None
                 keys.press_key(WinButtons.RESTART_TRAINING)
                 yield (
                     ModulesOutputMapping
@@ -107,6 +110,7 @@ class CustomTraining(ModuleTrainingTactic):
                     .toNormalControls()
                     .toMAIControls()
                 )
+                sleep(0.1)
                 keys.press_key(WinButtons.FORWARD)
                 state, reward = yield (
                     ModulesOutputMapping
@@ -119,8 +123,4 @@ class CustomTraining(ModuleTrainingTactic):
     def close(self) -> None:
         if self.rewards_plot is not None:
             self.rewards_plot.close()
-            # try:
-            #     self.rewards_plot.send(None)
-            # except StopIteration:
-            #     pass
         return super().close()

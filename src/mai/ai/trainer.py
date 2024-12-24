@@ -15,19 +15,19 @@ if TYPE_CHECKING:
 class Trainer:
     __slots__ = (
         '_loaded', '_gen', '_mc',
-        '_all_rewards',
-        '_loss', '_buffer',
+        '_all_rewards', '_loss',
+        '_memory', '_prev_memory',
 
         # Hyperparameters
-        'batch_size', 'gamma',
-        'eps_start', 'eps_end', 'eps_decay',
-        'tau', 'lr',
+        'batch_size', 'random_threshold',
+        'lr', '_steps_done',
 
         # Training parameters
         '_optimizer',
     )
     _mc: 'ModulesController'
-    _buffer: ReplayMemory
+    _memory: ReplayMemory
+    _prev_memory: ReplayMemory | None
     _all_rewards: Mapping[str, 'NNRewardBase']
     _batch_size: int
     _optimizer: torch.optim.Optimizer
@@ -39,14 +39,17 @@ class Trainer:
 
     def __enter__[T: Trainer](self: T) -> T:
         self.hyperparameters_init()
-        self._buffer = ReplayMemory()
+        self._memory = ReplayMemory()
+        self._prev_memory = None
         self._optimizer = torch.optim.Adam(
             list(self._mc.enabled_parameters()),
             lr=self.lr,
             amsgrad=True
         )
+        self._loss = torch.nn.MSELoss()
         self._gen = self.inference_gen()
         next(self._gen)
+        self.random_threshold = 0.1
         self._loaded = True
         return self
 
@@ -55,18 +58,13 @@ class Trainer:
 
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
-        self.gamma = 0.99
-        # self.eps_start = 0.9
-        # self.eps_end = 0.05
-        # self.eps_decay = 1000
-        self.tau = 0.005
         self.lr = 1e-6
 
     def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
-        # if random.random() > 0.3:
-            return self._mc(state)
-        # else:
-        #     return ModulesOutputMapping.create_random_controls()
+        if random.random() > self.random_threshold:
+            return self._mc(state).extract_controls(requires_grad=True)
+        else:
+            return ModulesOutputMapping.create_random_controls()
 
     def _optimize_model(self) -> None:
         assert self._loaded
@@ -75,37 +73,67 @@ class Trainer:
         assert self._loaded
         return self._gen.send((state_map, reward))
 
-    def reward_calculator(self) -> Generator[float, tuple[float, float], None]:
-        difference = 0
-        prev, current = yield difference
-        while True:
-            difference = current - prev
-            prev, current = yield difference
-
     def inference_gen(self) -> Generator[ModulesOutputMapping, tuple[ModulesOutputMapping, float], None]:
-        rewarder = self.reward_calculator()
-        next(rewarder)
-
         state_map, prev_reward = yield ModulesOutputMapping.create_random_controls()
+
         while True:
             action = self._select_action(state_map)
             observation, reward = yield action
 
             # Optimize the model
-            self._optimizer.zero_grad()
-            reward = rewarder.send((prev_reward, reward))
-            self._loss = action.toTensor() * reward
+            # self._optimizer.zero_grad()
+            # self._loss = action.toTensor() * reward
             # print(f"Reward = {reward:1.4f}")
-            self._loss.mean().backward()
-            self._optimizer.step()
+            # self._loss.mean().backward()
+            # self._optimizer.step()
+            assert len(action) == 10, len(action)
 
-            self._buffer.add(Transition(state_map, action, observation, reward))
+            self._memory.add(Transition(state_map, action, observation, reward))
 
             # Marking current values as previous
             state_map, prev_reward = observation, reward
 
     def epoch_end(self) -> None:
-        self._loss = None
-        reward_avg = sum([i.reward for i in self._buffer.q])
-        print(f"Reward avg: {reward_avg}")
-        self._buffer.clear()
+        if self._prev_memory is None:
+            self._prev_memory = self._memory
+            self._memory = ReplayMemory()
+            return
+
+        prev_avg = self._prev_memory.avg_reward()
+        curr_avg = self._memory.avg_reward()
+        # print(f'prev:{prev_avg:1.2f}', end=', ')
+        # print(f'curr:{curr_avg:1.2f}', end='')
+
+        if prev_avg > curr_avg:
+            best_mem, worst_mem = self._prev_memory, self._memory
+            # print(', previous better', end='')
+        else:
+            best_mem, worst_mem = self._memory, self._prev_memory
+            # print(', new      better', end='')
+
+        while len(best_mem) > len(worst_mem):
+            best_mem.q.pop(0)
+        while len(worst_mem) > len(best_mem):
+            worst_mem.q.pop(0)
+
+        assert len(best_mem) == len(worst_mem)
+        assert len(best_mem.q) == len(worst_mem.q)
+
+        x1 = [t.action_t for t in worst_mem.q]
+        x2 = [t.action_t for t in best_mem.q]
+
+        assert len(set(i.shape for i in x1)) == len(set(i.shape for i in x2))
+        assert x1[0].shape == x2[0].shape
+
+        predicted = torch.cat(x1)
+        target = torch.cat(x2)
+
+        self._optimizer.zero_grad()
+        loss = self._loss(predicted, target)
+        assert isinstance(loss, torch.Tensor)
+        loss.backward()
+        self._optimizer.step()
+        # print(f", loss: {loss.item():.1f}")
+
+        self._prev_memory = self._memory
+        self._memory = ReplayMemory()

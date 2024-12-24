@@ -30,11 +30,14 @@ class MainController:
             if self._tactics.empty():
                 return create_dummy_controls()
             self._current_tactic = self._tactics.get_nowait()
+            assert isinstance(self._current_tactic, BaseTactic), self._current_tactic
             self._current_tactic.prepare()
             if self._current_tactic.finished:
                 self._current_tactic = None
                 return create_dummy_controls()
+        assert isinstance(self._current_tactic, BaseTactic), self._current_tactic
         controls = self._current_tactic.react(state, context)
+        assert isinstance(self._current_tactic, BaseTactic), self._current_tactic
         if self._current_tactic.finished:
             self._current_tactic = None
         return controls

@@ -40,9 +40,9 @@ class NNModule(NNModuleBase):
 
     @classmethod
     def _create(cls):
-        inner_1 = 16
-        inner_2 = 32
-        inner_3 = 16
+        inner_1 = 16*2*2
+        inner_2 = 32*2*2
+        inner_3 = 16*2*2
         return nn.Sequential(
             nn.Linear(len(cls.input_types), inner_1),
             nn.ReLU(),

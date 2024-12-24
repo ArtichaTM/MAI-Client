@@ -1,5 +1,6 @@
 from typing import Generator
-import random
+
+from mai.capnp.data_classes import ModulesOutputMapping
 
 import torch
 
@@ -7,23 +8,31 @@ __all__ = ('Transition', 'ReplayMemory')
 
 
 class Transition:
-    __slots__ = ('state', 'action', 'next_state', 'reward',)
+    __slots__ = (
+        'state', '_state_t',
+        'action', '_action_t',
+        'next_state', '_next_state_t',
+        'reward',
+    )
 
-    def __init__(self, state, action, next_state, reward) -> None:
+    def __init__(
+        self,
+        state: ModulesOutputMapping,
+        action: ModulesOutputMapping,
+        next_state: ModulesOutputMapping,
+        reward: float
+    ) -> None:
+        assert isinstance(state, ModulesOutputMapping)
+        assert isinstance(action, ModulesOutputMapping)
+        assert isinstance(next_state, ModulesOutputMapping)
+        assert isinstance(reward, float)
         self.state = state
         self.action = action
         self.next_state = next_state
         self.reward = reward
-
-        if __debug__:
-            if isinstance(self.state, torch.Tensor):
-                assert self.state.shape == (26,), f"{self.state.shape}{self.state}"
-            if isinstance(self.action, torch.Tensor):
-                assert self.action.shape == (10,), f"{self.action.shape}{self.action}"
-            if isinstance(self.next_state, torch.Tensor):
-                assert self.next_state.shape == (26,), f"{self.next_state.shape}{self.next_state}"
-            if isinstance(self.reward, torch.Tensor):
-                assert self.reward.shape == (1,), f"{self.reward.shape}{self.reward}"
+        self._state_t = None
+        self._action_t = None
+        self._next_state_t = None
 
     def __repr__(self) -> str:
         return (
@@ -35,6 +44,23 @@ class Transition:
     def __iter__(self):
         return iter((self.state, self.action, self.next_state, self.reward))
 
+    @property
+    def state_t(self) -> torch.Tensor:
+        if self._state_t is None:
+            self._state_t = self.state.toTensor()
+        return self._state_t
+
+    @property
+    def action_t(self) -> torch.Tensor:
+        if self._action_t is None:
+            self._action_t = self.action.toTensor()
+        return self._action_t
+
+    @property
+    def next_state_t(self) -> torch.Tensor:
+        if self._next_state_t is None:
+            self._next_state_t = self.next_state.toTensor()
+        return self._next_state_t
 
 
 class ReplayMemory:
@@ -47,8 +73,11 @@ class ReplayMemory:
         self._max_size = max_size if isinstance(max_size, int) else 9999
         self.q = []
 
+    def __len__(self) -> int:
+        return len(self.q)
+
     def add(self, transition: Transition) -> None:
-        if len(self.q) == self._max_size:
+        if len(self) == self._max_size:
             self.q.pop(0)
         self.q.append(transition)
 
@@ -58,6 +87,12 @@ class ReplayMemory:
         requires_grad: bool = True
     ) -> Generator[torch.Tensor, None, None]:
         raise NotImplementedError()
+
+    def avg_reward(self) -> float:
+        return self.sum_reward() / len(self)
+
+    def sum_reward(self) -> float:
+        return sum([i.reward for i in self.q])
 
     def clear(self) -> None:
         self.q = []

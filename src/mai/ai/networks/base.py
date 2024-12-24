@@ -101,7 +101,10 @@ class NNModuleBase(ABC):
             torch.nn.init.uniform_(module.weight, -1, 1)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
-        elif isinstance(module, torch.nn.ReLU):
+        elif isinstance(module, (
+            torch.nn.ReLU,
+            torch.nn.Sigmoid
+        )):
             pass
         elif isinstance(module, torch.nn.Sequential):
             for child in module.children():

@@ -366,7 +366,7 @@ class ModulesOutputMapping(dict, MutableMapping):
             if value is not None:
                 output[i] = [value]
             else:
-                output[i] = [torch.tensor(0, requires_grad=requires_grad)]
+                output[i] = [torch.tensor(0.0, requires_grad=requires_grad)]
         return type(self)(output)
 
     def getNormalizedNegative(self, key: str):
