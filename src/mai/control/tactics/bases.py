@@ -25,7 +25,9 @@ class BaseTactic(ABC):
             self.finished = True
 
     def react(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
+        assert not self.finished
         try:
+            assert self._gen.gi_running
             output = self._gen.send((state, context))
         except StopIteration:
             self.finished = True
