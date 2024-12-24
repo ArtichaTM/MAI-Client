@@ -1,6 +1,5 @@
 from time import perf_counter
 
-from regex import F
 
 from mai.functions import popup
 from mai.windows import WindowController
@@ -26,6 +25,10 @@ class CustomTraining(ModuleTrainingTactic):
         state: 'MAIGameState'
         context: 'AdditionalContext'
 
+        keys = WindowController._instance
+        assert keys is not None
+        keys.update_window()
+
         if context is None:
             print(context)
             popup("Error during context evaluation", (
@@ -35,7 +38,9 @@ class CustomTraining(ModuleTrainingTactic):
             ))
             return
 
-        if context.latest_message != 'kickoffTimerStarted':
+        if context.latest_message == 'kickoffTimerEnded':
+            keys.press_key(WinButtons.RESTART_TRAINING)
+        elif context.latest_message != 'kickoffTimerStarted':
             print(context.latest_message)
             popup("Error during training startup", (
                 "Trying to run training without entering custom training. \n"
@@ -66,9 +71,6 @@ class CustomTraining(ModuleTrainingTactic):
         next(self.rewards_plot)
 
         with Trainer(self._mc) as trainer:
-            keys = WindowController._instance
-            assert keys is not None
-            keys.update_window()
             keys.press_key(WinButtons.FORWARD)
             while True:
                 start_time = perf_counter()
