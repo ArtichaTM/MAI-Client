@@ -29,6 +29,7 @@ from mai.control.tactics.simple import (
     ButtonPress
 )
 from mai.ai.rewards import build_rewards
+from mai.ai.trainer import Trainer
 from mai.functions import popup, rewards_tracker
 from mai.settings import Settings, WinButtons
 
@@ -109,6 +110,7 @@ class Constants(enum.IntEnum):
     MODULES_POWER = enum.auto()
     REWARDS_POWER_SLIDER = enum.auto()
     REWARDS_POWER_PR = enum.auto()
+    USE_RANDOM_THRESHOLD = enum.auto()
     USE_MATCH_TYPE = enum.auto()
     USE_RESTART_REASON = enum.auto()
     USE_RESTART_TIMEOUT = enum.auto()
@@ -144,7 +146,7 @@ class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
         '_controller', '_latest_message', '_epc_update', '_epc',
-        '_mc', '_wc', '_values',
+        '_mc', '_wc', '_values', '_update_random_threshold',
 
         # Heavy updates
         '_stats_update_enabled', '_modules_update_enabled',
@@ -160,6 +162,7 @@ class MainInterface:
         (True, False): 'yellow',
         (True, True): 'green',
     }
+    _update_random_threshold: bool
     _instance: 'MainInterface | None' = None
 
     def __init__(self):
@@ -171,6 +174,7 @@ class MainInterface:
         self._rewards_tracker_gen: Generator[None, MAIGameState, None] | None = None
         self.call_functions = Queue(2)
         self._epc_update = self.epc_update_fast
+        self._update_random_threshold = False
         from mai.ai.controller import ModulesController
         self._mc = ModulesController()
         self._wc = WindowController() if WindowController._instance is None else WindowController._instance
@@ -324,6 +328,12 @@ class MainInterface:
                 self._rewards_tracker_gen.send(state)
             except StopIteration:
                 self._rewards_tracker_gen = None
+        if self._update_random_threshold:
+            trainer = Trainer._instance
+            if trainer is not None:
+                assert self._values is not None
+                trainer.random_threshold = self._values[Constants.USE_RANDOM_THRESHOLD]
+                self._update_random_threshold = False
 
     def _stats_update(self, state: MAIGameState) -> None:
         magn = lambda x: Vector.from_mai(x).magnitude()
@@ -591,7 +601,17 @@ class MainInterface:
                             sg.Button('Pause', k=Constants.USE_BUTTON_PAUSE, disabled=True),
                             sg.Button('Resume', k=Constants.USE_BUTTON_RESUME, disabled=True),
                             sg.Button('Stop', k=Constants.USE_BUTTON_STOP, disabled=True)
-                        ], 
+                        ],  [
+                            sg.Text("Random threshold:"),
+                            sg.Slider(
+                                range=(0, 0.9),
+                                default_value=0.1,
+                                resolution=0.01,
+                                orientation='horizontal',
+                                enable_events=True,
+                                k=Constants.USE_RANDOM_THRESHOLD,
+                            ),
+                        ]
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
             ], [
@@ -773,6 +793,12 @@ class MainInterface:
                         on_close
                     )
                     next(self._rewards_tracker_gen)
+                case Constants.USE_RANDOM_THRESHOLD:
+                    training = Trainer._instance
+                    if training is None:
+                        self._update_random_threshold = True
+                        continue
+                    training.random_threshold = self._values[Constants.USE_RANDOM_THRESHOLD]
                 case Constants.USE_BUTTON_TRAIN:
                     self._mc.training = True
                     try:
