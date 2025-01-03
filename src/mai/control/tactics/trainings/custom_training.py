@@ -110,7 +110,7 @@ class CustomTraining(ModuleTrainingTactic):
                     .toNormalControls()
                     .toMAIControls()
                 )
-                sleep(0.1)
+                sleep(0.25)
                 keys.press_key(WinButtons.FORWARD)
                 state, reward = yield (
                     ModulesOutputMapping

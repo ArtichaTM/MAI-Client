@@ -19,13 +19,12 @@ class NNReward(NNRewardBase):
         self.latest_distance = None
 
     def _calculate(self, state, context) -> float:
-        car_pos = Vector.from_mai(state.car.position)
         ball_pos = Vector.from_mai(state.ball.position)
         if self.latest_distance is None:
-            self.latest_distance = (car_pos - ball_pos).magnitude()
+            self.latest_distance = ball_pos.magnitude()
             return 0
 
-        distance = (car_pos - ball_pos).magnitude()
+        distance = ball_pos.magnitude()
         difference = distance - self.latest_distance
         self.latest_distance = distance
         if abs(difference) < 0.001:

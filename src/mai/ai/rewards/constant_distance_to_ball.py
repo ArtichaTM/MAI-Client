@@ -1,5 +1,3 @@
-from time import perf_counter
-
 from .base import NNRewardBase
 from mai.capnp.data_classes import Vector
 
@@ -15,9 +13,8 @@ class NNReward(NNRewardBase):
         super().reset()
 
     def _calculate(self, state, context) -> float:
-        car_pos = Vector.from_mai(state.car.position)
         ball_pos = Vector.from_mai(state.ball.position)
 
-        distance = (car_pos - ball_pos).magnitude() 
+        distance = ball_pos.magnitude() 
         distance = 1-(distance/2)
         return distance

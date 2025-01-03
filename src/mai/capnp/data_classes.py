@@ -380,9 +380,13 @@ class ModulesOutputMapping(dict, MutableMapping):
     def getNormalizedPositive(self, key: str):
         assert isinstance(key, str)
         v = self.get(key, (0.0,))
-        return 1 / (1 + exp(-float(
-            sum(v)/len(v)
-        )))
+        mean_value = sum(v) / len(v)
+        # Clamp the value to avoid overflow
+        if mean_value < -709:  # This is a common threshold for float overflow
+            return 0.0
+        elif mean_value > 709:
+            return 1.0
+        return 1 / (1 + exp(-mean_value))
 
     def toFloatControls(self) -> FloatControls:
         return FloatControls(

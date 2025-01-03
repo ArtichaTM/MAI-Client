@@ -1,7 +1,5 @@
 from typing import Generator, Mapping, TYPE_CHECKING
-from math import exp
 import random
-from queue import Queue
 
 import torch
 
@@ -58,7 +56,7 @@ class Trainer:
 
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
-        self.lr = 1e-6
+        self.lr = 1e-4
 
     def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
         if random.random() > self.random_threshold:
@@ -132,8 +130,9 @@ class Trainer:
         loss = self._loss(predicted, target)
         assert isinstance(loss, torch.Tensor)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self._mc.enabled_parameters(), 100)
         self._optimizer.step()
         # print(f", loss: {loss.item():.1f}")
 
-        self._prev_memory = self._memory
+        self._prev_memory = best_mem
         self._memory = ReplayMemory()
