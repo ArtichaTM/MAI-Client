@@ -23,6 +23,7 @@ class Trainer:
         # Training parameters
         '_optimizer',
     )
+    _instance: 'Trainer | None' = None
     _mc: 'ModulesController'
     _memory: ReplayMemory
     _prev_memory: ReplayMemory | None
@@ -36,6 +37,7 @@ class Trainer:
         self._loaded = False
 
     def __enter__[T: Trainer](self: T) -> T:
+        type(self)._instance = self
         self.hyperparameters_init()
         self._memory = ReplayMemory()
         self._prev_memory = None
@@ -53,6 +55,7 @@ class Trainer:
 
     def __exit__(self, *args) -> None:
         self._loaded = False
+        type(self)._instance = None
 
     def hyperparameters_init(self) -> None:
         self.batch_size = 10

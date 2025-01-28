@@ -13,6 +13,7 @@ from mai.capnp.data_classes import (
 from mai.functions import rewards_tracker
 from .base import ModuleTrainingTactic
 
+
 class CustomTraining(ModuleTrainingTactic):
     __slots__ = ('rewards_plot', )
 
