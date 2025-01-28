@@ -24,6 +24,7 @@ from mai.capnp.data_classes import (
 )
 from mai.control import MainController
 from mai.windows import WindowController
+from mai.control.tactics.watch_graph import WatchGraph
 from mai.control.tactics.simple import (
     SequencedCommands,
     ButtonPress
@@ -66,6 +67,7 @@ class Constants(enum.IntEnum):
     DEBUG_RESET_TRAINING = enum.auto()
     DEBUG_UPDATE_MAGNITUDE_OFFSET = enum.auto()
     DEBUG_REWARDS_TRACK = enum.auto()
+    DEBUG_SPEED_TRACK = enum.auto()
     STATS_CAR_P_X = enum.auto()
     STATS_CAR_P_Y = enum.auto()
     STATS_CAR_P_Z = enum.auto()
@@ -566,7 +568,8 @@ class MainInterface:
                         ], [
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING),
                             sg.Button("Update magnitude offset", k=Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET),
-                            sg.Button("Rewards tracker", k=Constants.DEBUG_REWARDS_TRACK)
+                            sg.Button("Rewards tracker", k=Constants.DEBUG_REWARDS_TRACK),
+                            sg.Button("Speed tracker", k=Constants.DEBUG_SPEED_TRACK)
                         ]
                     ]),
                     sg.Tab('Modules', [
@@ -793,6 +796,8 @@ class MainInterface:
                         on_close
                     )
                     next(self._rewards_tracker_gen)
+                case Constants.DEBUG_SPEED_TRACK:
+                    self._controller.add_reaction_tactic(WatchGraph())
                 case Constants.USE_RANDOM_THRESHOLD:
                     training = Trainer._instance
                     if training is None:

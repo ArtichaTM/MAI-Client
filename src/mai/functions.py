@@ -1,9 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, Generator
 from threading import current_thread
 from functools import partial
-from multiprocessing import Queue
 
-import numpy as np
 import PySimpleGUI as sg
 
 from .plotter import ProcessPlotter
@@ -77,3 +75,26 @@ def rewards_tracker(
     except GeneratorExit:
         process_plotter.finish()
 
+def values_tracker(
+    names: tuple[str],
+    on_close: Callable[[], Any] = lambda: ...,
+    **kwargs
+):
+    """Allows plotting with only names and values"""
+    assert isinstance(names, tuple)
+    assert all((isinstance(i, str) for i in names))
+    assert callable(on_close)
+    process_plotter = ProcessPlotter(names, **kwargs)
+
+    try:
+        while True:
+            values = yield
+            assert isinstance(values, tuple)
+            assert all((isinstance(i, (float, int)) for i in values))
+            try:
+                process_plotter.plot(values)
+            except BrokenPipeError:
+                on_close()
+                return
+    except GeneratorExit:
+        process_plotter.finish()

@@ -10,17 +10,20 @@ class ChildProcessPlotter:
     __slots__ = (
         'pipe', 'fig', 'ax',
         'x', 'ys', 'xlim', 'ylim',
-        'plot_names',
+        'plot_names', 'legend',
     )
 
     fig: Figure
     ax: Axes
     ys: list[list[float | None]]
+    legend: bool
 
     def terminate(self):
         plt.close('all')
 
     def call_back(self):
+        assert hasattr(self, 'pipe')
+        assert not self.pipe.closed
         while self.pipe.poll():
             command = self.pipe.recv()
             if command is None:
@@ -44,7 +47,8 @@ class ChildProcessPlotter:
         pipe,
         plot_names: tuple[str, ...],
         xlim: tuple[int, int],
-        ylim: tuple[float, float]
+        ylim: tuple[float, float],
+        legend: bool,
     ):
         self.pipe = pipe
         self.plot_names = plot_names
@@ -68,12 +72,13 @@ class ProcessPlotter:
         'closed',
     )
 
-    def __init__(self, plot_names: tuple[str, ...]):
+    def __init__(self, plot_names: tuple[str, ...], legend: bool = True):
+        assert isinstance(legend, bool)
         self.plot_pipe, plotter_pipe = mp.Pipe()
         self.plotter = ChildProcessPlotter()
         self.plot_process = mp.Process(
             target=self.plotter, args=(
-                plotter_pipe, plot_names, (0, 200), (-1.1, 1.1)
+                plotter_pipe, plot_names, (0, 200), (-1.1, 1.1), legend
             ), daemon=True
         )
         self.plot_process.start()
@@ -81,6 +86,7 @@ class ProcessPlotter:
 
     def plot(self, data: tuple[float | None, ...]):
         assert not self.closed
+        assert not self.plot_pipe.closed
         if self.plot_pipe.closed:
             self.closed = True
         self.plot_pipe.send(data)
