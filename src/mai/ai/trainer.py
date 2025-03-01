@@ -105,3 +105,5 @@ class Trainer:
 
         for prev, current in pairwise(self._memory):
             pass
+
+        self._memory.clear()
