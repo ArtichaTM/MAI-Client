@@ -1,6 +1,6 @@
 from typing import (
     Literal, Type, NamedTuple, Annotated,
-    Mapping, MutableMapping, 
+    Mapping, 
     TYPE_CHECKING
 )
 import enum
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     import torch
     CAR_OR_BALL = Literal['car'] | Literal['ball']
     V_OR_AV = Literal['v'] | Literal['av']
-    MAGNITUDE_OFFSET_TYPING = MutableMapping[CAR_OR_BALL, MutableMapping[V_OR_AV, float]]
+    MAGNITUDE_OFFSET_TYPING = dict[CAR_OR_BALL, dict[V_OR_AV, float]]
     NumpyVector = Annotated[npt.NDArray[np.float32], Literal[3]]
 
 
@@ -238,7 +238,7 @@ class AdditionalContext:
     )
 
 
-class ModulesOutputMapping(dict, MutableMapping):
+class ModulesOutputMapping(dict):
     @classmethod
     def create_random_controls[T: ModulesOutputMapping](
         cls: Type[T],
