@@ -76,6 +76,9 @@ class ReplayMemory:
     def __len__(self) -> int:
         return len(self.q)
 
+    def __iter__(self):
+        return iter(self.q)
+
     def add(self, transition: Transition) -> None:
         if len(self) == self._max_size:
             self.q.pop(0)

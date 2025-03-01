@@ -50,7 +50,7 @@ class FreeplayTraining(ModuleTrainingTactic):
 
         state, context = yield
 
-        with Trainer(self._mc) as trainer:
+        with Trainer(self._mc, self._run_parameters) as trainer:
             while True:
                 if self.rewards_plot is not None:
                     try:

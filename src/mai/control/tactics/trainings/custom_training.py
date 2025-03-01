@@ -71,7 +71,7 @@ class CustomTraining(ModuleTrainingTactic):
         )
         next(self.rewards_plot)
 
-        with Trainer(self._mc) as trainer:
+        with Trainer(self._mc, self._run_parameters) as trainer:
             keys.press_key(WinButtons.FORWARD)
             while True:
                 start_time = perf_counter()

@@ -113,6 +113,7 @@ class Constants(enum.IntEnum):
     REWARDS_POWER_SLIDER = enum.auto()
     REWARDS_POWER_PR = enum.auto()
     USE_RANDOM_THRESHOLD = enum.auto()
+    USE_RANDOM_JUMP = enum.auto()
     USE_MATCH_TYPE = enum.auto()
     USE_RESTART_REASON = enum.auto()
     USE_RESTART_TIMEOUT = enum.auto()
@@ -192,14 +193,7 @@ class MainInterface:
             assert isinstance(el, sg.Element)
             el.update(disabled=v)  # type: ignore
 
-    def epc_update_fast(self) -> None:
-        self._epc = 1 / (perf_counter() - self._latest_exchange)
-
-    def epc_update_slow(self) -> None:
-        new_epc = 1 / (perf_counter() - self._latest_exchange)
-        self._epc += (new_epc - self._epc) / new_epc
-
-    def build_run_params(self) -> RunParameters:
+    def _build_run_params(self) -> RunParameters:
         assert self._values is not None
         match_type = self._values[Constants.USE_MATCH_TYPE]
         assert isinstance(match_type, str)
@@ -237,6 +231,8 @@ class MainInterface:
 
         restart_timeout_str: str = self._values[Constants.USE_RESTART_TIMEOUT]
         restart_timeout = int(''.join((i for i in restart_timeout_str if i.isdigit())))
+        random_threshold: int = self._values[Constants.USE_RANDOM_THRESHOLD]
+        random_jump: bool = self._values[Constants.USE_RANDOM_JUMP]
 
         return RunParameters(
             type=RunType(match_type),
@@ -244,7 +240,9 @@ class MainInterface:
             ) if self._values[k]],
             rewards=rewards_power,
             restart_reasons=restart_reasons,
-            restart_timeout=restart_timeout
+            restart_timeout=restart_timeout,
+            random_threshold=random_threshold,
+            random_jump=random_jump
         )
 
     def _build_reward_row(self, reward: type['NNRewardBase']) -> list:
@@ -291,14 +289,6 @@ class MainInterface:
             ))
             default = False
         return output
-
-    def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
-        assert Exchanger._instance is not None
-        assert self._window is not None
-        controls = self._controller.react(state, context)
-        if self.call_functions.empty():
-            self.call_functions.put(partial(self._status_bars_update, state, controls))
-        return controls
 
     def _fmt(self, value: float) -> str:
         return format(value, " > 1.3f")
@@ -427,18 +417,6 @@ class MainInterface:
                 y_data_list=[y_data],
             )
         self._rewards_tracker_gen = None
-
-    def handle_exception(self, exc: Exception) -> None:
-        assert isinstance(exc, Exception)
-        if isinstance(exc, ValueError):
-            popup("Error", exc.args[0])
-            return
-        import traceback
-        tb = traceback.format_exc()
-        popup(type(exc).__qualname__, tb)
-
-    def close(self) -> None:
-        self._mc.save()
 
     def _build_window(self) -> None:
         Settings.get_current_eps = lambda: self._epc
@@ -614,6 +592,12 @@ class MainInterface:
                                 enable_events=True,
                                 k=Constants.USE_RANDOM_THRESHOLD,
                             ),
+                            sg.Checkbox(
+                                "Random jumps",
+                                k=Constants.USE_RANDOM_JUMP,
+                                default=False,
+                                enable_events=False
+                            )
                         ]
                     ])
                 ]], expand_x=True, expand_y=True, enable_events=True, k=Constants.TABS)
@@ -640,6 +624,30 @@ class MainInterface:
                 )
             ]
         ], margins=(0, 0))
+
+    def epc_update_fast(self) -> None:
+        self._epc = 1 / (perf_counter() - self._latest_exchange)
+
+    def epc_update_slow(self) -> None:
+        new_epc = 1 / (perf_counter() - self._latest_exchange)
+        self._epc += (new_epc - self._epc) / new_epc
+
+    def exchange(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
+        assert Exchanger._instance is not None
+        assert self._window is not None
+        controls = self._controller.react(state, context)
+        if self.call_functions.empty():
+            self.call_functions.put(partial(self._status_bars_update, state, controls))
+        return controls
+
+    def handle_exception(self, exc: Exception) -> None:
+        assert isinstance(exc, Exception)
+        if isinstance(exc, ValueError):
+            popup("Error", exc.args[0])
+            return
+        import traceback
+        tb = traceback.format_exc()
+        popup(type(exc).__qualname__, tb)
 
     def run(self) -> int:
         self._controller = MainController()
@@ -807,13 +815,13 @@ class MainInterface:
                 case Constants.USE_BUTTON_TRAIN:
                     self._mc.training = True
                     try:
-                        self._controller.train(self._mc, self.build_run_params())
+                        self._controller.train(self._mc, self._build_run_params())
                     except Exception as e:
                         self.handle_exception(e)
                 case Constants.USE_BUTTON_PLAY:
                     self._mc.training = False
                     try:
-                        self._controller.play(self._mc, self.build_run_params())
+                        self._controller.play(self._mc, self._build_run_params())
                     except Exception as e:
                         self.handle_exception(e)
                 case Constants.USE_BUTTON_PAUSE:
@@ -839,3 +847,6 @@ class MainInterface:
                         Constants.USE_BUTTON_TRAIN
                     )
         return 2
+
+    def close(self) -> None:
+        self._mc.save()

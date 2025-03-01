@@ -71,6 +71,8 @@ class RunParameters(NamedTuple):
     rewards: Mapping[str, float]
     restart_reasons: set[RestartReason]
     restart_timeout: int
+    random_threshold: float
+    random_jump: bool
 
 class Vector:
     __slots__ = ('_arr',)
@@ -239,11 +241,18 @@ class AdditionalContext:
 class ModulesOutputMapping(dict, MutableMapping):
     @classmethod
     def create_random_controls[T: ModulesOutputMapping](
-        cls: Type[T], requires_grad: bool = True
+        cls: Type[T],
+        /,
+        requires_grad: bool = True,
+        random_jump: bool = False
     ) -> T:
+        assert isinstance(requires_grad, bool)
+        assert isinstance(random_jump, bool)
         output = cls({
             key: [torch.rand((), requires_grad=requires_grad)] for key in CONTROLS_KEYS
         })
+        if not random_jump:
+            output['controls.jump'] = torch.tensor(0)
         return output
 
     @classmethod
