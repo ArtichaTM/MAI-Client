@@ -252,7 +252,7 @@ class ModulesOutputMapping(dict):
             key: [torch.rand((), requires_grad=requires_grad)] for key in CONTROLS_KEYS
         })
         if not random_jump:
-            output['controls.jump'] = torch.tensor(0)
+            output['controls.jump'] = [torch.tensor(0)]
         return output
 
     @classmethod
