@@ -103,7 +103,5 @@ class Trainer:
     def epoch_end(self) -> None:
         self._loss = None
 
-        print('End!')
-
         for prev, current in pairwise(self._memory):
             pass
