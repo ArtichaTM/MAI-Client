@@ -1,4 +1,5 @@
 from typing import Generator
+import random
 
 from mai.capnp.data_classes import ModulesOutputMapping
 
@@ -103,6 +104,10 @@ class ReplayMemory:
 
     def sum_reward(self) -> float:
         return sum([i.reward for i in self.q])
+
+    def sample(self, batch_size: int) -> list[Transition]:
+        assert isinstance(batch_size, int)
+        return random.sample(self.q, k=batch_size)
 
     def clear(self) -> None:
         self.q = []
