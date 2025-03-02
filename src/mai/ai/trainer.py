@@ -20,18 +20,18 @@ class Trainer:
         'params',
 
         # Hyperparameters
-        'batch_size', 'random_threshold',
-        'lr', '_steps_done',
+        'batch_size', 'lr',
+        'gamma',
 
         # Training parameters
-        '_optimizer',
+        '_optimizer', '_steps_done',
     )
     _instance: 'Trainer | None' = None
     _mc: 'ModulesController'
     _memory: ReplayMemory
     params: 'RunParameters'
     _all_rewards: Mapping[str, 'NNRewardBase']
-    _batch_size: int
+    batch_size: int
     _optimizer: torch.optim.Optimizer
 
     def __init__(
@@ -56,7 +56,6 @@ class Trainer:
         self._loss = torch.nn.MSELoss()
         self._gen = self.inference_gen()
         next(self._gen)
-        self.random_threshold = 0.1
         self._loaded = True
         return self
 
@@ -67,10 +66,11 @@ class Trainer:
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
         self.lr = 1e-4
+        self.gamma = 0.1
 
     def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
         assert isinstance(state, ModulesOutputMapping)
-        if random.random() > self.random_threshold:
+        if random.random() > self.params.random_threshold:
             return self._mc(state).extract_controls(requires_grad=True)
         else:
             return ModulesOutputMapping.create_random_controls(
