@@ -417,6 +417,16 @@ class ModulesOutputMapping(dict):
         ]
         return torch.tensor(values, requires_grad=requires_grad)
 
+    def toDiscreteTensor(self, requires_grad: bool = True) -> 'torch.Tensor':
+        values = []
+        for i in self.values():
+            if len(i) > 1:
+                v = sum(i)/len(i)
+            else:
+                v = float(i[0].item())
+            values.append(round(v))
+        return torch.tensor(values, requires_grad=requires_grad)
+
     def randomize[T: ModulesOutputMapping](
         self: T, requires_grad: bool = True
     ) -> T:
