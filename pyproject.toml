@@ -15,13 +15,13 @@ authors = [
 ]
 description = "Module AI network client"
 dependencies = [
-  'torch~=2.5.1',
-  'pycapnp~=2.0.0',
-  'pysimplegui~=5.0.7',
-  'torchrl~=0.6.0',
-  'pywin32~=308',
-  'live-plotter~=4.1.0'
+  'pycapnp>=2.0.0',
+  'pywin32>=308',
+  'live-plotter>=4.1.0',
+  "torch>=2.6.0",
+  "torchrl>=0.7.1",
 ]
+
 classifiers = [
   "Development Status :: 4 - Beta"
   , "Operating System :: POSIX :: Linux"
@@ -34,7 +34,26 @@ classifiers = [
 ]
 requires-python = ">= 3.12"
 
-[project.optional-dependencies]
-cuda = [
-  "torch[cuda]"
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", marker = "sys_platform == 'win32'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
 ]
+
+[tool.uv]
+conflicts = [
+  [
+    { extra = "cpu" },
+    { extra = "cu124" },
+  ],
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
