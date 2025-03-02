@@ -12,7 +12,7 @@ class Transition:
         'state', '_state_t',
         'action', '_action_t',
         'next_state', '_next_state_t',
-        'reward',
+        'reward', '_reward_t',
     )
 
     def __init__(
@@ -33,6 +33,7 @@ class Transition:
         self._state_t = None
         self._action_t = None
         self._next_state_t = None
+        self._reward_t = None
 
     def __repr__(self) -> str:
         return (
@@ -61,6 +62,12 @@ class Transition:
         if self._next_state_t is None:
             self._next_state_t = self.next_state.toTensor()
         return self._next_state_t
+
+    @property
+    def reward_t(self) -> torch.Tensor:
+        if self._reward_t is None:
+            self._reward_t = torch.tensor(self.reward)
+        return self._reward_t
 
 
 class ReplayMemory:
