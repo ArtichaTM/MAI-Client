@@ -28,7 +28,7 @@ class Trainer:
     )
     _instance: 'Trainer | None' = None
     _mc: 'ModulesController'
-    _memory: ReplayMemory
+    _memory: ReplayMemory[ModulesOutputMapping]
     params: 'RunParameters'
     _all_rewards: Mapping[str, 'NNRewardBase']
     batch_size: int
@@ -97,35 +97,24 @@ class Trainer:
             assert state.has_reward()
             assert not state.has_controls()
             self._select_action(state)
+
             assert state.has_controls()
+            self._memory.add(state)
+
             observations = yield
-
-            t = Transition(
-                state=state,
-                next_state=observations,
-            )
-            self._memory.add(t)
-
-            # Marking current values as previous
             state = observations
 
     def epoch_end(self) -> None:
         self._loss = None
 
-        for prev, current in pairwise(self._memory):
-            assert isinstance(prev, Transition)
-            assert isinstance(current, Transition)
-            # print(
-            #     prev.action.has_state(),
-            #     prev.action.has_controls(),
-            #     current.action.has_state(),
-            #     current.action.has_controls(),
-            #     '|',
-            #     prev.state.has_state(),
-            #     prev.state.has_controls(),
-            #     current.state.has_state(),
-            #     current.state.has_controls(),
-            #     sep='\t',
-            # )
+        # for mapping in self._memory:
+        #     print(
+        #         mapping.has_state(),
+        #         mapping.has_reward(),
+        #         mapping.has_controls(),
+        #         mapping.reward if mapping.has_reward() else None,
+        #         mapping.is_complete(),
+        #         sep='\t',
+        #     )
 
         self._memory.clear()
