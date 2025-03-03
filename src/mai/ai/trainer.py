@@ -24,7 +24,7 @@ class Trainer:
         'gamma',
 
         # Training parameters
-        '_optimizer', '_steps_done',
+        '_optimizer', '_epoch_num',
     )
     _instance: 'Trainer | None' = None
     _mc: 'ModulesController'
@@ -55,6 +55,7 @@ class Trainer:
         )
         self._loss = torch.nn.MSELoss()
         self._gen = self.inference_gen()
+        self._epoch_num = 0
         next(self._gen)
         self._loaded = True
         return self
@@ -102,16 +103,15 @@ class Trainer:
             state = observations
 
     def epoch_end(self) -> None:
-        self._loss = None
+        self._epoch_num += 1
 
-        # for mapping in self._memory:
-        #     print(
-        #         mapping.has_state(),
-        #         mapping.has_reward(),
-        #         mapping.has_controls(),
-        #         mapping.reward if mapping.has_reward() else None,
-        #         mapping.is_complete(),
-        #         sep='\t',
-        #     )
+        reward_sum = sum((i.reward for i in self._memory))
+        print(
+            f'> Epoch {self._epoch_num} info: ',
+            f'Reward summary: {reward_sum:.2f}',
+            f'Reward average: {reward_sum/len(self._memory):.2f}',
+            sep='\n'
+        )
+        
 
         self._memory.clear()
