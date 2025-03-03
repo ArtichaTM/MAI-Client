@@ -94,7 +94,7 @@ class Trainer:
 
         while True:
             assert state.has_all_state(), state.keys()
-            assert not state.has_controls(), state.keys()
+            assert not state.has_any_controls(), state.keys()
             self._select_action(state)
             self._memory.add(state)
 
