@@ -29,6 +29,34 @@ if TYPE_CHECKING:
 
 ARENA_SIZE: 'Vector'
 DENORMALIZATION_VECTOR: 'Vector'
+STATE_KEYS = (
+    'state.car.position.x',
+    'state.car.position.y',
+    'state.car.position.z',
+    'state.car.velocity.x',
+    'state.car.velocity.y',
+    'state.car.velocity.z',
+    'state.car.rotation.pitch',
+    'state.car.rotation.roll',
+    'state.car.rotation.yaw',
+    'state.car.angularVelocity.x',
+    'state.car.angularVelocity.y',
+    'state.car.angularVelocity.z',
+    'state.ball.position.x',
+    'state.ball.position.y',
+    'state.ball.position.z',
+    'state.ball.velocity.x',
+    'state.ball.velocity.y',
+    'state.ball.velocity.z',
+    'state.ball.rotation.pitch',
+    'state.ball.rotation.roll',
+    'state.ball.rotation.yaw',
+    'state.ball.angularVelocity.x',
+    'state.ball.angularVelocity.y',
+    'state.ball.angularVelocity.z',
+    'state.dead',
+    'state.boostAmount',
+)
 CONTROLS_KEYS = (
     'controls.throttle',
     'controls.steer',
@@ -41,6 +69,7 @@ CONTROLS_KEYS = (
     'controls.dodgeVertical',
     'controls.dodgeStrafe',
 )
+REWARD_KEY = '_key'
 
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
@@ -154,6 +183,7 @@ class NormalControls:
         if self.dodgeVertical.value != 0: controls.dodgeForward = float(self.dodgeVertical.value)
         if self.dodgeStrafe.value != 0: controls.dodgeStrafe = float(self.dodgeStrafe.value)
         return controls
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class FloatControls:
@@ -303,6 +333,7 @@ class ModulesOutputMapping(dict):
             ('state.boostAmount', [boostAmount]),
         ]:
             d[name] = value
+        assert set(d.keys()) == set(STATE_KEYS)
         return cls(d)
 
     @classmethod
@@ -364,6 +395,28 @@ class ModulesOutputMapping(dict):
         tensors = torch.tensor(values, requires_grad=requires_grad)
         result = tensors.mean()  # type: ignore
         return result
+
+    def has_state(self) -> bool:
+        return STATE_KEYS[0] in self
+
+    def has_controls(self) -> bool:
+        return CONTROLS_KEYS[0] in self
+
+    def has_reward(self) -> bool:
+        return REWARD_KEY in self
+
+    @property
+    def reward(self) -> float:
+        assert self.has_reward()
+        return self[REWARD_KEY]
+
+    @reward.setter
+    def reward(self, reward: float) -> None:
+        assert isinstance(reward, float)
+        self[REWARD_KEY] = reward
+
+    def is_complete(self) -> bool:
+        return self.has_state() and self.has_controls()
 
     def extract_controls[T: ModulesOutputMapping](
         self: T,

@@ -57,13 +57,12 @@ class FreeplayTraining(ModuleTrainingTactic):
                         self.rewards_plot.send(state)
                     except StopIteration:
                         rewards_plot = None
+                mapping = ModulesOutputMapping.fromMAIGameState(state)
                 reward = self.calculate_reward(state, context)
-                output = trainer.inference(
-                    ModulesOutputMapping.fromMAIGameState(state),
-                    reward
-                )
+                mapping.reward = reward
+                trainer.inference(mapping)
                 state, reward = yield (
-                    output
+                    mapping
                     .toFloatControls()
                     .toNormalControls()
                     .toMAIControls()

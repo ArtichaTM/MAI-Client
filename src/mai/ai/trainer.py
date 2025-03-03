@@ -68,42 +68,64 @@ class Trainer:
         self.lr = 1e-4
         self.gamma = 0.1
 
-    def _select_action(self, state: ModulesOutputMapping) -> ModulesOutputMapping:
+    def _select_action(self, state: ModulesOutputMapping) -> None:
         assert isinstance(state, ModulesOutputMapping)
+        assert state.has_state()
+        assert not state.has_controls()
         if random.random() > self.params.random_threshold:
-            return self._mc(state).extract_controls(requires_grad=True)
+            self._mc(state)
         else:
-            return ModulesOutputMapping.create_random_controls(
+            state.update(ModulesOutputMapping.create_random_controls(
                 random_jump=not self.params.random_jump
-            )
+            ))
+        assert state.has_controls()
 
     def _optimize_model(self) -> None:
         assert self._loaded
 
-    def inference(self, state_map: ModulesOutputMapping, reward: float) -> ModulesOutputMapping:
+    def inference(self, state_map: ModulesOutputMapping) -> None:
         assert self._loaded
-        return self._gen.send((state_map, reward))
+        assert not state_map.has_controls()
+        self._gen.send(state_map)
+        assert state_map.has_controls()
 
-    def inference_gen(self) -> Generator[ModulesOutputMapping, tuple[ModulesOutputMapping, float], None]:
-        state_map, prev_reward = yield ModulesOutputMapping.create_random_controls(
-            random_jump=not self.params.random_jump
-        )
+    def inference_gen(self) -> Generator[None, ModulesOutputMapping, None]:
+        state = yield
 
         while True:
-            action = self._select_action(state_map)
-            observation, reward = yield action
+            assert state.has_state()
+            assert state.has_reward()
+            assert not state.has_controls()
+            self._select_action(state)
+            assert state.has_controls()
+            observations = yield
 
-            assert len(action) == 10, len(action)
-
-            self._memory.add(Transition(state_map, action, observation, reward))
+            t = Transition(
+                state=state,
+                next_state=observations,
+            )
+            self._memory.add(t)
 
             # Marking current values as previous
-            state_map, prev_reward = observation, reward
+            state = observations
 
     def epoch_end(self) -> None:
         self._loss = None
 
         for prev, current in pairwise(self._memory):
-            pass
+            assert isinstance(prev, Transition)
+            assert isinstance(current, Transition)
+            # print(
+            #     prev.action.has_state(),
+            #     prev.action.has_controls(),
+            #     current.action.has_state(),
+            #     current.action.has_controls(),
+            #     '|',
+            #     prev.state.has_state(),
+            #     prev.state.has_controls(),
+            #     current.state.has_state(),
+            #     current.state.has_controls(),
+            #     sep='\t',
+            # )
 
         self._memory.clear()
