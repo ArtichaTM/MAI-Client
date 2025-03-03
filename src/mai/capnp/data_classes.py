@@ -1,6 +1,6 @@
 from typing import (
     Literal, Type, NamedTuple, Annotated,
-    Mapping, 
+    Mapping, Iterable,
     TYPE_CHECKING
 )
 import enum
@@ -427,18 +427,37 @@ class ModulesOutputMapping(dict):
     def is_complete(self) -> bool:
         return self.has_state() and self.has_controls()
 
-    def extract_controls[T: ModulesOutputMapping](
+    def extract_keys[T: ModulesOutputMapping](
         self: T,
+        keys: Iterable[str],
         requires_grad: bool = True
     ) -> T:
         output: Mapping[str, list[torch.Tensor]] = dict()
-        for i in CONTROLS_KEYS:
+        for i in keys:
             value = self._avg_from_dict(i, requires_grad=requires_grad)
             if value is not None:
                 output[i] = [value]
             else:
                 output[i] = [torch.tensor(0.0, requires_grad=requires_grad)]
         return type(self)(output)
+
+    def extract_controls[T: ModulesOutputMapping](
+        self: T,
+        requires_grad: bool = True
+    ) -> T:
+        return self.extract_keys(
+            keys=CONTROLS_KEYS,
+            requires_grad=requires_grad
+        )
+
+    def extract_state[T: ModulesOutputMapping](
+        self: T,
+        requires_grad: bool = True
+    ) -> T:
+        return self.extract_keys(
+            keys=STATE_KEYS,
+            requires_grad=requires_grad
+        )
 
     def getNormalizedNegative(self, key: str):
         assert isinstance(key, str)
