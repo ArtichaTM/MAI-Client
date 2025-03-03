@@ -4,13 +4,34 @@ from itertools import pairwise
 
 import torch
 
-from mai.capnp.data_classes import ModulesOutputMapping
+from mai.capnp.data_classes import (
+    ModulesOutputMapping,
+    STATE_KEYS,
+    CONTROLS_KEYS
+)
 from .memory import ReplayMemory, Transition
 from .rewards import NNRewardBase, build_rewards
 
 if TYPE_CHECKING:
     from .controller import ModulesController
     from mai.capnp.data_classes import RunParameters
+
+
+class Critic(torch.nn.Module):
+    def __init__(self, hidden_size: int= 32):
+        assert isinstance(hidden_size, int)
+        assert hidden_size > 8
+        super(Critic, self).__init__()
+        self.fc1 = torch.nn.Linear(len(STATE_KEYS)+len(CONTROLS_KEYS), hidden_size)
+        self.fc2 = torch.nn.Linear(hidden_size, hidden_size)
+        self.fc3 = torch.nn.Linear(hidden_size, 1)
+
+    def forward(self, state, action):
+        x = torch.cat([state, action], dim=1)
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        return self.fc3(x)
+
 
 class Trainer:
     __slots__ = (
@@ -20,11 +41,20 @@ class Trainer:
         'params',
 
         # Hyperparameters
-        'batch_size', 'lr',
+        'batch_size',
+        'lr',
+        'critic_lr',
         'gamma',
 
-        # Training parameters
-        '_optimizer', '_epoch_num',
+        # Variables
+        '_epoch_num',
+
+        # Model fields
+        '_model_optimizer',
+
+        # Critic fields
+        '_critic',
+        '_critic_optimizer',
     )
     _instance: 'Trainer | None' = None
     _mc: 'ModulesController'
@@ -32,7 +62,9 @@ class Trainer:
     params: 'RunParameters'
     _all_rewards: Mapping[str, 'NNRewardBase']
     batch_size: int
+    _critic: Critic
     _optimizer: torch.optim.Optimizer
+    _critic_optimizer: torch.optim.Optimizer
 
     def __init__(
         self,
@@ -48,15 +80,23 @@ class Trainer:
         type(self)._instance = self
         self.hyperparameters_init()
         self._memory = ReplayMemory()
-        self._optimizer = torch.optim.Adam(
-            list(self._mc.enabled_parameters()),
-            lr=self.lr,
-            amsgrad=True
-        )
         self._loss = torch.nn.MSELoss()
         self._gen = self.inference_gen()
         self._epoch_num = 0
         next(self._gen)
+
+        self._model_optimizer = torch.optim.Adam(
+            list(self._mc.enabled_parameters()),
+            lr=self.lr,
+            amsgrad=True
+        )
+        self._critic = Critic()
+        self._critic_optimizer = torch.optim.Adam(
+            self._critic.parameters(recurse=True),
+            lr=self.critic_lr,
+            amsgrad=True
+        )
+
         self._loaded = True
         return self
 
@@ -67,6 +107,7 @@ class Trainer:
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
         self.lr = 1e-4
+        self.critic_lr = 1e-4
         self.gamma = 0.1
 
     def _select_action(self, state: ModulesOutputMapping) -> None:
@@ -112,6 +153,8 @@ class Trainer:
             f'Reward average: {reward_sum/len(self._memory):.2f}',
             sep='\n'
         )
-        
+
+        batch = self._memory.sample(self.batch_size)
+        states, actions, next_states, rewards = batch.to_canonical()
 
         self._memory.clear()

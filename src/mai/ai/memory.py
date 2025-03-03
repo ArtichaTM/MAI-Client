@@ -1,5 +1,5 @@
+from typing import Generator, Iterable, NamedTuple
 from collections.abc import Iterator
-from typing import Generator, Iterable
 import random
 
 from mai.capnp.data_classes import ModulesOutputMapping
@@ -7,6 +7,13 @@ from mai.capnp.data_classes import ModulesOutputMapping
 import torch
 
 __all__ = ('Transition', 'ReplayMemory')
+
+
+class CanonicalValues(NamedTuple):
+    states: torch.Tensor
+    actions: torch.Tensor
+    next_states: torch.Tensor
+    rewards: torch.Tensor
 
 
 class Transition:
@@ -59,7 +66,8 @@ class ReplayMemory[T: ModulesOutputMapping](list):
     __slots__ = ('_max_size',)
     _max_size: int
 
-    def __init__(self, max_size: int | None = None):
+    def __init__(self, *args, max_size: int | None = None, **kwargs,):
+        super().__init__(*args, **kwargs)
         assert max_size is None or isinstance(max_size, int)
         self._max_size = max_size if isinstance(max_size, int) else 9999
 
@@ -84,6 +92,17 @@ class ReplayMemory[T: ModulesOutputMapping](list):
     def sum_reward(self) -> float:
         return sum([i.reward for i in self])
 
-    def sample(self, batch_size: int) -> list[T]:
+    def sample[S: ReplayMemory](self: S, batch_size: int) -> S:
         assert isinstance(batch_size, int)
-        return random.sample(self, k=batch_size)
+        return type(self)(random.sample(self, k=batch_size))
+
+    def to_canonical(self) -> CanonicalValues:
+        assert len(self) > 1
+        v = CanonicalValues(
+            torch.stack ([m.extract_state().toTensor() for m in self[:-1]]),
+            torch.stack ([m.extract_controls().toTensor() for m in self[:-1]]),
+            torch.stack ([m.extract_state().toTensor() for m in self[1:]]),
+            torch.tensor([m.reward for m in self[:-1]])
+        )
+        assert len(v.states) == len(v.actions) == len(v.next_states) == len(v.rewards)
+        return v
