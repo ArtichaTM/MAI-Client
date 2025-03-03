@@ -20,6 +20,7 @@ dependencies = [
   'live-plotter>=4.1.0',
   "torch>=2.6.0",
   "torchrl>=0.7.1",
+  "pysimplegui>=5.0.9",
 ]
 
 classifiers = [
@@ -39,6 +40,7 @@ torch = [
   { index = "pytorch-cpu", marker = "sys_platform == 'win32'" },
   { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
 ]
+pysimplegui = { index = "pysimplegui" }
 
 [tool.uv]
 conflicts = [
@@ -47,6 +49,12 @@ conflicts = [
     { extra = "cu124" },
   ],
 ]
+
+
+[[tool.uv.index]]
+name = "pysimplegui"
+url = "https://PySimpleGUI.net/install"
+explicit = true
 
 [[tool.uv.index]]
 name = "pytorch-cu124"
