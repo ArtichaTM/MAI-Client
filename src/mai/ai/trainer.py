@@ -78,7 +78,7 @@ class Trainer:
             state.update(ModulesOutputMapping.create_random_controls(
                 random_jump=self.params.random_jump
             ))
-        assert state.has_controls()
+        assert state.has_any_controls()
 
     def _optimize_model(self) -> None:
         assert self._loaded
@@ -96,8 +96,6 @@ class Trainer:
             assert state.has_all_state(), state.keys()
             assert not state.has_controls(), state.keys()
             self._select_action(state)
-
-            assert state.has_any_controls(), state.keys()
             self._memory.add(state)
 
             observations = yield
