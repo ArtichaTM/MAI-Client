@@ -24,6 +24,7 @@ class ModulesController:
     _all_modules: Mapping[str, NNModuleBase]
     _ordered_modules: list[NNModuleBase]
     _device: torch.device
+    models_folder: Path | None
 
     def __init__(
         self,
@@ -32,9 +33,7 @@ class ModulesController:
     ) -> None:
         super().__init__()
 
-        if models_folder is None:
-            models_folder = Path()
-        assert isinstance(models_folder, Path)
+        assert models_folder is None or isinstance(models_folder, Path)
         self.models_folder = models_folder
 
         if _device is None:
@@ -203,7 +202,7 @@ class ModulesController:
 
     def unload_all_modules(
         self,
-        save: bool | None = None,
+        save: bool = True,
         _exceptions: set[NNModuleBase | str] | None = None
     ) -> None:
         if _exceptions is None:

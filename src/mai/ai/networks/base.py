@@ -86,7 +86,9 @@ class NNModuleBase(ABC):
     def file_name(self) -> str:
         return self.get_name() + '.pt'
 
-    def path_to_model(self) -> Path:
+    def path_to_model(self) -> Path | None:
+        if self._mc.models_folder is None:
+            return None
         return self._mc.models_folder / self.file_name
 
     @classmethod
@@ -119,7 +121,9 @@ class NNModuleBase(ABC):
 
     def _load(self) -> None:
         path = self.path_to_model()
-        if path.exists():
+        if path is None:
+            self._create_empty()
+        elif path.exists():
             self._model = torch.load(path, weights_only=False)
             if self._model is None:
                 print(f"Model {path} points to incorrect model")
@@ -172,8 +176,9 @@ class NNModuleBase(ABC):
         assert isinstance(save, bool)
         assert self._model is not None
         assert self.loaded
-        if save:
-            torch.save(self._model, self.path_to_model())
+        path = self.path_to_model()
+        if save and path is not None:
+            torch.save(self._model, path)
         self._model = None
 
     def requires(self) -> set[str]:
@@ -209,4 +214,6 @@ class NNModuleBase(ABC):
         raise NotImplementedError()
 
     def save(self) -> None:
-        torch.save(self._model, self.path_to_model())
+        path = self.path_to_model()
+        assert path is not None
+        torch.save(self._model, path)
