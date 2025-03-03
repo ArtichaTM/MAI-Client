@@ -76,7 +76,7 @@ class Trainer:
             self._mc(state)
         else:
             state.update(ModulesOutputMapping.create_random_controls(
-                random_jump=not self.params.random_jump
+                random_jump=self.params.random_jump
             ))
         assert state.has_controls()
 
@@ -93,12 +93,11 @@ class Trainer:
         state = yield
 
         while True:
-            assert state.has_state()
-            assert state.has_reward()
-            assert not state.has_controls()
+            assert state.has_all_state(), state.keys()
+            assert not state.has_controls(), state.keys()
             self._select_action(state)
 
-            assert state.has_controls()
+            assert state.has_any_controls(), state.keys()
             self._memory.add(state)
 
             observations = yield

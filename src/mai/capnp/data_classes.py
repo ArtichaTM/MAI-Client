@@ -399,8 +399,17 @@ class ModulesOutputMapping(dict):
     def has_state(self) -> bool:
         return STATE_KEYS[0] in self
 
+    def has_all_state(self) -> bool:
+        return all((key in self for key in STATE_KEYS))
+
     def has_controls(self) -> bool:
         return CONTROLS_KEYS[0] in self
+
+    def has_all_controls(self) -> bool:
+        return all((key in self for key in CONTROLS_KEYS))
+
+    def has_any_controls(self) -> bool:
+        return any((key in self for key in CONTROLS_KEYS))
 
     def has_reward(self) -> bool:
         return REWARD_KEY in self
