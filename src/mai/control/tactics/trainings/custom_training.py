@@ -95,6 +95,7 @@ class CustomTraining(ModuleTrainingTactic):
                         .toNormalControls()
                         .toMAIControls()
                     )
+                keys.press_key(WinButtons.RESTART_TRAINING)
                 trainer.epoch_end()
                 self.env_reset()
                 if self.rewards_plot:
@@ -102,14 +103,6 @@ class CustomTraining(ModuleTrainingTactic):
                         self.rewards_plot.send(None)
                     except StopIteration:
                         self.rewards_plot = None
-                keys.press_key(WinButtons.RESTART_TRAINING)
-                yield (
-                    ModulesOutputMapping
-                    .create_random_controls(requires_grad=False)
-                    .toFloatControls()
-                    .toNormalControls()
-                    .toMAIControls()
-                )
                 sleep(0.25)
                 keys.press_key(WinButtons.FORWARD)
                 state, reward = yield (
