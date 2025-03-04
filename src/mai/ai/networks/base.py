@@ -102,6 +102,7 @@ class NNModuleBase(ABC):
                 torch.nn.init.zeros_(module.bias)
         elif isinstance(module, (
             torch.nn.ReLU,
+            torch.nn.LeakyReLU,
             torch.nn.Sigmoid,
             torch.nn.Dropout,
             torch.nn.Tanh,

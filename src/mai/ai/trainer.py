@@ -34,13 +34,15 @@ class Critic(torch.nn.Module):
         super(Critic, self).__init__()
         self.fc1 = torch.nn.Linear(len(STATE_KEYS)+len(CONTROLS_KEYS), hidden_size)
         self.fc2 = torch.nn.Linear(hidden_size, hidden_size)
-        self.fc3 = torch.nn.Linear(hidden_size, 1)
+        self.fc3 = torch.nn.Linear(hidden_size, hidden_size)
+        self.fc4 = torch.nn.Linear(hidden_size, 1)
 
     def forward(self, state, action):
         x = torch.cat([state, action], dim=1)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        return self.fc3(x)
+        x = torch.relu(self.fc3(x))
+        return self.fc4(x)
 
 
 class MCsController:
@@ -267,7 +269,7 @@ class Trainer:
             amsgrad=True
         )
 
-        critic_hidden_size = 32
+        critic_hidden_size = 256
         self._critic = Critic(critic_hidden_size)
         self._target_critic = Critic(critic_hidden_size)
         self._critic_optimizer = torch.optim.Adam(
@@ -287,7 +289,7 @@ class Trainer:
         self.batch_size = 10
         self.mc_lr = 1e-4
         self.critic_lr = 1e-4
-        self.gamma = 0.99
+        self.gamma = 0.97
         self.tau = 0.001
 
     #
