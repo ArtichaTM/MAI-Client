@@ -53,6 +53,7 @@ class Transition:
     def state_t(self) -> torch.Tensor:
         if self._state_t is None:
             self._state_t = self.state.toTensor()
+            assert self._state_t.dtype == torch.get_default_dtype()
         return self._state_t
 
     @property
@@ -96,13 +97,21 @@ class ReplayMemory[T: ModulesOutputMapping](list):
         assert isinstance(batch_size, int)
         return type(self)(random.sample(self, k=batch_size))
 
-    def to_canonical(self) -> CanonicalValues:
+    def to_canonical(self, requires_grad: bool = True) -> CanonicalValues:
         assert len(self) > 1
         v = CanonicalValues(
             torch.stack ([m.extract_state().toTensor() for m in self[:-1]]),
             torch.stack ([m.extract_controls().toTensor() for m in self[:-1]]),
             torch.stack ([m.extract_state().toTensor() for m in self[1:]]),
-            torch.tensor([m.reward for m in self[:-1]])
+            torch.tensor(
+                [m.reward for m in self[:-1]],
+                requires_grad=requires_grad,
+                dtype=torch.get_default_dtype()
+            )
         )
+        assert v.states.dtype == torch.get_default_dtype()
+        assert v.actions.dtype == torch.get_default_dtype()
+        assert v.next_states.dtype == torch.get_default_dtype()
+        assert v.rewards.dtype == torch.get_default_dtype()
         assert len(v.states) == len(v.actions) == len(v.next_states) == len(v.rewards)
         return v

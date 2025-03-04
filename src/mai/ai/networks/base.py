@@ -102,7 +102,13 @@ class NNModuleBase(ABC):
                 torch.nn.init.zeros_(module.bias)
         elif isinstance(module, (
             torch.nn.ReLU,
-            torch.nn.Sigmoid
+            torch.nn.Sigmoid,
+            torch.nn.Dropout,
+            torch.nn.Tanh,
+            torch.nn.LSTM,
+            torch.nn.LSTMCell,
+            torch.nn.GRU,
+            torch.nn.GRUCell,
         )):
             pass
         elif isinstance(module, torch.nn.Sequential):

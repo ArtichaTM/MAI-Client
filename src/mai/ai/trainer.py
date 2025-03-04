@@ -194,9 +194,8 @@ class Trainer:
 
         # Hyperparameters
         'batch_size',
-        'lr',
-        'critic_lr',
         'gamma',
+        'tau',
 
         # Variables
         '_epoch_num',
@@ -204,10 +203,12 @@ class Trainer:
         # Model fields
         '_mc', '_target_mc',
         '_mc_optimizer',
+        'mc_lr',
 
         # Critic fields
         '_critic', '_target_critic',
         '_critic_optimizer',
+        'critic_lr',
     )
     _instance: 'Trainer | None' = None
     _memory: ReplayMemory[ModulesOutputMapping]
@@ -262,7 +263,7 @@ class Trainer:
 
         self._mc_optimizer = torch.optim.Adam(
             list(self.modules._mc.enabled_parameters()),
-            lr=self.lr,
+            lr=self.mc_lr,
             amsgrad=True
         )
 
@@ -284,9 +285,10 @@ class Trainer:
 
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
-        self.lr = 1e-4
+        self.mc_lr = 1e-4
         self.critic_lr = 1e-4
-        self.gamma = 0.1
+        self.gamma = 0.99
+        self.tau = 0.001
 
     #
     # Training
@@ -315,6 +317,9 @@ class Trainer:
         state = yield
         assert self._loaded
 
+        print('Starting training')
+        print('Epoch | Reward sum | Reward avg | Critic loss | MC loss')
+
         while True:
             assert state.has_all_state(), state.keys()
             assert not state.has_any_controls(), state.keys()
@@ -328,15 +333,54 @@ class Trainer:
         assert self._loaded
         self._epoch_num += 1
 
-        # reward_sum = sum((i.reward for i in self._memory))
-        # print(
-        #     f'> Epoch {self._epoch_num} info: ',
-        #     f'Reward summary: {reward_sum:.2f}',
-        #     f'Reward average: {reward_sum/len(self._memory):.2f}',
-        #     sep='\n'
-        # )
+        # batch = self._memory.sample(len(self._memory))
+        batch = self._memory
+        states, actions, next_states, rewards = batch.to_canonical()
+        rewards = rewards.unsqueeze(1)
 
-        # batch = self._memory.sample(self.batch_size)
-        # states, actions, next_states, rewards = batch.to_canonical()
+        # Update critic network
+        all_actions_m: list[ModulesOutputMapping] = self._target_mc(batch)
+        next_actions = torch.stack([m.extract_controls().toTensor() for m in all_actions_m[1:]])
+        assert states .shape == next_states .shape
+        assert actions.shape == next_actions.shape
+        assert states.shape[0] == actions.shape[0]
+        assert next_states.shape[0] == actions.shape[0]
+        assert states.shape[1] == len(STATE_KEYS)
+        assert actions.shape[1] == len(CONTROLS_KEYS)
+        target_q_values: torch.Tensor = self._target_critic(next_states, next_actions)
+        real_q_values: torch.Tensor = self._critic(states, actions)
+        assert target_q_values.shape == real_q_values.shape, f"{target_q_values.shape} {real_q_values.shape}"
+        assert rewards.shape == target_q_values.shape, f"{rewards.shape} {target_q_values.shape}"
+        expected_q_values: torch.Tensor =  + (self.gamma * target_q_values)
 
+        assert real_q_values.shape == expected_q_values.shape
+        critic_loss = self._loss(real_q_values, expected_q_values.detach())
+        self._critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self._critic_optimizer.step()
+
+        # Update MC
+        mc_loss = -self._critic(
+            states,
+            torch.stack([m.extract_controls().toTensor() for m in all_actions_m[:-1]])
+        ).mean()
+        self._mc_optimizer.zero_grad()
+        mc_loss.backward()
+        self._mc_optimizer.step()
+
+        # Update target networks
+        for t_p, p in zip(self._target_mc.enabled_parameters(), self._mc.enabled_parameters()):
+            t_p.data.copy_(self.tau * p.data + (1.0 - self.tau) *t_p.data)
+        for t_p, p in zip(self._target_critic.parameters(), self._critic.parameters()):
+            t_p.data.copy_(self.tau * p.data + (1.0 - self.tau) *t_p.data)
+
+        reward_sum = sum((i.reward for i in self._memory))
+        print(
+            f"{self._epoch_num: >5}"[:5],
+            f"{reward_sum}"[:9],
+            f"{reward_sum/len(self._memory)}"[:9],
+            f"{critic_loss}"[:11],
+            f"{mc_loss}"[:7],
+            sep=' | '
+        )
         self._memory.clear()

@@ -282,7 +282,7 @@ class ModulesOutputMapping(dict):
             key: [torch.rand((), requires_grad=requires_grad)] for key in CONTROLS_KEYS
         })
         if not random_jump:
-            output['controls.jump'] = [torch.tensor(0)]
+            output['controls.jump'] = [torch.tensor(0., dtype=torch.get_default_dtype())]
         return output
 
     @classmethod
@@ -302,8 +302,14 @@ class ModulesOutputMapping(dict):
         ball_velocity = vtt(s.ball.velocity)
         ball_rotation = rtt(s.ball.rotation)
         ball_angularVelocity = vtt(s.ball.angularVelocity)
-        dead = torch.tensor(float(s.dead), requires_grad=requires_grad)
-        boostAmount = torch.tensor(float(s.boostAmount), requires_grad=requires_grad)
+        dead = torch.tensor(
+            float(s.dead),
+            requires_grad=requires_grad
+        )
+        boostAmount = torch.tensor(
+            float(s.boostAmount),
+            requires_grad=requires_grad
+        )
         for name, value in [
             ('state.car.position.x', [car_position[0]]),
             ('state.car.position.y', [car_position[1]]),

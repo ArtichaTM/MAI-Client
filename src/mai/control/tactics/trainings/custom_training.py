@@ -1,5 +1,5 @@
 from time import perf_counter, sleep
-
+from threading import Thread
 
 from mai.functions import popup
 from mai.windows import WindowController
@@ -8,7 +8,8 @@ from mai.ai.trainer import Trainer
 from mai.capnp.data_classes import (
     MAIGameState,
     AdditionalContext,
-    ModulesOutputMapping
+    ModulesOutputMapping,
+    NormalControls
 )
 from mai.functions import rewards_tracker
 from .base import ModuleTrainingTactic

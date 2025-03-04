@@ -54,20 +54,12 @@ class ModulesController:
             for module in self._ordered_modules:
                 module.inference(value)
             return value
+        if isinstance(value, list) and isinstance(value[0], ModulesOutputMapping):
+            for v in value:
+                self(v)
+            return value
         else:
-            assert isinstance(value, torch.Tensor)
-            assert value.shape != (), value
-            assert len(value.shape) == 1
-            assert (value.shape[0] % 26) == 0, value.shape
-            if value.shape == (26,):
-                return self.tensor_inference(value)
-            elif (value.shape[0] % 26) == 0:
-                v = []
-                for i in value.view(-1, 26):
-                    v.append(self.tensor_inference(i))
-                return torch.cat(v).reshape(-1, 10)  # type: ignore
-            else:
-                raise RuntimeError()
+            raise RuntimeError(f"Can't inference {type(value)}({value})")
 
     def __repr__(self) -> str:
         io = StringIO()
@@ -81,6 +73,7 @@ class ModulesController:
         return io.getvalue()
 
     def tensor_inference(self, value: torch.Tensor) -> torch.Tensor:
+        assert value.dtype == torch.get_default_dtype()
         assert value.shape != (), value
         assert value.shape == (26,), value.shape
 
@@ -123,6 +116,7 @@ class ModulesController:
             if not module.loaded:
                 continue
             for parameter in module.enabled_parameters():
+                assert parameter.dtype == torch.get_default_dtype()
                 yield parameter
 
     def iter_models(self) -> Generator[torch.nn.Module, None, None]:
