@@ -96,22 +96,22 @@ class CustomTraining(ModuleTrainingTactic):
                         .toMAIControls()
                     )
                 keys.press_key(WinButtons.RESTART_TRAINING)
-                trainer.epoch_end()
+                t = Thread(target=trainer.epoch_end)
+                t.start()
                 self.env_reset()
                 if self.rewards_plot:
                     try:
                         self.rewards_plot.send(None)
                     except StopIteration:
                         self.rewards_plot = None
-                sleep(0.25)
+                while t.is_alive():
+                    mai_c = NormalControls().toMAIControls()
+                    mai_c.skip = True
+                    yield mai_c
+                    sleep(0.1)
+                t.join(timeout=0)
                 keys.press_key(WinButtons.FORWARD)
-                state, reward = yield (
-                    ModulesOutputMapping
-                    .create_random_controls(requires_grad=False)
-                    .toFloatControls()
-                    .toNormalControls()
-                    .toMAIControls()
-                )
+                sleep(0)
 
     def close(self) -> None:
         if self.rewards_plot is not None:
