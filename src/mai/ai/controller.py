@@ -226,8 +226,21 @@ class ModulesController:
                 continue
             self.module_unload(module.name, save=save)
 
-    def copy[T: ModulesController](self: T) -> T:
-        controller = type(self)(self.device, self.models_folder)
+    def copy[T: ModulesController](
+        self: T,
+        /,
+        copy_models_folder: bool = False,
+        copy_device: bool = False
+    ) -> T:
+        models_folder = None
+        if copy_models_folder:
+            models_folder = self.models_folder
+        device = None
+        if copy_device:
+            device = self.device
+        controller = type(self)(device, models_folder)
+        del device, models_folder
+
         assert isinstance(self._ordered_modules, list)
         for module in self._ordered_modules:
             new_module = type(module)(module._model_path)

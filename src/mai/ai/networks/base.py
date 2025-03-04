@@ -120,11 +120,14 @@ class NNModuleBase(ABC):
         if self._model_path is None:
             self._create_empty()
         elif self._model_path:
-            self._model = torch.load(self._model_path, weights_only=False)
-            if self._model is None:
-                print(f"Model {self._model_path} points to incorrect model")
-                self._create_empty()
-        else:
+            try:
+                self._model = torch.load(self._model_path, weights_only=False)
+            except FileNotFoundError:
+                print(f"No model at {self._model_path} exists")
+            else:
+                if self._model is None:
+                    print(f"Model {self._model_path} points to incorrect model")
+        if self._model is None:
             self._create_empty()
         assert self._model is not None
         # self._model.to(self._mc._device)

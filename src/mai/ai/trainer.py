@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import (
     Generator, Mapping, Callable,
     TYPE_CHECKING
@@ -100,7 +101,14 @@ class MCsController:
             self._target_mc.get_all_modules()
         ):
             yield m, target_m
-        
+
+    def module_apply(
+        self,
+        name: str,
+        func: Callable[['NNModuleBase'], None]
+    ):
+        for module in self._get_module(name):
+            func(module)
 
     @property
     def training(self) -> bool:
@@ -226,7 +234,6 @@ class Trainer:
         self._all_rewards = {k: m() for k, m in build_rewards().items()}
         self._loaded = False
         self.params = params
-        self._target_mc = None
 
     def __enter__[T: Trainer](self: T) -> T:
         type(self)._instance = self
@@ -237,12 +244,21 @@ class Trainer:
         self._epoch_num = 0
         next(self._gen)
 
-        self._mc = ModulesController()
-        self._target_mc = ModulesController()
+        self._target_mc = ModulesController(
+            models_folder=Path()
+        )
+        self._mc = self._target_mc.copy(
+            copy_device=True,
+            copy_models_folder=False,
+        )
+        self._mc.models_folder = None
 
         self.modules.training = True
+        def assign_power(m: 'NNModuleBase'):
+            m.power = 1.
         for module in self.params.modules:
             self.modules.enable(module)
+            self.modules.module_apply(module, assign_power)
 
         self._mc_optimizer = torch.optim.Adam(
             list(self.modules._mc.enabled_parameters()),
@@ -312,15 +328,15 @@ class Trainer:
         assert self._loaded
         self._epoch_num += 1
 
-        reward_sum = sum((i.reward for i in self._memory))
-        print(
-            f'> Epoch {self._epoch_num} info: ',
-            f'Reward summary: {reward_sum:.2f}',
-            f'Reward average: {reward_sum/len(self._memory):.2f}',
-            sep='\n'
-        )
+        # reward_sum = sum((i.reward for i in self._memory))
+        # print(
+        #     f'> Epoch {self._epoch_num} info: ',
+        #     f'Reward summary: {reward_sum:.2f}',
+        #     f'Reward average: {reward_sum/len(self._memory):.2f}',
+        #     sep='\n'
+        # )
 
-        batch = self._memory.sample(self.batch_size)
-        states, actions, next_states, rewards = batch.to_canonical()
+        # batch = self._memory.sample(self.batch_size)
+        # states, actions, next_states, rewards = batch.to_canonical()
 
         self._memory.clear()
