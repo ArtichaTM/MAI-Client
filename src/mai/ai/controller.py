@@ -42,7 +42,7 @@ class ModulesController:
             )
         self._device = _device
 
-        self._all_modules = {k: m(self) for k, m in build_networks().items()}
+        self._all_modules = {k: m(self.models_folder) for k, m in build_networks().items()}
         self._ordered_modules = []
         self._training = False
 
@@ -120,29 +120,29 @@ class ModulesController:
         for module in self._all_modules.values():
             yield module
 
-    def get_module(self, _module: NNModuleBase | str) -> NNModuleBase:
-        if isinstance(_module, str):
-            module = self._all_modules.get(_module, None)
-            if module is None:
-                raise KeyError(
-                    f"Module {_module} is not found. "
-                    "possible modules: "
-                    f"{', '.join((i for i in self._all_modules.keys()))}"
-                )
-        else:
-            module = _module
+    def get_module(self, _module: str) -> NNModuleBase:
+        assert isinstance(_module, str)
+        module = self._all_modules.get(_module, None)
+        if module is None:
+            raise KeyError(
+                f"Module {_module} is not found. "
+                "possible modules: "
+                f"{', '.join((i for i in self._all_modules.keys()))}"
+            )
         return module
 
-    def module_enable(self, _module: NNModuleBase | str) -> int:
+    def module_enable(self, _module: str) -> int:
         """ Enables module, which includes it in `NNController._ordered_modules`
         :param name: Name of the module
         :return: Index of inserted module in `NNController._ordered_modules`
         """
+        assert isinstance(_module, str)
         module = self.get_module(_module)
+        assert isinstance(module, NNModuleBase), module
         assert module not in {i for i in self._ordered_modules}, \
             f"{self._ordered_modules}{module.enabled}"
         if not module.loaded:
-            self.module_load(module)
+            self.module_load(module.name)
         requirements = module.requires()
         requirements_indexes = []
         index = 0
@@ -167,8 +167,10 @@ class ModulesController:
         module.enabled = True
         return index
 
-    def module_disable(self, _module: NNModuleBase | str) -> None:
+    def module_disable(self, _module: str) -> None:
+        assert isinstance(_module, str)
         module = self.get_module(_module)
+        assert isinstance(module, NNModuleBase), module
         assert module in {i for i in self._ordered_modules}
         index = self._ordered_modules.index(module)
 
@@ -183,7 +185,8 @@ class ModulesController:
             self.module_disable(dependency_name)
         module.enabled = False
 
-    def module_load(self, _module: NNModuleBase | str) -> None:
+    def module_load(self, _module: str) -> None:
+        assert isinstance(_module, str)
         module = self.get_module(_module)
         assert module not in {i for i in self._ordered_modules}
         if not module.loaded:
@@ -191,12 +194,13 @@ class ModulesController:
 
     def module_unload(
         self,
-        _module: NNModuleBase | str,
+        _module: str,
         save: bool = False
     ) -> None:
+        assert isinstance(_module, str)
         module = self.get_module(_module)
         if module.enabled:
-            self.module_disable(module)
+            self.module_disable(module.name)
         assert module not in {i for i in self._ordered_modules}
         module.unload(save=save)
 
@@ -220,11 +224,18 @@ class ModulesController:
                 continue
             if not module.loaded:
                 continue
-            self.module_unload(module, save=save)
+            self.module_unload(module.name, save=save)
 
     def copy[T: ModulesController](self: T) -> T:
         controller = type(self)(self.device, self.models_folder)
         assert isinstance(self._ordered_modules, list)
         for module in self._ordered_modules:
-            controller._ordered_modules.append(module.copy(controller))
+            new_module = type(module)(module._model_path)
+            new_module.training = module.training
+            new_module.enabled = module.enabled
+            new_module.power = module.power
+            new_module._model = module._create()
+            if module._model is not None:
+                new_module._model.load_state_dict(module._model.state_dict(), strict=True)
+            controller._ordered_modules.append(new_module)
         return controller

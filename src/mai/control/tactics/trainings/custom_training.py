@@ -53,13 +53,13 @@ class CustomTraining(ModuleTrainingTactic):
         state, context = yield
 
         module_str = self._run_parameters.modules[0]
-        for module in self._mc.get_all_modules():
-            if module.enabled:
-                self._mc.module_disable(module)
+        # for module in self._mc.get_all_modules():
+        #     if module.enabled:
+        #         self._mc.module_disable(module)
 
-        module = self._mc.get_module(module_str)
-        self._mc.module_enable(module_str)
-        module.training = True
+        # module = self._mc.get_module(module_str)
+        # self._mc.module_enable(module_str)
+        # module.training = True
 
         def on_rewards_plot_closed() -> None:
             nonlocal self
@@ -71,7 +71,7 @@ class CustomTraining(ModuleTrainingTactic):
         )
         next(self.rewards_plot)
 
-        with Trainer(self._mc, self._run_parameters) as trainer:
+        with Trainer(self._run_parameters) as trainer:
             keys.press_key(WinButtons.FORWARD)
             while True:
                 start_time = perf_counter()

@@ -123,10 +123,10 @@ class Constants(enum.IntEnum):
     USE_BUTTON_RESUME = enum.auto()
     USE_BUTTON_STOP = enum.auto()
 
-    def module(self, module: 'NNModuleBase') -> str:
-        return f"{self}{module.name.replace('_', '-')}-"
+    def module(self, module: type['NNModuleBase']) -> str:
+        return f"{self}{module.get_name().replace('_', '-')}-"
 
-    def module_iter(self, modules: Iterable['NNModuleBase']) -> Generator[str, None, None]:
+    def module_iter(self, modules: Iterable[type['NNModuleBase']]) -> Generator[str, None, None]:
         for module in modules:
             yield self.module(module)
 
@@ -149,7 +149,7 @@ class MainInterface:
     __slots__ = (
         '_window', '_latest_exchange', '_exchange_func',
         '_controller', '_latest_message', '_epc_update', '_epc',
-        '_mc', '_wc', '_values', '_update_random_threshold',
+        '_wc', '_values',
 
         # Heavy updates
         '_stats_update_enabled', '_modules_update_enabled',
@@ -177,9 +177,7 @@ class MainInterface:
         self._rewards_tracker_gen: Generator[None, MAIGameState, None] | None = None
         self.call_functions = Queue(2)
         self._epc_update = self.epc_update_fast
-        self._update_random_threshold = False
         from mai.ai.controller import ModulesController
-        self._mc = ModulesController()
         self._wc = WindowController() if WindowController._instance is None else WindowController._instance
         self._build_window()
 
@@ -203,8 +201,9 @@ class MainInterface:
             Constants.USE_BUTTON_PLAY,
             Constants.USE_BUTTON_TRAIN
         )
-        module_checkbox_keys = dict()
-        for m in self._mc.get_all_modules():
+        module_checkbox_keys: dict[str, type['NNModuleBase']] = dict()
+        from mai.ai.networks import build_networks
+        for m in build_networks().values():
             module_checkbox_keys[
                 Constants.MODULES_CHECKBOX.module(m)
             ] = m
@@ -233,11 +232,13 @@ class MainInterface:
         restart_timeout = int(''.join((i for i in restart_timeout_str if i.isdigit())))
         random_threshold: int = self._values[Constants.USE_RANDOM_THRESHOLD]
         random_jump: bool = self._values[Constants.USE_RANDOM_JUMP]
+        modules = [v.get_name() for k, v in module_checkbox_keys.items(
+        ) if self._values[k]]
+        assert all((isinstance(i, str) for i in modules))
 
         return RunParameters(
             type=RunType(match_type),
-            modules=[v.name for k, v in module_checkbox_keys.items(
-            ) if self._values[k]],
+            modules=modules,
             rewards=rewards_power,
             restart_reasons=restart_reasons,
             restart_timeout=restart_timeout,
@@ -263,9 +264,9 @@ class MainInterface:
             )
         ]
 
-    def _build_module_row(self, module: 'NNModuleBase') -> list[sg.Element]:
+    def _build_module_row(self, module: type['NNModuleBase']) -> list[sg.Element]:
         return [
-            sg.Text(module.name[:15].rjust(15,), p=(0, 0)),
+            sg.Text(module.get_name()[:15].rjust(15,), p=(0, 0)),
             sg.Checkbox(
                 '',
                 k=Constants.MODULES_CHECKBOX.module(module),
@@ -320,12 +321,6 @@ class MainInterface:
                 self._rewards_tracker_gen.send(state)
             except StopIteration:
                 self._rewards_tracker_gen = None
-        if self._update_random_threshold:
-            trainer = Trainer._instance
-            if trainer is not None:
-                assert self._values is not None
-                trainer.random_threshold = self._values[Constants.USE_RANDOM_THRESHOLD]
-                self._update_random_threshold = False
 
     def _stats_update(self, state: MAIGameState) -> None:
         magn = lambda x: Vector.from_mai(x).magnitude()
@@ -373,12 +368,13 @@ class MainInterface:
                 self._update(getattr(Constants, f'STATS_CAR_{letter}{i}_Z'), self._fmt(car.position.z))
 
     def _modules_update(self) -> None:
-        for module in self._mc.get_all_modules():
+        from mai.ai.networks import build_networks
+        for module in build_networks().values():
             progress_bar = self[Constants.MODULES_POWER.module(module)]
-            progress_bar.update(round(module.power*100))
-            checkbox = self[Constants.MODULES_CHECKBOX.module(module)]
-            checkbox_color = type(self).module_state_to_color[(module.loaded, module.enabled)]
-            checkbox.update(checkbox_color=checkbox_color)
+            progress_bar.update(100)
+            # checkbox = self[Constants.MODULES_CHECKBOX.module(module)]
+            # checkbox_color = type(self).module_state_to_color[(module.loaded, module.enabled)]
+            # checkbox.update(checkbox_color=checkbox_color)
 
     def _rewards_tracker_debug(self) -> Generator[None, MAIGameState, None]:
         reward_classes = [m() for m in build_rewards().values()]
@@ -420,6 +416,7 @@ class MainInterface:
 
     def _build_window(self) -> None:
         Settings.get_current_eps = lambda: self._epc
+        from mai.ai.networks import build_networks
         self._window = sg.Window('MAI', [
             [
                 sg.TabGroup([[
@@ -551,7 +548,7 @@ class MainInterface:
                         ]
                     ]),
                     sg.Tab('Modules', [
-                        self._build_module_row(nn) for nn in self._mc.get_all_modules()
+                        self._build_module_row(nn) for nn in build_networks().values()
                     ]),
                     sg.Tab('Rewards', [
                         self._build_reward_row(r) for r in build_rewards().values()
@@ -806,22 +803,14 @@ class MainInterface:
                     next(self._rewards_tracker_gen)
                 case Constants.DEBUG_SPEED_TRACK:
                     self._controller.add_reaction_tactic(WatchGraph())
-                case Constants.USE_RANDOM_THRESHOLD:
-                    training = Trainer._instance
-                    if training is None:
-                        self._update_random_threshold = True
-                        continue
-                    training.random_threshold = self._values[Constants.USE_RANDOM_THRESHOLD]
                 case Constants.USE_BUTTON_TRAIN:
-                    self._mc.training = True
                     try:
-                        self._controller.train(self._mc, self._build_run_params())
+                        self._controller.train(self._build_run_params())
                     except Exception as e:
                         self.handle_exception(e)
                 case Constants.USE_BUTTON_PLAY:
-                    self._mc.training = False
                     try:
-                        self._controller.play(self._mc, self._build_run_params())
+                        self._controller.play(self._build_run_params())
                     except Exception as e:
                         self.handle_exception(e)
                 case Constants.USE_BUTTON_PAUSE:
@@ -849,4 +838,4 @@ class MainInterface:
         return 2
 
     def close(self) -> None:
-        self._mc.save()
+        pass

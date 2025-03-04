@@ -40,6 +40,7 @@ def main():
             if exit_code == 0:
                 return
         restarts += 1
+        print(f'Restarting because of exit code {exit_code}')
         if restarts > 5:
             raise RuntimeError("Too many restarts")
 

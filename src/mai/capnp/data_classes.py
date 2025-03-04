@@ -389,10 +389,20 @@ class ModulesOutputMapping(dict):
     def _avg_from_dict(
         self, name: str, requires_grad: bool = True
     ) -> 'torch.Tensor | None':
-        values: list['torch.Tensor'] = self.get(name, [])
+        values: list[torch.Tensor] = self.get(name, [])
         if not values:
             return None
-        tensors = torch.tensor(values, requires_grad=requires_grad)
+        assert isinstance(values, list)
+        assert all((isinstance(i, torch.Tensor) for i in values)), values
+        try:
+            tensors = torch.tensor(
+                values,
+                dtype=torch.float,
+                requires_grad=requires_grad
+            )
+        except RuntimeError:
+            print(values)
+            raise
         result = tensors.mean()  # type: ignore
         return result
 

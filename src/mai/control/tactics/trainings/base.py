@@ -23,17 +23,15 @@ __all__ = ('BaseTrainingTactic',)
 
 class BaseTrainingTactic(BaseTactic):
     __slots__ = (
-        '_mc', '_run_parameters', '_rewards',
-        '_prev_reward',
+        '_run_parameters', '_rewards',
+        '_prev_reward', '_trainer'
     )
 
     def __init__(
         self,
-        nnc: 'ModulesController',
         run_parameters: RunParameters
     ) -> None:
         super().__init__()
-        self._mc = nnc
         self._run_parameters = run_parameters
         self._prev_reward: float = 0.0
         self._rewards: list[NNRewardBase] = []
@@ -84,18 +82,6 @@ class ModuleTrainingTactic(BaseTrainingTactic):
             )
             self.finished = True
             return
-
-        _module = modules[0]
-        module = self._mc.get_module(_module)
-
-        self._mc.unload_all_modules(
-            _exceptions={module,},
-            save=True
-        )
-        self._mc.training = True
-        if not module.enabled:
-            self._mc.module_enable(module)
-            module.power = 1
 
         self.reasons_to_func_map: Mapping[RestartReason, Callable[[
             MAIGameState, AdditionalContext
