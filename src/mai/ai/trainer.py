@@ -221,7 +221,7 @@ class Trainer:
     _critic_optimizer: torch.optim.Optimizer
 
     _mc: ModulesController
-    _target_mc: ModulesController | None
+    _target_mc: ModulesController
     _mc_optimizer: torch.optim.Optimizer
 
     def __init__(
@@ -298,7 +298,7 @@ class Trainer:
         assert state.has_state()
         assert not state.has_controls()
         if random.random() > self.params.random_threshold:
-            self._mc(state)
+            self._target_mc(state)
         else:
             state.update(ModulesOutputMapping.create_random_controls(
                 random_jump=self.params.random_jump

@@ -68,6 +68,12 @@ class ModulesController:
             else:
                 raise RuntimeError()
 
+    def __repr__(self) -> str:
+        io = StringIO()
+        return (
+            f"<MC "
+        )
+
     def tensor_inference(self, value: torch.Tensor) -> torch.Tensor:
         assert value.shape != (), value
         assert value.shape == (26,), value.shape
