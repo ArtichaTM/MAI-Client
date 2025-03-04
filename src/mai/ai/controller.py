@@ -1,3 +1,4 @@
+from io import StringIO
 from typing import Generator, Mapping, TYPE_CHECKING
 from pathlib import Path
 
@@ -70,9 +71,14 @@ class ModulesController:
 
     def __repr__(self) -> str:
         io = StringIO()
-        return (
-            f"<MC "
-        )
+        io.write('<MC')
+        if self.models_folder is not None:
+            io.write(f' path={self.models_folder}')
+        loaded = sum((1 if m.loaded else 0 for m in self.get_all_modules()))
+        enabled = sum((1 if m.loaded else 0 for m in self.get_all_modules()))
+        io.write(f" with {enabled}/{loaded}/{len(self._all_modules)}")
+        io.write('>')
+        return io.getvalue()
 
     def tensor_inference(self, value: torch.Tensor) -> torch.Tensor:
         assert value.shape != (), value
@@ -114,6 +120,8 @@ class ModulesController:
 
     def enabled_parameters(self) -> Generator[torch.nn.Parameter, None, None]:
         for module in self.get_all_modules():
+            if not module.loaded:
+                continue
             for parameter in module.enabled_parameters():
                 yield parameter
 
