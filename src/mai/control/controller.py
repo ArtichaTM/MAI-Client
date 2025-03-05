@@ -37,9 +37,10 @@ class MainController:
                 return create_dummy_controls()
         assert isinstance(self._current_tactic, BaseTactic), self._current_tactic
         controls = self._current_tactic.react(state, context)
-        assert isinstance(self._current_tactic, BaseTactic), self._current_tactic
-        if self._current_tactic.finished:
-            self._current_tactic = None
+        if self._current_tactic is not None:
+            assert isinstance(self._current_tactic, BaseTactic), self._current_tactic
+            if self._current_tactic.finished:
+                self._current_tactic = None
         return controls
 
     def add_reaction_tactic(self, tactic: BaseTactic) -> None:
