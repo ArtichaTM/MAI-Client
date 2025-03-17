@@ -4,12 +4,13 @@ from typing import (
     TYPE_CHECKING
 )
 import random
-from itertools import pairwise
+# from itertools import chain, pairwise
 
 import torch
 
 from mai.capnp.data_classes import (
     ModulesOutputMapping,
+    # Vector,
     STATE_KEYS,
     CONTROLS_KEYS
 )
@@ -339,6 +340,21 @@ class Trainer:
         batch = self._memory
         states, actions, next_states, rewards = batch.to_canonical()
         rewards = rewards.unsqueeze(1)
+
+        # import numpy as np
+        # with open('temp.csv', mode='w', encoding='utf-8') as f:
+        #     keys = (*STATE_KEYS, *CONTROLS_KEYS)
+        #     f.write(','.join(keys))
+        #     f.write(',reward')
+        #     for m in batch:
+        #         f.write('\n')
+        #         for key in keys:
+        #             v = m._avg_from_dict(key, requires_grad=False)
+        #             assert v is not None
+        #             f.write(str(float(v)))
+        #             f.write(',')
+        #         f.write(str(m.reward))
+
 
         # Update critic network
         all_actions_m: list[ModulesOutputMapping] = self._target_mc(batch)
