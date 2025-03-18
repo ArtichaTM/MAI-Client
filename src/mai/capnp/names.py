@@ -4,10 +4,10 @@ import os
 
 import capnp  # type: ignore
 
-capnp.remove_import_hook()
+capnp.remove_import_hook()  # type: ignore
 here = os.path.dirname(os.path.abspath(__file__))
 module_file = os.path.abspath(os.path.join(here, "data.capnp"))
-module = capnp.load(module_file)  # pylint: disable=no-member
+module = capnp.load(module_file)  # type: ignore
 MAIVector = module.MAIVector
 MAIVectorBuilder = MAIVector
 MAIVectorReader = MAIVector
