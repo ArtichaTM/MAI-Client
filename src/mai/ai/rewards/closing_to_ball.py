@@ -3,6 +3,7 @@ from time import perf_counter
 from .base import NNRewardBase
 from mai.capnp.data_classes import Vector
 
+
 class NNReward(NNRewardBase):
     __slots__ = (
         'multiplier',
@@ -30,7 +31,6 @@ class NNReward(NNRewardBase):
             self.latest_answer = perf_counter()-1
             self.result = 0
             return 0
-
         current = perf_counter()
         if (current - self.latest_answer) > self._update_seconds:
             distance = (
@@ -46,5 +46,4 @@ class NNReward(NNRewardBase):
                 self.result = difference**0.7 * self.multiplier
             self.latest_distance = distance
             self.latest_answer = current
-
         return self.result
