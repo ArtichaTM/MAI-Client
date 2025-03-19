@@ -1,13 +1,11 @@
 """This is an automatically generated stub for `data.capnp`."""
 
-import os
+from pathlib import Path
 
-import capnp  # type: ignore
+import capnp
 
 capnp.remove_import_hook()  # type: ignore
-here = os.path.dirname(os.path.abspath(__file__))
-module_file = os.path.abspath(os.path.join(here, "data.capnp"))
-module = capnp.load(module_file)  # type: ignore
+module = capnp.load(str(Path(__file__).parent / '../../../../CapnP/data.capnp'))  # type: ignore
 MAIVector = module.MAIVector
 MAIVectorBuilder = MAIVector
 MAIVectorReader = MAIVector

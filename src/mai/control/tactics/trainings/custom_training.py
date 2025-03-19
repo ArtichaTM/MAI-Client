@@ -1,5 +1,5 @@
+from typing import Generator
 from time import perf_counter, sleep
-from threading import Thread
 
 from mai.functions import popup
 from mai.windows import WindowController
@@ -7,6 +7,7 @@ from mai.settings import WinButtons
 from mai.ai.trainer import Trainer
 from mai.capnp.data_classes import (
     MAIGameState,
+    MAIControls,
     AdditionalContext,
     ModulesOutputMapping,
     NormalControls
@@ -22,10 +23,13 @@ class CustomTraining(ModuleTrainingTactic):
         self.rewards_plot = None
         return super().prepare()
 
-    def react_gen(self):
-        state, context = yield
-        state: 'MAIGameState'
-        context: 'AdditionalContext'
+    def react_gen(
+        self
+    ) -> Generator[MAIControls, tuple[MAIGameState, AdditionalContext], None]:
+        c = NormalControls().toMAIControls()
+        c.skip = True
+        state, context = yield c
+        del c
 
         keys = WindowController._instance
         assert keys is not None
@@ -72,49 +76,45 @@ class CustomTraining(ModuleTrainingTactic):
         )
         next(self.rewards_plot)
 
-        with Trainer(self._run_parameters) as trainer:
-            keys.press_key(WinButtons.FORWARD)
-            while True:
-                start_time = perf_counter()
-                while not self.is_restarting(
-                    state,
-                    context,
-                    time_since_start=start_time
-                ):
-                    if self.rewards_plot is not None:
+        trainer = Trainer(self._run_parameters)
+        yield from self.async_wait(trainer.prepare)
+
+        try:
+            with trainer:
+                keys.press_key(WinButtons.FORWARD)
+                while True:
+                    start_time = perf_counter()
+                    while not self.is_restarting(
+                        state,
+                        context,
+                        time_since_start=start_time
+                    ):
+                        if self.rewards_plot is not None:
+                            try:
+                                self.rewards_plot.send(state)
+                            except StopIteration:
+                                self.rewards_plot = None
+                        mapping = ModulesOutputMapping.fromMAIGameState(state)
+                        reward = self.calculate_reward(state, context)
+                        mapping.reward = reward
+                        trainer.inference(mapping)
+                        state, reward = yield (
+                            mapping
+                            .toFloatControls()
+                            .toNormalControls()
+                            .toMAIControls()
+                        )
+                    keys.press_key(WinButtons.RESTART_TRAINING)
+                    yield from self.async_wait(trainer.epoch_end)
+                    self.env_reset()
+                    if self.rewards_plot:
                         try:
-                            self.rewards_plot.send(state)
+                            self.rewards_plot.send(None)
                         except StopIteration:
                             self.rewards_plot = None
-                    mapping = ModulesOutputMapping.fromMAIGameState(state)
-                    reward = self.calculate_reward(state, context)
-                    mapping.reward = reward
-                    trainer.inference(mapping)
-                    state, reward = yield (
-                        mapping
-                        .toFloatControls()
-                        .toNormalControls()
-                        .toMAIControls()
-                    )
-                keys.press_key(WinButtons.RESTART_TRAINING)
-                t = Thread(target=trainer.epoch_end)
-                t.start()
-                self.env_reset()
-                if self.rewards_plot:
-                    try:
-                        self.rewards_plot.send(None)
-                    except StopIteration:
-                        self.rewards_plot = None
-                while t.is_alive():
-                    mai_c = NormalControls().toMAIControls()
-                    mai_c.skip = True
-                    yield mai_c
-                    sleep(0.1)
-                t.join(timeout=0)
-                keys.press_key(WinButtons.FORWARD)
-                sleep(0)
-
-    def close(self) -> None:
-        if self.rewards_plot is not None:
-            self.rewards_plot.close()
-        return super().close()
+                    keys.press_key(WinButtons.FORWARD)
+                    sleep(0)
+        except GeneratorExit:
+            if self.rewards_plot:
+                self.rewards_plot.close()
+            keys.press_key(WinButtons.RESTART_TRAINING)

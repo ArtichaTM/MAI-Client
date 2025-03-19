@@ -1,21 +1,19 @@
-from typing import TYPE_CHECKING, Callable, Mapping
-from time import perf_counter
+from typing import TYPE_CHECKING, Callable, Mapping, Generator
+from time import perf_counter, sleep
+from threading import Thread
 
-from mai.ai.controller import ModulesController
-from mai.capnp.data_classes import RunParameters
+from mai.capnp.data_classes import RunParameters, NormalControls
 
 from ..bases import BaseTactic
 from mai.functions import popup
 from mai.capnp.data_classes import (
     RunParameters,
     MAIGameState,
+    MAIControls,
     AdditionalContext,
     RestartReason
 )
 from mai.ai.rewards import build_rewards, NNRewardBase
-
-if TYPE_CHECKING:
-    from mai.ai.controller import ModulesController
 
 
 __all__ = ('BaseTrainingTactic',)
@@ -43,6 +41,20 @@ class BaseTrainingTactic(BaseTactic):
             reward = rewards[reward_str]()
             reward.power = power
             self._rewards.append(reward)
+
+    def async_wait(
+        self,
+        func: Callable,
+        name: str = 'Trainer async wait'
+    ) -> Generator[MAIControls, tuple[MAIGameState, AdditionalContext], None]:
+        t = Thread(target=func, name=name)
+        t.start()
+        while t.is_alive():
+            mai_c = NormalControls().toMAIControls()
+            mai_c.skip = True
+            yield mai_c
+            sleep(0.1)
+        t.join(timeout=0)
 
     def calculate_reward(self, state: 'MAIGameState', context: 'AdditionalContext') -> float:
         reward: float = 0

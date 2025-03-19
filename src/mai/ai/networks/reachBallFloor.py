@@ -30,10 +30,10 @@ class NNModule(NNModuleBase):
         'controls.yaw',
         'controls.roll',
         'controls.boost',
-        'controls.jump',
+        # 'controls.jump',
         'controls.handbrake',
-        'controls.dodgeVertical',
-        'controls.dodgeStrafe',
+        # 'controls.dodgeVertical',
+        # 'controls.dodgeStrafe',
     )
 
     @classmethod
@@ -47,15 +47,15 @@ class NNModule(NNModuleBase):
             nn.LeakyReLU(),
 
             nn.Linear(inner_1, inner_2),
-            # nn.Dropout(),
+            nn.Dropout(0.2),
             nn.LeakyReLU(),
 
             nn.Linear(inner_2, inner_3),
-            # nn.Dropout(),
+            nn.Dropout(0.2),
             nn.LeakyReLU(),
 
             nn.Linear(inner_3, inner_4),
-            # nn.Dropout(),
+            nn.Dropout(0.2),
             nn.LeakyReLU(),
 
             nn.Linear(inner_4, len(cls.output_types)),

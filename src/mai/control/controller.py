@@ -64,13 +64,13 @@ class MainController:
             case RunType.FREEPLAY:
                 tactic = trainings.FreeplayTraining(params)
             case RunType.v11:
-                pass
+                raise NotImplementedError()
             case RunType.v22:
-                pass
+                raise NotImplementedError()
             case RunType.v33:
-                pass
+                raise NotImplementedError()
             case RunType.v44:
-                pass
+                raise NotImplementedError()
 
         if tactic is None:
             raise ValueError(

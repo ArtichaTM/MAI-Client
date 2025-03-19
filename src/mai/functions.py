@@ -75,6 +75,7 @@ def rewards_tracker(
     except GeneratorExit:
         process_plotter.finish()
 
+
 def values_tracker(
     names: tuple[str],
     on_close: Callable[[], Any] = lambda: ...,

@@ -1,1 +1,1 @@
-CapnP/data.capnp
+../../../../CapnP/data.capnp

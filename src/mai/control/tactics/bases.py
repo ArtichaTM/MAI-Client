@@ -12,10 +12,15 @@ class BaseTactic(ABC):
     finished: when set to true in react, this call will be the last
     """
     __slots__ = ('finished', '_gen')
+    finished: bool
+    _gen: Generator[MAIControls, tuple[
+        MAIGameState, AdditionalContext
+    ], None] | None
 
     def __init__(self) -> None:
         super().__init__()
         self.finished = False
+        self._gen = None
 
     def prepare(self) -> None:
         self._gen = self.react_gen()
@@ -26,6 +31,7 @@ class BaseTactic(ABC):
 
     def react(self, state: MAIGameState, context: AdditionalContext) -> MAIControls:
         assert not self.finished
+        assert self._gen is not None
         try:
             output = self._gen.send((state, context))
         except StopIteration:
@@ -36,8 +42,9 @@ class BaseTactic(ABC):
     @abstractmethod
     def react_gen(
         self
-    ) -> Generator['MAIControls | None', tuple[MAIGameState, AdditionalContext], None]:
+    ) -> Generator[MAIControls, tuple[MAIGameState, AdditionalContext], None]:
         raise NotImplementedError()
 
     def close(self) -> None:
-        pass
+        if self._gen is not None:
+            self._gen.close()

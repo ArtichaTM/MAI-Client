@@ -109,6 +109,12 @@ class Vector:
     def __init__(self, arr: 'NumpyVector') -> None:
         self._arr = arr
 
+    def __str__(self) -> str:
+        return str(self._arr)
+
+    def __repr__(self) -> str:
+        return f"<V {self._arr[0]:.2f} {self._arr[1]:.2f} {self._arr[2]:.2f}>"
+
     def __sub__(self: 'Vector', other: 'Vector') -> 'Vector':
         return type(self)(self._arr - other._arr)
 

@@ -14,6 +14,7 @@ from mai.capnp.data_classes import (
     STATE_KEYS,
     CONTROLS_KEYS
 )
+from mai.functions import values_tracker
 from .memory import ReplayMemory
 from .rewards import NNRewardBase, build_rewards
 from .controller import ModulesController
@@ -241,6 +242,18 @@ class Trainer:
 
     def __enter__[T: Trainer](self: T) -> T:
         type(self)._instance = self
+        if not self._loaded:
+           self.prepare()
+        return self
+
+    def __exit__(self, *args) -> None:
+        self._loaded = False
+        type(self)._instance = None
+        self._target_mc.save()
+
+    def prepare(self) -> None:
+        if self._loaded:
+            return
         self.hyperparameters_init()
         self._memory = ReplayMemory()
         self._loss = torch.nn.MSELoss()
@@ -280,11 +293,6 @@ class Trainer:
         )
 
         self._loaded = True
-        return self
-
-    def __exit__(self, *args) -> None:
-        self._loaded = False
-        type(self)._instance = None
 
     def hyperparameters_init(self) -> None:
         self.batch_size = 10
@@ -355,7 +363,6 @@ class Trainer:
         #             f.write(',')
         #         f.write(str(m.reward))
 
-
         # Update critic network
         all_actions_m: list[ModulesOutputMapping] = self._target_mc(batch)
         next_actions = torch.stack([m.extract_controls().toTensor() for m in all_actions_m[1:]])
@@ -402,3 +409,6 @@ class Trainer:
             sep=' | '
         )
         self._memory.clear()
+
+    def close(self) -> None:
+        pass
