@@ -248,13 +248,19 @@ class MainInterface:
 
     def _build_reward_row(self, reward: type['NNRewardBase']) -> list:
         return [
-            sg.Text(reward.get_pretty_name()[:20].rjust(15,), p=(0, 0)),
+            sg.Push(),
+            sg.Text(
+                reward.get_pretty_name(), p=(0, 0),
+                expand_x=True,
+                justification='right'
+            ),
             sg.Slider(
                 range=(0, 1),
                 default_value=1,
                 resolution=0.01,
                 orientation='horizontal',
                 enable_events=False,
+                s=(10, 18),
                 k=Constants.REWARDS_POWER_SLIDER.reward(reward.get_name()),
             ),
             sg.Progress(
@@ -266,7 +272,11 @@ class MainInterface:
 
     def _build_module_row(self, module: type['NNModuleBase']) -> list[sg.Element]:
         return [
-            sg.Text(module.get_name()[:15].rjust(15,), p=(0, 0)),
+            sg.Text(
+                module.get_name(), p=(0, 0),
+                expand_x=True,
+                justification='right'
+            ),
             sg.Checkbox(
                 '',
                 k=Constants.MODULES_CHECKBOX.module(module),
