@@ -346,6 +346,9 @@ class Trainer:
 
         # batch = self._memory.sample(len(self._memory))
         batch = self._memory
+        batch.rewards_differentiate()
+        batch.rewards_affect_previous(percent=0.3, start_multiplier=0.3)
+        batch.rewards_normalize()
         states, actions, next_states, rewards = batch.to_canonical()
         rewards = rewards.unsqueeze(1)
 

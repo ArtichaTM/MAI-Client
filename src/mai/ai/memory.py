@@ -5,6 +5,7 @@ import random
 from mai.capnp.data_classes import ModulesOutputMapping
 
 import torch
+import numpy as np
 
 __all__ = ('Transition', 'ReplayMemory')
 
@@ -115,3 +116,35 @@ class ReplayMemory[T: ModulesOutputMapping](list):
         assert v.rewards.dtype == torch.get_default_dtype()
         assert len(v.states) == len(v.actions) == len(v.next_states) == len(v.rewards)
         return v
+
+    def rewards_differentiate(self) -> None:
+        rewards = [self[0].reward]
+        for i in range(1, len(self)):
+            rewards.append(self[i].reward - self[i-1].reward)
+        assert len(rewards) == len(self)
+        for new_reward, mapping in zip(rewards, self):
+            mapping.reward = new_reward
+
+    def rewards_normalize(self) -> float:
+        """Normalizes all values to [0; 1]
+        :return: Multiplier (1/maximum_reward)
+        """
+        rewards = [i.reward for i in self]
+        multiplier = 1/max(rewards)
+        for mapping in self:
+            mapping.reward *= multiplier
+        return multiplier
+
+    def rewards_affect_previous(
+        self,
+        percent: float = 0.1,
+        start_multiplier: float = 0.5
+    ) -> None:
+        effect_range = int(len(self) * percent)
+        assert effect_range > 0
+        multipliers = list(np.linspace(0.5, 0, effect_range+1)[:-1])
+        for index in range(effect_range, len(self)):
+            for reverse_index in range(max(0, index-effect_range), index):
+                multiplier = multipliers[index-reverse_index-1]
+                diff = self[index].reward - self[reverse_index].reward
+                self[reverse_index].reward += diff*multiplier
