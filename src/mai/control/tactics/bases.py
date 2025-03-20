@@ -1,5 +1,6 @@
 from typing import Generator
 from abc import ABC, abstractmethod
+from time import sleep
 
 from mai.capnp.names import MAIControls, MAIGameState
 from mai.capnp.data_classes import AdditionalContext
@@ -46,5 +47,12 @@ class BaseTactic(ABC):
         raise NotImplementedError()
 
     def close(self) -> None:
+        self.finished = True
         if self._gen is not None:
-            self._gen.close()
+            while True:
+                try:
+                    self._gen.close()
+                except ValueError:
+                    sleep(0.05)
+                else:
+                    break
