@@ -21,7 +21,7 @@ from .controller import ModulesController
 
 if TYPE_CHECKING:
     from mai.capnp.data_classes import RunParameters
-    from mai.ai.networks.base import NNModuleBase
+    from mai.ai.networks.base import ModuleBase, NNModuleBase
 
 
 __all__ = (
@@ -66,6 +66,7 @@ class MCsController:
             yield self._target_mc
 
     def __compare_assertions(self) -> bool:
+        from mai.ai.networks.base import ModuleBase, NNModuleBase
         assert isinstance(self._target_mc, ModulesController)
         assert self._mc.training == self._target_mc.training
         for m_mc, m_t_mc in zip(
@@ -73,9 +74,11 @@ class MCsController:
         ):
             assert m_mc.enabled == m_t_mc.enabled, f"{m_mc}!={m_t_mc}"
             assert m_mc.loaded == m_t_mc.loaded, f"{m_mc}!={m_t_mc}"
-            assert m_mc.file_name == m_t_mc.file_name, f"{m_mc}!={m_t_mc}"
             assert m_mc.name == m_t_mc.name, f"{m_mc}!={m_t_mc}"
+            if not isinstance(m_mc, NNModuleBase):
+                continue
             assert m_mc.power == m_t_mc.power, f"{m_mc}!={m_t_mc}"
+            assert m_mc.file_name == m_t_mc.file_name, f"{m_mc}!={m_t_mc}"
             if m_mc.loaded:
                 assert m_mc._model is not None
                 assert m_t_mc._model is not None
@@ -87,13 +90,13 @@ class MCsController:
                     assert p1.data_ptr() != p2.data_ptr(), f"{p1}!={p2}"
         return True
 
-    def _get_module(self, name: str) -> Generator['NNModuleBase', None, None]:
+    def _get_module(self, name: str) -> Generator['ModuleBase', None, None]:
         yield self._mc.get_module(name)
         if self._target_mc is not None:
             yield self._target_mc.get_module(name)
 
     def _iter_modules(self) -> Generator[
-        tuple['NNModuleBase', 'NNModuleBase | None'],
+        tuple['ModuleBase', 'ModuleBase | None'],
         None, None
     ]:
         if self._target_mc is None:
@@ -109,7 +112,7 @@ class MCsController:
     def module_apply(
         self,
         name: str,
-        func: Callable[['NNModuleBase'], None]
+        func: Callable[['ModuleBase'], None]
     ):
         for module in self._get_module(name):
             func(module)
@@ -151,7 +154,7 @@ class MCsController:
             mc.unload_all_modules(save=save)
 
     def loaded(self) -> Generator[
-        tuple['NNModuleBase', 'NNModuleBase | None'],
+        tuple['ModuleBase', 'ModuleBase | None'],
         None, None
     ]:
         for module, module_t in self._iter_modules():
@@ -159,7 +162,7 @@ class MCsController:
                 yield module, module_t
 
     def enabled(self) -> Generator[
-        tuple['NNModuleBase', 'NNModuleBase | None'],
+        tuple['ModuleBase', 'ModuleBase | None'],
         None, None
     ]:
         for module, module_t in self._iter_modules():
@@ -271,7 +274,7 @@ class Trainer:
         self._mc.models_folder = None
 
         self.modules.training = True
-        def assign_power(m: 'NNModuleBase'):
+        def assign_power(m: 'ModuleBase'):
             m.power = 1.
         for module in self.params.modules:
             self.modules.enable(module)

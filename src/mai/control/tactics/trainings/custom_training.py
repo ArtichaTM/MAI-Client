@@ -55,7 +55,7 @@ class CustomTraining(ModuleTrainingTactic):
             ))
             return
 
-        state, context = yield
+        state, context = yield NormalControls().toMAIControls()
 
         module_str = self._run_parameters.modules[0]
         # for module in self._mc.get_all_modules():

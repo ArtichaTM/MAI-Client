@@ -56,6 +56,7 @@ STATE_KEYS = (
     'state.ball.angularVelocity.z',
     'state.dead',
     'state.boostAmount',
+    'MAIGameState',
 )
 CONTROLS_KEYS = (
     'controls.throttle',
@@ -343,9 +344,11 @@ class ModulesOutputMapping(dict):
             ('state.ball.angularVelocity.z', [ball_angularVelocity[2]]),
             ('state.dead', [dead]),
             ('state.boostAmount', [boostAmount]),
+            ('MAIGameState', s)
         ]:
             d[name] = value
-        assert set(d.keys()) == set(STATE_KEYS)
+        assert set(d.keys()) == set(STATE_KEYS),\
+            f"{set(d.keys())}, {set(STATE_KEYS)}"
         return cls(d)
 
     @classmethod
@@ -445,6 +448,10 @@ class ModulesOutputMapping(dict):
     def reward(self, reward: float) -> None:
         assert isinstance(reward, float)
         self[REWARD_KEY] = reward
+
+    @property
+    def origin(self) -> 'MAIGameState | None':
+        return self.get('MAIGameState', None)
 
     def is_complete(self) -> bool:
         return self.has_state() and self.has_controls()

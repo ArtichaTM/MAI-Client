@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 
 from mai.capnp.data_classes import ModulesOutputMapping
-from .networks import build_networks, NNModuleBase
+from .networks import build_networks, ModuleBase
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState
@@ -22,8 +22,8 @@ class ModulesController:
         # public:
         'state', 'models_folder',
     )
-    _all_modules: Mapping[str, NNModuleBase]
-    _ordered_modules: list[NNModuleBase]
+    _all_modules: Mapping[str, ModuleBase]
+    _ordered_modules: list[ModuleBase]
     _device: torch.device
     models_folder: Path | None
 
@@ -54,7 +54,7 @@ class ModulesController:
             for module in self._ordered_modules:
                 module.inference(value)
             return value
-        if isinstance(value, list) and isinstance(value[0], ModulesOutputMapping):
+        if isinstance(value, list):
             for v in value:
                 self(v)
             return value
@@ -71,17 +71,6 @@ class ModulesController:
         io.write(f" with {enabled}/{loaded}/{len(self._all_modules)}")
         io.write('>')
         return io.getvalue()
-
-    def tensor_inference(self, value: torch.Tensor) -> torch.Tensor:
-        assert value.dtype == torch.get_default_dtype()
-        assert value.shape != (), value
-        assert value.shape == (26,), value.shape
-
-        mapping = ModulesOutputMapping.fromTensor(value)
-        for module in self._ordered_modules:
-            module.inference(mapping)
-        output = mapping.extract_controls().toTensor()
-        return output
 
     def save(self) -> None:
         for module in self.get_all_modules():
@@ -124,11 +113,11 @@ class ModulesController:
             assert module._model is not None
             yield module._model
 
-    def get_all_modules(self) -> Generator[NNModuleBase , None, None]:
+    def get_all_modules(self) -> Generator[ModuleBase , None, None]:
         for module in self._all_modules.values():
             yield module
 
-    def get_module(self, _module: str) -> NNModuleBase:
+    def get_module(self, _module: str) -> ModuleBase:
         assert isinstance(_module, str)
         module = self._all_modules.get(_module, None)
         if module is None:
@@ -146,7 +135,7 @@ class ModulesController:
         """
         assert isinstance(_module, str)
         module = self.get_module(_module)
-        assert isinstance(module, NNModuleBase), module
+        assert isinstance(module, ModuleBase), module
         assert module not in {i for i in self._ordered_modules}, \
             f"{self._ordered_modules}{module.enabled}"
         if not module.loaded:
@@ -178,7 +167,7 @@ class ModulesController:
     def module_disable(self, _module: str) -> None:
         assert isinstance(_module, str)
         module = self.get_module(_module)
-        assert isinstance(module, NNModuleBase), module
+        assert isinstance(module, ModuleBase), module
         assert module in {i for i in self._ordered_modules}
         index = self._ordered_modules.index(module)
 
@@ -215,7 +204,7 @@ class ModulesController:
     def unload_all_modules(
         self,
         save: bool = True,
-        _exceptions: set[NNModuleBase | str] | None = None
+        _exceptions: set[ModuleBase | str] | None = None
     ) -> None:
         if _exceptions is None:
             exceptions = set()
@@ -225,7 +214,7 @@ class ModulesController:
                 if isinstance(exc, str):
                     exceptions.add(self.get_module(exc))
                 else:
-                    assert isinstance(exc, NNModuleBase)
+                    assert isinstance(exc, ModuleBase)
                     exceptions.add(exc)
         for module in self._ordered_modules[::-1].copy():
             if module.name in exceptions:
@@ -251,7 +240,7 @@ class ModulesController:
 
         assert isinstance(self._ordered_modules, list)
         for module in self._ordered_modules:
-            new_module = type(module)(module._model_path)
+            new_module = type(module)()
             new_module.training = module.training
             new_module.enabled = module.enabled
             new_module.power = module.power

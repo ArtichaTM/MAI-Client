@@ -3,7 +3,7 @@ from torch import nn
 from .base import NNModuleBase
 
 
-class NNModule(NNModuleBase):
+class Module(NNModuleBase):
     __slots__ = ()
     input_types = (
         'state.car.position.x',

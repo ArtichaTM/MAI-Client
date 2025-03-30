@@ -35,7 +35,7 @@ from mai.functions import popup, rewards_tracker
 from mai.settings import Settings, WinButtons
 
 if TYPE_CHECKING:
-    from mai.ai.controller import NNModuleBase
+    from mai.ai.controller import ModuleBase
     from mai.ai.rewards import NNRewardBase
 
 __all__ = ('MainInterface',)
@@ -123,10 +123,10 @@ class Constants(enum.IntEnum):
     USE_BUTTON_RESUME = enum.auto()
     USE_BUTTON_STOP = enum.auto()
 
-    def module(self, module: type['NNModuleBase']) -> str:
+    def module(self, module: type['ModuleBase']) -> str:
         return f"{self}{module.get_name().replace('_', '-')}-"
 
-    def module_iter(self, modules: Iterable[type['NNModuleBase']]) -> Generator[str, None, None]:
+    def module_iter(self, modules: Iterable[type['ModuleBase']]) -> Generator[str, None, None]:
         for module in modules:
             yield self.module(module)
 
@@ -201,7 +201,7 @@ class MainInterface:
             Constants.USE_BUTTON_PLAY,
             Constants.USE_BUTTON_TRAIN
         )
-        module_checkbox_keys: dict[str, type['NNModuleBase']] = dict()
+        module_checkbox_keys: dict[str, type['ModuleBase']] = dict()
         from mai.ai.networks import build_networks
         for m in build_networks().values():
             module_checkbox_keys[
@@ -270,7 +270,7 @@ class MainInterface:
             )
         ]
 
-    def _build_module_row(self, module: type['NNModuleBase']) -> list[sg.Element]:
+    def _build_module_row(self, module: type['ModuleBase']) -> list[sg.Element]:
         return [
             sg.Text(
                 module.get_name(), p=(0, 0),
@@ -654,6 +654,7 @@ class MainInterface:
             return
         import traceback
         tb = traceback.format_exc()
+        print(tb)
         popup(type(exc).__qualname__, tb)
 
     def run(self) -> int:

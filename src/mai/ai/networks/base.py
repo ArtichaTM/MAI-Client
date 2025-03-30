@@ -8,14 +8,126 @@ if TYPE_CHECKING:
     from mai.capnp.data_classes import ModulesOutputMapping
 
 
-class NNModuleBase(ABC):
+class ModuleBase(ABC):
     """
     Base class for all modules, hidden or not
     """
     __slots__ = (
-        '_enabled', '_model', '_model_path',
-        '_training',
-        'power',
+        '_enabled', '_training', 'power',
+        'models_path',
+    )
+    _enabled: bool
+    _training: bool
+    power: float
+
+    output_types: tuple[str, ...] = ()
+    input_types: tuple[str, ...] = ()
+
+    def __init__(self, models_path: Path | None) -> None:
+        assert models_path is None or isinstance(models_path, Path)
+        self.models_path = models_path
+        self._enabled: bool = False
+        self._training = False
+        self.power = 0
+
+    def __repr__(self) -> str:
+        return (
+            f"<Algo {self.name} "
+            f"loaded={self.loaded}, enabled={self.enabled}, "
+            f"power={self.power: > 1.2f}>"
+        )
+
+    @property
+    def loaded(self) -> bool:
+        """
+        This property shows if model loaded
+        model can't be enabled without loading first
+        """
+        return True
+
+    @property
+    def enabled(self) -> bool:
+        """
+        This property shows if model used in generating actions
+        """
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value: bool) -> None:
+        assert isinstance(value, bool)
+        self._enabled = value
+
+    @property
+    def training(self) -> bool:
+        """
+        If false, weights is frozen
+        """
+        return self._training
+
+    @training.setter
+    def training(self, value: bool) -> None:
+        self._training = value
+
+    @property
+    def name(self) -> str:
+        """
+        Display name of model
+        """
+        return self.get_name()
+
+    @property
+    def file_name(self) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    def get_name(cls) -> str:
+        """
+        Display name of model
+        """
+        return cls.__module__.split('.')[-1]
+
+    def enabled_parameters(self) -> Generator[torch.nn.Parameter, None, None]:
+        yield from ()
+
+    def state_dict(self):
+        return dict()
+
+    def set_device(self, device: torch.device) -> None:
+        pass
+
+    def unload(self, save: bool = True) -> None:
+        assert isinstance(save, bool)
+        assert self.loaded
+
+    def requires(self) -> set[str]:
+        return set()
+
+    @abstractmethod
+    def inference(
+        self,
+        tensor_dict: 'ModulesOutputMapping',
+        requires_grad: bool = False
+    ) -> None:
+        """
+        Inference some input values
+            based on `input_types()`
+            and return `output_types()`
+        """
+        raise NotImplementedError()
+
+    def copy[T: ModuleBase](self: T) -> T:
+        return type(self)(self.models_path)
+
+    def save(self) -> None:
+        pass
+
+
+class NNModuleBase(ModuleBase):
+    """
+    Base class for all modules, hidden or not
+    """
+    __slots__ = (
+        '_model', '_model_path',
     )
     _enabled: bool
     _model: torch.nn.Module | None
@@ -50,18 +162,6 @@ class NNModuleBase(ABC):
         model can't be enabled without loading first
         """
         return self._model is not None
-
-    @property
-    def enabled(self) -> bool:
-        """
-        This property shows if model used in generating actions
-        """
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, value: bool) -> None:
-        assert isinstance(value, bool)
-        self._enabled = value
 
     @property
     def training(self) -> bool:
@@ -185,11 +285,6 @@ class NNModuleBase(ABC):
         tensor_dict: 'ModulesOutputMapping',
         requires_grad: bool = False
     ) -> None:
-        """
-        Inference some input values
-            based on `input_types()`
-            and return `output_types()`
-        """
         assert self._model is not None
         assert self._enabled
         assert 0 <= self.power <= 1

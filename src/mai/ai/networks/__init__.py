@@ -1,25 +1,26 @@
 from logging import warning
 from pathlib import Path
 
-from .base import NNModuleBase
+from .base import ModuleBase
 
-def build_networks() -> dict[str, type[NNModuleBase]]:
-    output: dict[str, type[NNModuleBase]] = dict()
+
+def build_networks() -> dict[str, type[ModuleBase]]:
+    output: dict[str, type[ModuleBase]] = dict()
     for file in Path(__file__).parent.iterdir():
         if file.name in {'base.py',} or file.name.startswith('_'):
             continue
         values = globals()
         name = file.name.split('.')[0]
         try:
-            exec(f"from .{name} import NNModule", values)
+            exec(f"from .{name} import Module", values)
         except Exception as e:
             warning(
                 f"Can't import {name} because:",
                 exc_info=e
             )
             continue
-        assert 'NNModule' in values
-        module: type[NNModuleBase] = values['NNModule']
-        assert issubclass(module, NNModuleBase), module
+        assert 'Module' in values
+        module: type[ModuleBase] = values['Module']
+        assert issubclass(module, ModuleBase), module
         output[module.get_name()] = module
     return output
