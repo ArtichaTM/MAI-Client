@@ -442,7 +442,7 @@ class MainInterface:
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_X, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_Y, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_P_Z, size=(FLOAT_MAX_SIZE,1)),
-                                sg.Text('Rotation:'),
+                                sg.Text('Rotation (PYR):'),
                                 sg.StatusBar('', k=Constants.STATS_CAR_R_PITCH, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_R_YAW, size=(FLOAT_MAX_SIZE,1)),
                                 sg.StatusBar('', k=Constants.STATS_CAR_R_ROLL, size=(FLOAT_MAX_SIZE,1)),
