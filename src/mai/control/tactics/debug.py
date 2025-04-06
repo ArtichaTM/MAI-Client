@@ -21,11 +21,11 @@ class DebugTactic(BaseTactic):
 
     def react_gen(self):
         state: MAIGameState
-        context: AdditionalContext
+        context: AdditionalContext | None
         state, context = yield create_dummy_controls()
         while True:
             mapping = ModulesOutputMapping.fromMAIGameState(state)
             self.cl.inference(mapping, requires_grad=False)
             controls = mapping.toFloatControls().toNormalControls().toMAIControls()
             state, context = yield controls
-            assert isinstance(context, AdditionalContext)
+            assert context is None or isinstance(context, AdditionalContext)
