@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generator
 from threading import current_thread
 from functools import partial
 
+import torch
 import PySimpleGUI as sg
 
 from .plotter import ProcessPlotter
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
 __all__ = (
     'popup',
     'create_dummy_controls',
+    '_init_weights',
 )
 
 def _popup(title: str, text: str) -> None:
@@ -99,3 +101,27 @@ def values_tracker(
                 return
     except GeneratorExit:
         process_plotter.finish()
+
+
+def _init_weights(module: torch.nn.Module):
+    if isinstance(module, torch.nn.Linear):
+        torch.nn.init.uniform_(module.weight, -1, 1)
+        if module.bias is not None:
+            torch.nn.init.zeros_(module.bias)
+    elif isinstance(module, (
+        torch.nn.ReLU,
+        torch.nn.LeakyReLU,
+        torch.nn.Sigmoid,
+        torch.nn.Dropout,
+        torch.nn.Tanh,
+        torch.nn.LSTM,
+        torch.nn.LSTMCell,
+        torch.nn.GRU,
+        torch.nn.GRUCell,
+    )):
+        pass
+    elif isinstance(module, torch.nn.Sequential):
+        for child in module.children():
+            _init_weights(child)
+    else:
+        raise RuntimeError(f"Can't initialize layer {module}")

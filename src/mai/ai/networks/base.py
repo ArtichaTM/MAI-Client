@@ -1,8 +1,10 @@
-from typing import Any, Generator, MutableMapping, TYPE_CHECKING
+from typing import Generator, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from pathlib import Path
 
 import torch
+
+from mai.functions import _init_weights
 
 if TYPE_CHECKING:
     from mai.capnp.data_classes import ModulesOutputMapping
@@ -195,33 +197,10 @@ class NNModuleBase(ModuleBase):
         """
         return cls.__module__.split('.')[-1]
 
-    def _init_weights(self, module: torch.nn.Module):
-        if isinstance(module, torch.nn.Linear):
-            torch.nn.init.uniform_(module.weight, -1, 1)
-            if module.bias is not None:
-                torch.nn.init.zeros_(module.bias)
-        elif isinstance(module, (
-            torch.nn.ReLU,
-            torch.nn.LeakyReLU,
-            torch.nn.Sigmoid,
-            torch.nn.Dropout,
-            torch.nn.Tanh,
-            torch.nn.LSTM,
-            torch.nn.LSTMCell,
-            torch.nn.GRU,
-            torch.nn.GRUCell,
-        )):
-            pass
-        elif isinstance(module, torch.nn.Sequential):
-            for child in module.children():
-                self._init_weights(child)
-        else:
-            raise RuntimeError(f"Can't initialize layer {module}")
-
     def _create_empty(self):
         self._model = self._create()
         with torch.no_grad():
-            self._model.apply(self._init_weights)
+            self._model.apply(_init_weights)
 
     def _load(self) -> None:
         if self._model_path is None:

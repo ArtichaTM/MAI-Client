@@ -22,7 +22,8 @@ __all__ = ('BaseTrainingTactic',)
 class BaseTrainingTactic(BaseTactic):
     __slots__ = (
         '_run_parameters', '_rewards',
-        '_prev_reward', '_trainer'
+        '_prev_reward', '_trainer',
+        'reasons_to_func_map',
     )
 
     def __init__(
@@ -33,6 +34,35 @@ class BaseTrainingTactic(BaseTactic):
         self._run_parameters = run_parameters
         self._prev_reward: float = 0.0
         self._rewards: list[NNRewardBase] = []
+        self.reasons_to_func_map: Mapping[RestartReason, Callable[[
+            MAIGameState, AdditionalContext
+        ], bool]] = {
+            RestartReason.BALL_TOUCH: self._check_restart_hit,
+            RestartReason.BALL_EXPLODE: self._check_restart_explode,
+            RestartReason.TIMEOUT: self._check_restart_timeout,
+        }
+
+    def _check_restart_hit(self, state, context: 'AdditionalContext', **kwargs) -> bool:
+        return context.latest_message == 'ballTouched'
+
+    def _check_restart_explode(self, state, context: 'AdditionalContext', **kwargs) -> bool:
+        return context.latest_message == 'ballExplode'
+
+    def _check_restart_timeout(
+        self,
+        state,
+        context: 'AdditionalContext',
+        time_since_start: float | None = None
+    ) -> bool:
+        assert isinstance(time_since_start, float), "Pass time_since_start to kwargs"
+        return (perf_counter() - time_since_start) > self._run_parameters.restart_timeout
+
+    def is_restarting(self, state: 'MAIGameState', context: 'AdditionalContext', **kwargs) -> bool:
+        for reason in self._run_parameters.restart_reasons:
+            result = self.reasons_to_func_map[reason](state, context, **kwargs)
+            if result:
+                return True
+        return False
 
     def prepare(self) -> None:
         super().prepare()
@@ -74,8 +104,6 @@ class BaseTrainingTactic(BaseTactic):
 
 
 class ModuleTrainingTactic(BaseTrainingTactic):
-    __slots__ = ('reasons_to_func_map',)
-
     def prepare(self) -> None:
         super().prepare()
         modules = self._run_parameters.modules
@@ -94,33 +122,3 @@ class ModuleTrainingTactic(BaseTrainingTactic):
             )
             self.finished = True
             return
-
-        self.reasons_to_func_map: Mapping[RestartReason, Callable[[
-            MAIGameState, AdditionalContext
-        ], bool]] = {
-            RestartReason.BALL_TOUCH: self._check_restart_hit,
-            RestartReason.BALL_EXPLODE: self._check_restart_explode,
-            RestartReason.TIMEOUT: self._check_restart_timeout,
-        }
-
-    def _check_restart_hit(self, state, context: 'AdditionalContext', **kwargs) -> bool:
-        return context.latest_message == 'ballTouched'
-
-    def _check_restart_explode(self, state, context: 'AdditionalContext', **kwargs) -> bool:
-        return context.latest_message == 'ballExplode'
-
-    def _check_restart_timeout(
-        self,
-        state,
-        context: 'AdditionalContext',
-        time_since_start: float | None = None
-    ) -> bool:
-        assert isinstance(time_since_start, float), "Pass time_since_start to kwargs"
-        return (perf_counter() - time_since_start) > self._run_parameters.restart_timeout
-
-    def is_restarting(self, state: 'MAIGameState', context: 'AdditionalContext', **kwargs) -> bool:
-        for reason in self._run_parameters.restart_reasons:
-            result = self.reasons_to_func_map[reason](state, context, **kwargs)
-            if result:
-                return True
-        return False

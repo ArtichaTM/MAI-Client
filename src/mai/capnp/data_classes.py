@@ -55,8 +55,7 @@ STATE_KEYS = (
     'state.ball.angularVelocity.y',
     'state.ball.angularVelocity.z',
     'state.dead',
-    'state.boostAmount',
-    'MAIGameState',
+    'state.boostAmount'
 )
 CONTROLS_KEYS = (
     'controls.throttle',
