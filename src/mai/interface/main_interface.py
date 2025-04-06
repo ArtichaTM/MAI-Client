@@ -29,8 +29,8 @@ from mai.control.tactics.simple import (
     SequencedCommands,
     ButtonPress
 )
+from mai.control.tactics.debug import DebugTactic
 from mai.ai.rewards import build_rewards
-from mai.ai.trainer import Trainer
 from mai.functions import popup, rewards_tracker
 from mai.settings import Settings, WinButtons
 
@@ -68,6 +68,7 @@ class Constants(enum.IntEnum):
     DEBUG_UPDATE_MAGNITUDE_OFFSET = enum.auto()
     DEBUG_REWARDS_TRACK = enum.auto()
     DEBUG_SPEED_TRACK = enum.auto()
+    DEBUG_QUEUE_DEBUG_TACTIC = enum.auto()
     STATS_CAR_P_X = enum.auto()
     STATS_CAR_P_Y = enum.auto()
     STATS_CAR_P_Z = enum.auto()
@@ -554,7 +555,8 @@ class MainInterface:
                             sg.Button("Reset training", k=Constants.DEBUG_RESET_TRAINING),
                             sg.Button("Update magnitude offset", k=Constants.DEBUG_UPDATE_MAGNITUDE_OFFSET),
                             sg.Button("Rewards tracker", k=Constants.DEBUG_REWARDS_TRACK),
-                            sg.Button("Speed tracker", k=Constants.DEBUG_SPEED_TRACK)
+                            sg.Button("Speed tracker", k=Constants.DEBUG_SPEED_TRACK),
+                            sg.Button("Queue debug tactic", k=Constants.DEBUG_QUEUE_DEBUG_TACTIC),
                         ]
                     ]),
                     sg.Tab('Modules', [
@@ -813,6 +815,8 @@ class MainInterface:
                     next(self._rewards_tracker_gen)
                 case Constants.DEBUG_SPEED_TRACK:
                     self._controller.add_reaction_tactic(WatchGraph())
+                case Constants.DEBUG_QUEUE_DEBUG_TACTIC:
+                    self._controller.add_reaction_tactic(DebugTactic())
                 case Constants.USE_BUTTON_TRAIN:
                     try:
                         self._controller.train(self._build_run_params())
