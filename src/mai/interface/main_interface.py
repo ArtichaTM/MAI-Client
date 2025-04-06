@@ -571,8 +571,7 @@ class MainInterface:
                                 k=Constants.USE_MATCH_TYPE,
                                 auto_size_text=False,
                                 s=(20, 1),
-                                default_value=RunType.CUSTOM_TRAINING.value,
-                                enable_events=False
+                                default_value=RunType.CUSTOM_TRAINING.value
                             )
                         ], [
                             sg.Text("Restart reason:"),
