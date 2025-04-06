@@ -20,5 +20,5 @@
         "wcon",
         "wgui"
     ],
-    "python.analysis.autoImportCompletions": false
+    "python.analysis.autoImportCompletions": true
 }
