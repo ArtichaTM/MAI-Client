@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from mai.capnp.data_classes import (
     ModulesOutputMapping,
@@ -78,10 +79,25 @@ class Module(ModuleBase):
         throttle = np.dot(direction_vector, forward_vector)
         steer = np.dot(direction_vector, right_vector)
         yaw = np.arctan2(direction_vector[1], direction_vector[0]) / np.pi
+        throttle, steer, yaw = map(lambda x: round(x, 4), (
+            throttle, steer, yaw
+        ))
 
-        tensor_dict['controls.throttle'].append(throttle)
-        tensor_dict['controls.steer'].append(steer)
-        tensor_dict['controls.yaw'].append(yaw)
+        throttle = torch.tensor(throttle, requires_grad=requires_grad)
+        if 'controls.throttle' in tensor_dict:
+            tensor_dict['controls.throttle'].append(throttle)
+        else:
+            tensor_dict['controls.throttle'] = [throttle]
+        steer = torch.tensor(steer, requires_grad=requires_grad)
+        if 'controls.steer' in tensor_dict:
+            tensor_dict['controls.steer'].append(steer)
+        else:
+            tensor_dict['controls.steer'] = [steer]
+        yaw = torch.tensor(yaw, requires_grad=requires_grad)
+        if 'controls.yaw' in tensor_dict:
+            tensor_dict['controls.yaw'].append(yaw)
+        else:
+            tensor_dict['controls.yaw'] = [yaw]
 
     def requires(self) -> set[str]:
         return set()
