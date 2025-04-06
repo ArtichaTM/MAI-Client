@@ -20,7 +20,7 @@ dependencies = [
   'live-plotter>=4.1.0',
   "torch>=2.6.0",
   "torchrl>=0.7.1",
-  "pysimplegui>=5.0.9",
+  "PySimpleGUI-4-foss",
 ]
 
 classifiers = [
