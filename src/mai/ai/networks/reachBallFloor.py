@@ -68,7 +68,7 @@ class Module(ModuleBase):
         ])
         car_yaw = state.car.rotation.yaw
 
-        throttle, steer = 1, 0
+        throttle, steer, boost = 1, 0, 0
         direction_vector = ball_pos - car_pos
         if abs(car_velocity.max()) < 0.01:
             steer = 1
@@ -86,7 +86,8 @@ class Module(ModuleBase):
                 steer = -1
             else:
                 steer = 1
-            print(angle, sign)
+            if abs(angle) < 1:
+                boost = 1-angle
 
         throttle = torch.tensor(throttle, requires_grad=requires_grad)
         if 'controls.throttle' in tensor_dict:
@@ -98,11 +99,11 @@ class Module(ModuleBase):
             tensor_dict['controls.steer'].append(steer)
         else:
             tensor_dict['controls.steer'] = [steer]
-        # yaw = torch.tensor(yaw, requires_grad=requires_grad)
-        # if 'controls.yaw' in tensor_dict:
-        #     tensor_dict['controls.yaw'].append(yaw)
-        # else:
-        #     tensor_dict['controls.yaw'] = [yaw]
+        boost = torch.tensor(boost, requires_grad=requires_grad)
+        if 'controls.boost' in tensor_dict:
+            tensor_dict['controls.boost'].append(boost)
+        else:
+            tensor_dict['controls.boost'] = [boost]
 
     def requires(self) -> set[str]:
         return set()
