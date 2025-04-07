@@ -97,6 +97,9 @@ class ModuleBase(ABC):
     def set_device(self, device: torch.device) -> None:
         pass
 
+    def load(self) -> None:
+        pass
+
     def unload(self, save: bool = True) -> None:
         assert isinstance(save, bool)
         assert self.loaded
