@@ -38,7 +38,7 @@ class Module(ModuleBase):
     output_types = (
         'controls.throttle',
         # 'controls.steer',
-        # 'controls.pitch',
+        'controls.pitch',
         'controls.yaw',
         'controls.roll',
         'controls.boost',
@@ -95,13 +95,19 @@ class Module(ModuleBase):
         self.roll_pid = PIDController(
             kp=1.,
             ki=0.01,
-            kd=0.9,
+            kd=1.9,
             dt=0.1
         )
         self.yaw_pid = PIDController(
-            kp=1.5,
+            kp=1.0,
             ki=0,
             kd=1.2,
+            dt=0.1
+        )
+        self.pitch_pid = PIDController(
+            kp=0.5,
+            ki=0,
+            kd=0.2,
             dt=0.1
         )
         return super().load()
@@ -136,7 +142,7 @@ class Module(ModuleBase):
         car_roll = state.car.rotation.roll
         car_yaw = state.car.rotation.yaw
         car_pitch = state.car.rotation.pitch
-        throttle, yaw, roll, boost, jump = 1, 0, 0, 0, 0
+        throttle, pitch, yaw, roll, boost, jump = 1, 0, 0, 0, 0, 0
 
         # Jump
         if abs(car_pitch)+abs(car_roll) < 0.1:
@@ -157,6 +163,13 @@ class Module(ModuleBase):
             abs(yaw), abs(roll),
         ))
         boost = sum_rotation < 0.5
+
+        # Pitch
+        if sum_rotation < 1:
+            pitch = ball_pos[2]-car_pos[2]
+            pitch = pitch-car_pitch
+            pitch *= 1-sum_rotation
+            pitch = self.pitch_pid(pitch)
 
         for out_name in self.output_types:
             inner_name = out_name.split('.')[-1]
