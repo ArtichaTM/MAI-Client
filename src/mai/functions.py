@@ -125,3 +125,47 @@ def _init_weights(module: torch.nn.Module):
             _init_weights(child)
     else:
         raise RuntimeError(f"Can't initialize layer {module}")
+
+
+class PIDController:
+    __slots__ = (
+        'kp', 'ki', 'kd', 'dt',
+        'error_sum', 'last_error',
+    )
+
+    def __init__(
+        self,
+        kp: int | float,
+        ki: int | float,
+        kd: int | float,
+        dt: int | float,
+    ):
+        assert isinstance(kp, (int, float))
+        assert isinstance(ki, (int, float))
+        assert isinstance(kd, (int, float))
+        assert isinstance(dt, (int, float))
+        assert dt > 0
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.dt = dt
+        self.error_sum = 0
+        self.last_error = 0
+
+    def __call__(self, error: float) -> float:
+        assert isinstance(error, float)
+
+        # Proportional term
+        p_term = self.kp * error
+
+        # Integral term
+        self.error_sum += error * self.dt
+        i_term = self.ki * self.error_sum
+
+        # Derivative term
+        d_term = self.kd * (error - self.last_error) / self.dt
+        self.last_error = error
+
+        # Calculate the control output
+        control_output = p_term + i_term + d_term
+        return control_output
