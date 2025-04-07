@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generator
 from threading import current_thread
 from functools import partial
 
+import numpy as np
 import torch
 import PySimpleGUI as sg
 
@@ -130,7 +131,8 @@ def _init_weights(module: torch.nn.Module):
 class PIDController:
     __slots__ = (
         'kp', 'ki', 'kd', 'dt',
-        'error_sum', 'last_error',
+        'error_sum', 'last_error', 'minmax',
+        '__call__',
     )
 
     def __init__(
@@ -139,6 +141,7 @@ class PIDController:
         ki: int | float,
         kd: int | float,
         dt: int | float,
+        minmax: tuple[int|float, int|float] | None = None,
     ):
         assert isinstance(kp, (int, float))
         assert isinstance(ki, (int, float))
@@ -151,8 +154,42 @@ class PIDController:
         self.dt = dt
         self.error_sum = 0
         self.last_error = 0
+        self.minmax = minmax
+        if isinstance(minmax, tuple):
+            assert isinstance(minmax, tuple)
+            assert isinstance(minmax[0], (int, tuple))
+            assert isinstance(minmax[1], (int, tuple))
+            self.__call__ = self._windup
+        else:
+            assert minmax is None
+            self.__call__ = self._no_windup
 
-    def __call__(self, error: float) -> float:
+    def _windup(self, error: float) -> float:
+        assert isinstance(error, float)
+        assert isinstance(self.minmax, tuple)
+
+        # Proportional term
+        p_term = self.kp * error
+
+        # Integral term
+        self.error_sum += error * self.dt
+        i_term = self.ki * self.error_sum
+
+        # Derivative term
+        d_term = self.kd * (error - self.last_error) / self.dt
+        self.last_error = error
+
+        # Calculate the control output
+        control_output = p_term + i_term + d_term
+        control_output = np.clip(control_output, *self.minmax)
+
+        # Anti-windup
+        if self.minmax[0] < control_output < self.minmax[1]:
+            self.error_sum -= error * self.dt
+
+        return control_output
+
+    def _no_windup(self, error: float) -> float:
         assert isinstance(error, float)
 
         # Proportional term

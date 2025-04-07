@@ -96,19 +96,22 @@ class Module(ModuleBase):
             kp=1.,
             ki=0.01,
             kd=1.9,
-            dt=0.1
+            dt=0.1,
+            minmax=(-1, 1)
         )
         self.yaw_pid = PIDController(
-            kp=1.0,
-            ki=0,
+            kp=0.7,
+            ki=0.3,
             kd=1.2,
-            dt=0.1
+            dt=0.1,
+            minmax=(-1, 1)
         )
         self.pitch_pid = PIDController(
-            kp=0.5,
-            ki=0,
+            kp=1.5,
+            ki=0.3,
             kd=0.2,
-            dt=0.1
+            dt=0.1,
+            minmax=(-1, 1)
         )
         return super().load()
 
