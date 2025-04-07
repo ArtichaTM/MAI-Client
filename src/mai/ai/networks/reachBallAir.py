@@ -38,7 +38,7 @@ class Module(ModuleBase):
     output_types = (
         'controls.throttle',
         # 'controls.steer',
-        'controls.pitch',
+        # 'controls.pitch',
         'controls.yaw',
         'controls.roll',
         'controls.boost',
@@ -104,12 +104,6 @@ class Module(ModuleBase):
             kd=1.2,
             dt=0.1
         )
-        self.pitch_pid = PIDController(
-            kp=1.0,
-            ki=0,
-            kd=1.2,
-            dt=0.1
-        )
         return super().load()
 
     def inference(
@@ -142,7 +136,7 @@ class Module(ModuleBase):
         car_roll = state.car.rotation.roll
         car_yaw = state.car.rotation.yaw
         car_pitch = state.car.rotation.pitch
-        throttle, pitch, yaw, roll, boost, jump = 1, 0, 0, 0, 0, 0
+        throttle, yaw, roll, boost, jump = 1, 0, 0, 0, 0
 
         # Jump
         if abs(car_pitch)+abs(car_roll) < 0.1:
@@ -158,12 +152,9 @@ class Module(ModuleBase):
         roll = -car_roll
         roll = np.clip(self.roll_pid(roll), -1., 1.)
 
-        # Pitch
-        pitch = ball_pos[2]-car_pos[2]
-        pitch = pitch-car_pitch
-        pitch -= direction_vector_magnitude**0.5
+        # Boost
         sum_rotation = sum((
-            abs(yaw), abs(roll), abs(pitch)
+            abs(yaw), abs(roll),
         ))
         boost = sum_rotation < 0.5
 
