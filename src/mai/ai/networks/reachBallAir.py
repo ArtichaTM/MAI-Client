@@ -4,13 +4,19 @@ import torch
 from mai.capnp.data_classes import (
     ModulesOutputMapping,
     Vector
+
 )
+from mai.functions import PIDController
 
 from .base import ModuleBase
 
 
 class Module(ModuleBase):
-    __slots__ = ()
+    __slots__ = (
+        'roll_pid',
+        'yaw_pid',
+        'pitch_pid',
+    )
     input_types = (
         # 'state.car.position.x',
         # 'state.car.position.y',
@@ -36,7 +42,7 @@ class Module(ModuleBase):
         'controls.yaw',
         'controls.roll',
         'controls.boost',
-        # 'controls.jump',
+        'controls.jump',
         # 'controls.handbrake',
         # 'controls.dodgeVertical',
         # 'controls.dodgeStrafe',
@@ -77,6 +83,35 @@ class Module(ModuleBase):
         diff = desired_dir - current_dir
         return diff
 
+    def normalize_velocity(
+        self,
+        current: float,
+        target: float,
+        velocity: float
+    ) -> float:
+        return current
+
+    def load(self) -> None:
+        self.roll_pid = PIDController(
+            kp=1.,
+            ki=0.01,
+            kd=0.9,
+            dt=0.1
+        )
+        self.yaw_pid = PIDController(
+            kp=1.5,
+            ki=0,
+            kd=1.2,
+            dt=0.1
+        )
+        self.pitch_pid = PIDController(
+            kp=1.0,
+            ki=0,
+            kd=1.2,
+            dt=0.1
+        )
+        return super().load()
+
     def inference(
         self,
         tensor_dict: ModulesOutputMapping,
@@ -91,27 +126,46 @@ class Module(ModuleBase):
             state.ball.position.y,
             state.ball.position.z
         ])
+        ball_velocity = np.array([
+            state.ball.velocity.x,
+            state.ball.velocity.y,
+            state.ball.velocity.z,
+        ])
         car_pos = np.array([
             state.car.position.x,
             state.car.position.y,
             state.car.position.z
         ])
+        ball_pos += ball_velocity*0.1
+        direction_vector = ball_pos-car_pos
+        direction_vector_magnitude = np.linalg.norm(direction_vector)
         car_roll = state.car.rotation.roll
         car_yaw = state.car.rotation.yaw
-        throttle, pitch, yaw, roll, boost = 1, 0, 0, 0, 0
+        car_pitch = state.car.rotation.pitch
+        throttle, pitch, yaw, roll, boost, jump = 1, 0, 0, 0, 0, 0
 
-        # TODO: Add jump if on floor
-        # TODO: Add pitch control
+        # Jump
+        if abs(car_pitch)+abs(car_roll) < 0.1:
+            jump = 1
 
         # Yaw
-        xy = -car_pos[:-1]
-        angle = np.arctan2(xy[1], xy[0])
+        angle = np.arctan2(direction_vector[1], direction_vector[0])
         target_yaw = angle / np.pi
-        diff = (target_yaw-car_yaw + 1) % 2 - 1
-        yaw = diff
+        yaw = (target_yaw-car_yaw + 1) % 2 - 1
+        yaw = np.clip(self.yaw_pid(yaw), -1., 1.)
 
         # Roll
         roll = -car_roll
+        roll = np.clip(self.roll_pid(roll), -1., 1.)
+
+        # Pitch
+        pitch = ball_pos[2]-car_pos[2]
+        pitch = pitch-car_pitch
+        pitch -= direction_vector_magnitude**0.5
+        sum_rotation = sum((
+            abs(yaw), abs(roll), abs(pitch)
+        ))
+        boost = sum_rotation < 0.5
 
         for out_name in self.output_types:
             inner_name = out_name.split('.')[-1]
