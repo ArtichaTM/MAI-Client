@@ -19,7 +19,6 @@ dependencies = [
   'pywin32>=308',
   'live-plotter>=4.1.0',
   "torch>=2.6.0",
-  "torchrl>=0.7.1",
   "PySimpleGUI-4-foss",
 ]
 
