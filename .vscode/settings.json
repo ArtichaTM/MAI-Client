@@ -14,6 +14,7 @@
         "Freeplay",
         "magn",
         "MAIRL",
+        "pysimplegui",
         "tensordict",
         "torchrl",
         "wapi",
