@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 
 from mai.capnp.data_classes import ModulesOutputMapping
-from .networks import build_networks, ModuleBase
+from .networks import build_networks, ModuleBase, NNModuleBase
 
 if TYPE_CHECKING:
     from mai.capnp.names import MAIGameState
@@ -110,6 +110,8 @@ class ModulesController:
 
     def iter_models(self) -> Generator[torch.nn.Module, None, None]:
         for module in self._ordered_modules:
+            if not isinstance(module, NNModuleBase):
+                continue
             assert module._model is not None
             yield module._model
 
@@ -240,12 +242,16 @@ class ModulesController:
 
         assert isinstance(self._ordered_modules, list)
         for module in self._ordered_modules:
-            new_module = type(module)()
+            new_module = type(module)(module.models_path)
             new_module.training = module.training
             new_module.enabled = module.enabled
             new_module.power = module.power
-            new_module._model = module._create()
-            if module._model is not None:
-                new_module._model.load_state_dict(module._model.state_dict(), strict=True)
+            if isinstance(module, NNModuleBase):
+                assert isinstance(new_module, NNModuleBase)
+                new_module._model = module._create()
+                if module._model is not None:
+                    new_module._model.load_state_dict(
+                        module._model.state_dict(), strict=True
+                    )
             controller._ordered_modules.append(new_module)
         return controller

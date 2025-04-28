@@ -1,7 +1,7 @@
 from logging import warning
 from pathlib import Path
 
-from .base import ModuleBase
+from .base import ModuleBase, NNModuleBase
 
 
 def build_networks() -> dict[str, type[ModuleBase]]:
