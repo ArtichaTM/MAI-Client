@@ -14,7 +14,6 @@ from mai.capnp.data_classes import (
     STATE_KEYS,
     CONTROLS_KEYS
 )
-from mai.functions import values_tracker
 from .memory import ReplayMemory
 from .rewards import NNRewardBase, build_rewards
 from .controller import ModulesController
@@ -77,6 +76,7 @@ class MCsController:
             assert m_mc.name == m_t_mc.name, f"{m_mc}!={m_t_mc}"
             if not isinstance(m_mc, NNModuleBase):
                 continue
+            assert isinstance(m_t_mc, NNModuleBase)
             assert m_mc.power == m_t_mc.power, f"{m_mc}!={m_t_mc}"
             assert m_mc.file_name == m_t_mc.file_name, f"{m_mc}!={m_t_mc}"
             if m_mc.loaded:
