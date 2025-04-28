@@ -254,10 +254,13 @@ class Trainer:
         type(self)._instance = None
         self._target_mc.save()
 
-    def prepare(self) -> None:
-        if self._loaded:
-            return
-        self.hyperparameters_init()
+    def _prepare_module_training(self) -> None:
+        self.batch_size = 10
+        self.mc_lr = 1e-4
+        self.critic_lr = 1e-4
+        self.gamma = 0.97
+        self.tau = 0.001
+
         self._memory = ReplayMemory()
         self._loss = torch.nn.MSELoss()
         self._gen = self.inference_gen()
@@ -295,14 +298,20 @@ class Trainer:
             amsgrad=True
         )
 
-        self._loaded = True
+    def _prepare_mai_training(self) -> None:
+        raise NotImplementedError()
 
-    def hyperparameters_init(self) -> None:
-        self.batch_size = 10
-        self.mc_lr = 1e-4
-        self.critic_lr = 1e-4
-        self.gamma = 0.97
-        self.tau = 0.001
+    def prepare(self) -> None:
+        if self._loaded:
+            return
+
+        if len(self.params.modules) == 1:
+            self._prepare_module_training()
+        else:
+            assert self.params.modules
+            self._prepare_mai_training()
+
+        self._loaded = True
 
     #
     # Training

@@ -60,8 +60,13 @@ class MainController:
         tactic = None
         match params.type:
             case RunType.CUSTOM_TRAINING:
-                tactic = trainings.CustomTraining(params)
+                if len(params.modules) == 1:
+                    tactic = trainings.CustomTraining(params)
+                else:
+                    assert len(params.modules) > 1
+                    tactic = trainings.MAICustomTraining(params)
             case RunType.FREEPLAY:
+                assert len(params.modules) == 1
                 tactic = trainings.FreeplayTraining(params)
             case RunType.v11:
                 raise NotImplementedError()
