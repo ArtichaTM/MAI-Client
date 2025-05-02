@@ -57,7 +57,7 @@ class CustomTraining(ModuleTrainingTactic):
 
         state, context = yield NormalControls().toMAIControls()
 
-        module_str = self._run_parameters.modules[0]
+        # module_str = self._run_parameters.modules[0]
         # for module in self._mc.get_all_modules():
         #     if module.enabled:
         #         self._mc.module_disable(module)
