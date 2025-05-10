@@ -193,15 +193,31 @@ class ModulesController:
 
     def module_unload(
         self,
-        _module: str,
+        module_name: str,
         save: bool = False
     ) -> None:
-        assert isinstance(_module, str)
-        module = self.get_module(_module)
+        assert isinstance(module_name, str)
+        module = self.get_module(module_name)
         if module.enabled:
             self.module_disable(module.name)
         assert module not in {i for i in self._ordered_modules}
         module.unload(save=save)
+
+    def module_power(
+        self,
+        module_name: str,
+        power: float
+    ) -> None:
+        assert isinstance(module_name, str)
+        assert isinstance(power, float)
+        assert 0 <= power <= 1, power
+        module = self.get_module(module_name)
+        if power < 0.1:
+            if module.enabled:
+                self.module_disable(module_name)
+            module.power = power
+            return
+        module.power = power
 
     def unload_all_modules(
         self,

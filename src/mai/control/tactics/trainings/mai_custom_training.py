@@ -12,15 +12,16 @@ from mai.capnp.data_classes import (
     ModulesOutputMapping,
     NormalControls
 )
-from mai.functions import rewards_tracker
-from .base import ModuleTrainingTactic
+from mai.functions import rewards_tracker, powers_tracker
+from .base import BaseTrainingTactic
 
 
-class MAICustomTraining(ModuleTrainingTactic):
-    __slots__ = ('rewards_plot', )
+class MAICustomTraining(BaseTrainingTactic):
+    __slots__ = ('rewards_plot', 'powers_plot')
 
     def prepare(self) -> None:
         self.rewards_plot = None
+        self.powers_plot = None
         return super().prepare()
 
     def react_gen(
@@ -70,11 +71,21 @@ class MAICustomTraining(ModuleTrainingTactic):
             nonlocal self
             self.rewards_plot = None
 
+        def on_powers_plot_closed() -> None:
+            nonlocal self
+            self.powers_plot = None
+
         self.rewards_plot = rewards_tracker(
             self._rewards,
             on_close=on_rewards_plot_closed
         )
         next(self.rewards_plot)
+
+        self.powers_plot = powers_tracker(
+            self._run_parameters.modules,
+            on_close=on_powers_plot_closed
+        )
+        next(self.powers_plot)
 
         trainer = MAITrainer(self._run_parameters)
         yield from self.async_wait(trainer.prepare)
@@ -98,6 +109,15 @@ class MAICustomTraining(ModuleTrainingTactic):
                         reward = self.calculate_reward(state, context)
                         mapping.reward = reward
                         trainer.inference(mapping)
+                        if self.powers_plot is not None:
+                            assert mapping.has_powers()
+                            try:
+                                assert mapping.powers is not None
+                                self.powers_plot.send(tuple(
+                                    i.item() for i in mapping.powers
+                                ))
+                            except StopIteration:
+                                self.powers_plot = None
                         state, reward = yield (
                             mapping
                             .toFloatControls()

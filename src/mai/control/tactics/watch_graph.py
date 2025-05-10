@@ -1,7 +1,7 @@
 from .bases import BaseTactic
-from mai.capnp.data_classes import MAIControls, MAIGameState, Vector
+from mai.capnp.data_classes import MAIGameState, Vector
 from mai.functions import create_dummy_controls, values_tracker
-from mai.plotter import ProcessPlotter
+from mai.plotter.plotter import ProcessPlotter
 
 
 class WatchGraph(BaseTactic):

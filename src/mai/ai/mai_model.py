@@ -1,7 +1,7 @@
 from typing import Iterable, Sequence
 from pathlib import Path
 
-from torch import nn, load, save
+from torch import nn, load
 
 from mai.functions import _init_weights
 
@@ -12,7 +12,7 @@ class MAINet(nn.Module):
         assert modules_amount > 1
         super().__init__()
         from mai.capnp.data_classes import STATE_KEYS
-        self.fc1 = nn.Linear(len(STATE_KEYS), 256)
+        self.fc1 = nn.Linear(len(STATE_KEYS)-1, 256)
         self.fc2 = nn.Linear(256, modules_amount)
         self.activation = nn.ReLU()
 
@@ -22,6 +22,12 @@ class MAINet(nn.Module):
         x = self.fc2(x)
         x = self.activation(x)
         return x
+
+    def init_weights(self) -> None:
+        nn.init.kaiming_uniform_(self.fc1.weight.data)
+        self.fc1.bias.data.fill_(0.0)
+        nn.init.kaiming_uniform_(self.fc2.weight.data)
+        self.fc2.bias.data.fill_(0.0)
 
     @staticmethod
     def mai_name(modules: Iterable[str]) -> str:

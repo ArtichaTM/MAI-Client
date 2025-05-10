@@ -70,7 +70,8 @@ CONTROLS_KEYS = (
     'controls.dodgeVertical',
     'controls.dodgeStrafe',
 )
-REWARD_KEY = '_key'
+REWARD_KEY = '_reward'
+POWERS_LEY = '_powers'
 
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
@@ -407,7 +408,7 @@ class ModulesOutputMapping(dict):
         values: list[torch.Tensor] = self.get(name, [])
         if not values:
             return None
-        assert isinstance(values, list)
+        assert isinstance(values, list), values
         assert all((isinstance(i, torch.Tensor) for i in values)), values
         try:
             tensors = torch.tensor(
@@ -439,6 +440,9 @@ class ModulesOutputMapping(dict):
     def has_reward(self) -> bool:
         return REWARD_KEY in self
 
+    def has_powers(self) -> bool:
+        return POWERS_LEY in self
+
     @property
     def reward(self) -> float:
         assert self.has_reward()
@@ -448,6 +452,18 @@ class ModulesOutputMapping(dict):
     def reward(self, reward: float) -> None:
         assert isinstance(reward, float)
         self[REWARD_KEY] = reward
+
+    @property
+    def powers(self) -> torch.Tensor | None:
+        assert self.has_powers()
+        return self[POWERS_LEY]
+
+    @powers.setter
+    def powers(self, powers: torch.Tensor) -> None:
+        assert isinstance(powers, torch.Tensor)
+        assert len(powers.shape) == 1
+        assert all(0 <= i.item() <= 1 for i in powers), powers
+        self[POWERS_LEY] = powers
 
     @property
     def origin(self) -> 'MAIGameState | None':
@@ -484,7 +500,7 @@ class ModulesOutputMapping(dict):
         requires_grad: bool = True
     ) -> T:
         return self.extract_keys(
-            keys=STATE_KEYS,
+            keys=STATE_KEYS[:-1],
             requires_grad=requires_grad
         )
 

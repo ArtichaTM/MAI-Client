@@ -25,6 +25,22 @@ class CanonicalValues:
         )
 
 
+@dataclass(slots=True, frozen=True)
+class CanonicalValuesPlusPowers:
+    states: torch.Tensor
+    actions: torch.Tensor
+    next_states: torch.Tensor
+    rewards: torch.Tensor
+    powerss: torch.Tensor
+
+    def __iter__(self) -> Generator[torch.Tensor, None, None]:
+        yield from (
+            self.states, self.actions,
+            self.next_states, self.rewards,
+            self.rewards
+        )
+
+
 class ReplayMemory[T: ModulesOutputMapping](list):
     __slots__ = ('_max_size',)
     _max_size: int
@@ -146,9 +162,9 @@ class TensorReplayMemory(list[Transition]):
     def sum_reward(self) -> float:
         return sum([i.state.reward for i in self])
 
-    def to_canonical(self, requires_grad: bool = True) -> CanonicalValues:
+    def to_canonical(self, requires_grad: bool = True) -> CanonicalValuesPlusPowers:
         assert len(self) > 1
-        v = CanonicalValues(
+        v = CanonicalValuesPlusPowers(
             states=torch.stack ([m.state.extract_state(
                 requires_grad
             ).toTensor(requires_grad) for m in self[:-1]]),
@@ -162,7 +178,8 @@ class TensorReplayMemory(list[Transition]):
                 [m.state.reward for m in self[1:]],
                 requires_grad=requires_grad,
                 dtype=torch.get_default_dtype()
-            )
+            ),
+            powerss=torch.stack([m.powers for m in self[1:]])
         )
         assert v.states.dtype == torch.get_default_dtype()
         assert v.actions.dtype == torch.get_default_dtype()

@@ -1,5 +1,5 @@
 from mai.functions import popup
-from mai.ai.trainer import Trainer
+from mai.ai.trainer import ModuleTrainer
 from mai.capnp.data_classes import (
     MAIGameState,
     AdditionalContext,
@@ -42,7 +42,7 @@ class FreeplayTraining(ModuleTrainingTactic):
 
         state, context = yield
 
-        with Trainer(self._run_parameters) as trainer:
+        with ModuleTrainer(self._run_parameters) as trainer:
             while True:
                 if self.rewards_plot is not None:
                     try:

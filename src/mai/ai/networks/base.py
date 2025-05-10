@@ -15,10 +15,12 @@ class ModuleBase(ABC):
     Base class for all modules, hidden or not
     """
     __slots__ = (
-        '_enabled', '_training', 'power',
+        '_enabled', '_loaded',
+        '_training', 'power',
         'models_path',
     )
     _enabled: bool
+    _loaded: bool
     _training: bool
     power: float
 
@@ -30,6 +32,7 @@ class ModuleBase(ABC):
         self.models_path = models_path
         self._enabled: bool = False
         self._training = False
+        self._loaded = False
         self.power = 0
 
     def __repr__(self) -> str:
@@ -45,7 +48,7 @@ class ModuleBase(ABC):
         This property shows if model loaded
         model can't be enabled without loading first
         """
-        return True
+        return self._loaded
 
     @property
     def enabled(self) -> bool:
@@ -98,11 +101,13 @@ class ModuleBase(ABC):
         pass
 
     def load(self) -> None:
-        pass
+        assert not self._loaded
+        self._loaded = True
 
     def unload(self, save: bool = True) -> None:
         assert isinstance(save, bool)
-        assert self.loaded
+        assert self._loaded
+        self._loaded = False
 
     def requires(self) -> set[str]:
         return set()

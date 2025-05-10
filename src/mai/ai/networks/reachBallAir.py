@@ -1,11 +1,7 @@
 import numpy as np
 import torch
 
-from mai.capnp.data_classes import (
-    ModulesOutputMapping,
-    Vector
-
-)
+from mai.capnp.data_classes import ModulesOutputMapping
 from mai.functions import PIDController
 
 from .base import ModuleBase
@@ -92,6 +88,7 @@ class Module(ModuleBase):
         return current
 
     def load(self) -> None:
+        super().load()
         self.roll_pid = PIDController(
             kp=1.,
             ki=0.01,
@@ -113,7 +110,6 @@ class Module(ModuleBase):
             dt=0.1,
             minmax=(-1, 1)
         )
-        return super().load()
 
     def inference(
         self,
@@ -122,6 +118,8 @@ class Module(ModuleBase):
     ) -> None:
         assert isinstance(tensor_dict, ModulesOutputMapping)
         assert isinstance(requires_grad, bool)
+        assert self.loaded
+        assert self.enabled
         state = tensor_dict.origin
         assert state is not None
         ball_pos = np.array([

@@ -4,7 +4,7 @@ from time import perf_counter, sleep
 from mai.functions import popup
 from mai.windows import WindowController
 from mai.settings import WinButtons
-from mai.ai.trainer import Trainer
+from mai.ai.trainer import ModuleTrainer
 from mai.capnp.data_classes import (
     MAIGameState,
     MAIControls,
@@ -76,7 +76,7 @@ class CustomTraining(ModuleTrainingTactic):
         )
         next(self.rewards_plot)
 
-        trainer = Trainer(self._run_parameters)
+        trainer = ModuleTrainer(self._run_parameters)
         yield from self.async_wait(trainer.prepare)
 
         try:

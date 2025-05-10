@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Generator
+from typing import TYPE_CHECKING, Any, Callable, Generator, Sequence
 from threading import current_thread
 from functools import partial
 
@@ -6,7 +6,9 @@ import numpy as np
 import torch
 import PySimpleGUI as sg
 
-from .plotter import ProcessPlotter
+from .plotter import (
+    ProcessPlotter, PlotterPlot, PlotterBarH
+)
 
 if TYPE_CHECKING:
     from mai.ai.rewards.base import NNRewardBase
@@ -51,9 +53,15 @@ def rewards_tracker(
     on_close: Callable[[], Any] = lambda: ...
 ) -> Generator[None, 'MAIGameState | None', None]:
     from mai.capnp.exchanger import Exchanger
-    process_plotter = ProcessPlotter(tuple((
-        r.name.replace('_', ' ').title() for r in rewards
-    )))
+    process_plotter = ProcessPlotter(
+        PlotterPlot,
+        plot_names=tuple((
+            r.name.replace('_', ' ').title() for r in rewards
+        )),
+        xlim=(0, 200),
+        ylim=(-1.1, 1.1),
+        legend=True
+    )
 
     try:
         while True:
@@ -78,6 +86,29 @@ def rewards_tracker(
     except GeneratorExit:
         process_plotter.finish()
 
+def powers_tracker(
+    module_names: Sequence[str],
+    on_close: Callable[[], Any] = lambda: ...
+) -> Generator[None, Sequence[float], None]:
+    from mai.capnp.exchanger import Exchanger
+    process_plotter = ProcessPlotter(
+        PlotterBarH,
+        bar_names=module_names,
+    )
+
+    try:
+        while True:
+            floats = yield
+            floats = tuple(floats)
+            assert len(floats) == len(module_names)
+            assert all(isinstance(i, float) for i in floats)
+            try:
+                process_plotter.plot(floats)
+            except BrokenPipeError:
+                on_close()
+                return
+    except GeneratorExit:
+        process_plotter.finish()
 
 def values_tracker(
     names: tuple[str],
@@ -124,6 +155,9 @@ def _init_weights(module: torch.nn.Module):
     elif isinstance(module, torch.nn.Sequential):
         for child in module.children():
             _init_weights(child)
+    elif hasattr(module, 'init_weights'):
+        func = getattr(module, 'init_weights')
+        func()
     else:
         raise RuntimeError(f"Can't initialize layer {module}")
 
