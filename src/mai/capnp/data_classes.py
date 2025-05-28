@@ -21,6 +21,7 @@ from mai.settings import Settings
 if TYPE_CHECKING:
     from numpy import typing as npt
     import torch
+    from mai.ai.networks.base import ModuleBase
     CAR_OR_BALL = Literal['car'] | Literal['ball']
     V_OR_AV = Literal['v'] | Literal['av']
     MAGNITUDE_OFFSET_TYPING = dict[CAR_OR_BALL, dict[V_OR_AV, float]]
@@ -72,6 +73,7 @@ CONTROLS_KEYS = (
 )
 REWARD_KEY = '_reward'
 POWERS_LEY = '_powers'
+
 
 class DodgeVerticalType(enum.IntEnum):
     BACKWARD = -1
@@ -462,7 +464,7 @@ class ModulesOutputMapping(dict):
     def powers(self, powers: torch.Tensor) -> None:
         assert isinstance(powers, torch.Tensor)
         assert len(powers.shape) == 1
-        assert all(0 <= i.item() <= 1 for i in powers), powers
+        # assert all(0 <= i.item() <= 1 for i in powers), powers
         self[POWERS_LEY] = powers
 
     @property
@@ -522,6 +524,46 @@ class ModulesOutputMapping(dict):
         elif mean_value > 709:
             return 1.0
         return 1 / (1 + exp(-mean_value))
+
+    def get_average(self, key: str, powers: dict[str, list[float]]) -> float:
+        weights = powers[key]
+        if not weights:
+            return 0
+        # assert key in self, f"{key}:\n{powers}\n{self}"
+        if key not in self:
+            return 0
+        assert isinstance(weights, list)
+        assert all(isinstance(i, float) for i in weights)
+        v: list[torch.Tensor] = self[key]
+        if len(v) == 1:
+            return v[0].item()
+        assert len(v) == len(weights), f"{key}: {self}, {powers}"
+        return float(np.average(v, weights=weights))
+
+    def toFloatControlsWithPowers(self, modules: list['ModuleBase']) -> FloatControls:
+        powers: dict[str, list[float]] = {
+            name: [] for name in CONTROLS_KEYS
+        }
+        for module in modules:
+            for output_value in module.output_types:
+                if output_value not in powers:
+                    continue
+                if module.power < 0.1:
+                    continue
+                powers[output_value].append(module.power)
+
+        return FloatControls(
+            throttle = self.get_average('controls.throttle', powers),
+            steer = self.get_average('controls.steer', powers),
+            pitch = self.get_average('controls.pitch', powers),
+            yaw = self.get_average('controls.yaw', powers),
+            roll = self.get_average('controls.roll', powers),
+            boost = self.get_average('controls.boost', powers),
+            jump = self.get_average('controls.jump', powers),
+            handbrake = self.get_average('controls.handbrake', powers),
+            dodgeVertical = self.get_average('controls.dodgeVertical', powers),
+            dodgeStrafe = self.get_average('controls.dodgeStrafe', powers)
+        )
 
     def toFloatControls(self) -> FloatControls:
         return FloatControls(

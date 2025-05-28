@@ -37,7 +37,7 @@ class CanonicalValuesPlusPowers:
         yield from (
             self.states, self.actions,
             self.next_states, self.rewards,
-            self.rewards
+            self.powerss
         )
 
 
@@ -164,6 +164,8 @@ class TensorReplayMemory(list[Transition]):
 
     def to_canonical(self, requires_grad: bool = True) -> CanonicalValuesPlusPowers:
         assert len(self) > 1
+        powers_list = [m.powers for m in self[1:]]
+        assert len({len(power) for power in powers_list}) == 1
         v = CanonicalValuesPlusPowers(
             states=torch.stack ([m.state.extract_state(
                 requires_grad
@@ -179,7 +181,7 @@ class TensorReplayMemory(list[Transition]):
                 requires_grad=requires_grad,
                 dtype=torch.get_default_dtype()
             ),
-            powerss=torch.stack([m.powers for m in self[1:]])
+            powerss=torch.stack(powers_list, dim=0)
         )
         assert v.states.dtype == torch.get_default_dtype()
         assert v.actions.dtype == torch.get_default_dtype()

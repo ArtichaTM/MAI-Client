@@ -66,6 +66,10 @@ class MAICustomTraining(BaseTrainingTactic):
         # module = self._mc.get_module(module_str)
         # self._mc.module_enable(module_str)
         # module.training = True
+        trainer = MAITrainer(self._run_parameters)
+        selected_modules = [
+            trainer._mc.get_module(name) for name in self._run_parameters.modules
+        ]
 
         def on_rewards_plot_closed() -> None:
             nonlocal self
@@ -87,7 +91,6 @@ class MAICustomTraining(BaseTrainingTactic):
         )
         next(self.powers_plot)
 
-        trainer = MAITrainer(self._run_parameters)
         yield from self.async_wait(trainer.prepare)
 
         try:
@@ -120,7 +123,7 @@ class MAICustomTraining(BaseTrainingTactic):
                                 self.powers_plot = None
                         state, reward = yield (
                             mapping
-                            .toFloatControls()
+                            .toFloatControlsWithPowers(selected_modules)
                             .toNormalControls()
                             .toMAIControls()
                         )

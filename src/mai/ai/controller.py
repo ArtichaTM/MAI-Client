@@ -52,6 +52,10 @@ class ModulesController:
     ) -> T:
         if isinstance(value, ModulesOutputMapping):
             for module in self._ordered_modules:
+                assert any((
+                    module.enabled and module.power >= 0.1,
+                    not module.enabled and module.power <= 0.1,
+                )), module
                 module.inference(value)
             return value
         if isinstance(value, list):

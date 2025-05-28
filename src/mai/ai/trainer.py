@@ -41,16 +41,17 @@ class Critic(torch.nn.Module):
         assert 0 <= modules_amount
         assert hidden_size > 8
         super(Critic, self).__init__()
+        print(f"Critic(Enter:{len(STATE_KEYS)+modules_amount})")
         self.fc1 = torch.nn.Linear(
-            len(STATE_KEYS)+len(CONTROLS_KEYS)+modules_amount,
+            len(STATE_KEYS)+modules_amount-1,
             hidden_size
         )
         self.fc2 = torch.nn.Linear(hidden_size, hidden_size)
         self.fc3 = torch.nn.Linear(hidden_size, hidden_size)
         self.fc4 = torch.nn.Linear(hidden_size, 1)
 
-    def forward(self, state, action):
-        x = torch.cat([state, action], dim=1)
+    def forward(self, state, powers):
+        x = torch.cat((state, powers), dim=1)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
@@ -340,6 +341,7 @@ class MAITrainer(BaseTrainer):
         '_memory', '_mc', '_mse_loss',
         '_mai_net', '_epoch_num',
 
+        'models_folder',
         'mai_lr', 'critic_lr',
         'tau', 'gamma',
     )
@@ -348,6 +350,10 @@ class MAITrainer(BaseTrainer):
         self,
         params: RunParameters
     ) -> None:
+        self.models_folder = Path()
+        self._mc = ModulesController(
+            models_folder=self.models_folder
+        )
         super().__init__(params)
 
     def prepare(self) -> None:
@@ -362,14 +368,10 @@ class MAITrainer(BaseTrainer):
         # Constant reward decrease
         self.gamma = 0.97
         critic_hidden_size = 256
-        models_folder = Path()
 
         self._mse_loss = torch.nn.MSELoss()
         self._memory = TensorReplayMemory()
 
-        self._mc = ModulesController(
-            models_folder=models_folder
-        )
         self._mc.training = False
         self._mc.unload_all_modules(save=False)
         for module_name in self.params.modules:
@@ -380,7 +382,7 @@ class MAITrainer(BaseTrainer):
             module.power = 1.
 
         self._mai_net = MAINet.load(
-            models_folder,
+            self.models_folder,
             self.params.modules
         )
         self._mai_optimizer = torch.optim.Adam(
@@ -400,6 +402,7 @@ class MAITrainer(BaseTrainer):
             lr=self.critic_lr,
             amsgrad=True
         )
+        self._epoch_num = 0
 
         self._loaded = True
 
@@ -409,21 +412,26 @@ class MAITrainer(BaseTrainer):
         assert self._gen
         assert hasattr(self, '_mai_net')
 
+        torch.autograd.set_detect_anomaly(True)
         print('Epoch | Reward sum | Reward avg | Critic loss | MAI loss')
         for module_name in self.params.modules:
             self._mc.module_load(module_name)
             self._mc.module_enable(module_name)
             self._mc.module_power(module_name, 1.)
+        self._mai_net.train()
 
         while True:
             assert state.has_all_state(), state.keys()
             assert not state.has_any_controls(), state.keys()
             powers: torch.Tensor = self._mai_net(
                 state
-                    .extract_state(requires_grad=False)
+                    .extract_state(requires_grad=True)
                     .toTensor(requires_grad=True)
                 )
-            powers.clip(0., 1.)
+            if sum(powers) < 0.1:
+                powers += 0.1
+            powers = powers.clip(0., 1.)
+            assert all(0 <= i.item() <= 1 for i in powers), powers
             state.powers = powers
             assert powers.shape == (len(self.params.modules),)
             self._memory.add_v(
@@ -463,37 +471,19 @@ class MAITrainer(BaseTrainer):
         actor_losses, critic_losses = [], []
 
         with torch.no_grad():
-            # Select action according to policy
-            next_actions = (self._mai_net(next_observations)).clamp(-1, 1)
+            # Select power according to policy
+            next_powerss = (self._mai_net(next_observations)).clamp(-1, 1)
 
             # Compute the next Q-values: min over all critics targets
-            next_q_values = torch.cat(self._target_critic(next_observations, next_actions), dim=1)
+            next_q_values = self._target_critic(next_observations, next_powerss)
             next_q_values, _ = torch.min(next_q_values, dim=1, keepdim=True)
             target_q_values = rewards * self.gamma * next_q_values
 
-            # # Update critic network
-            # next_actions = actions[1:]
-            # assert states     .shape    == next_states .shape
-            # assert actions    .shape    == next_actions.shape
-            # assert states     .shape[0] == actions.shape[0]
-            # assert next_states.shape[0] == actions.shape[0]
-            # assert states     .shape[1] == len(STATE_KEYS)
-            # assert actions    .shape[1] == len(CONTROLS_KEYS)
-            # target_q_values: torch.Tensor = self._target_critic(next_states, next_actions, powerss)
-            # # TODO: Real_q_values are not real (not from game)
-            # real_q_values: torch.Tensor = self._critic(states, actions, powerss)
-            # assert target_q_values.shape == real_q_values.shape, f"{target_q_values.shape} {real_q_values.shape}"
-            # assert rewards.shape == target_q_values.shape, f"{rewards.shape} {target_q_values.shape}"
-            # expected_q_values: torch.Tensor =+ (self.gamma * target_q_values)
-
         # Get current Q-values estimates for each critic network
-        current_q_values = self._critic(observations, actions)
-
-        # Get current Q-values estimates for each critic network
-        current_q_values = self._critic(observations, actions)
+        current_q_values = self._critic(observations, powerss)
 
         # Compute critic loss
-        critic_loss = sum(self._mse_loss(current_q, target_q_values) for current_q in current_q_values)
+        critic_loss = self._mse_loss(current_q_values, target_q_values)
         assert isinstance(critic_loss, torch.Tensor)
         critic_losses.append(critic_loss.item())
 
@@ -502,10 +492,10 @@ class MAITrainer(BaseTrainer):
         critic_loss.backward()
         self._critic_optimizer.step()
 
-        critic_q1_forward = self._critic.q1_forward
-        assert isinstance(critic_q1_forward, torch.Module)
-        assert not isinstance(critic_q1_forward, torch.Tensor)
-        mai_loss = -critic_q1_forward(observations, self._mai_net(observations)).mean()
+        critic_forward = self._critic.forward
+        # assert isinstance(critic_forward, torch.Module)
+        # assert not isinstance(critic_forward, torch.Tensor)
+        mai_loss = -critic_forward(observations, self._mai_net(observations)).mean()
         actor_losses.append(mai_loss.item())
 
         # Optimize the actor
