@@ -41,7 +41,6 @@ class Critic(torch.nn.Module):
         assert 0 <= modules_amount
         assert hidden_size > 8
         super(Critic, self).__init__()
-        print(f"Critic(Enter:{len(STATE_KEYS)+modules_amount})")
         self.fc1 = torch.nn.Linear(
             len(STATE_KEYS)+modules_amount-1,
             hidden_size
