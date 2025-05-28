@@ -411,7 +411,7 @@ class MAITrainer(BaseTrainer):
         assert self._gen
         assert hasattr(self, '_mai_net')
 
-        print('Epoch | Reward sum | Reward avg | Critic loss | MAI loss')
+        print('Epoch | Reward sum | Reward avg | MAI loss')
         for module_name in self.params.modules:
             self._mc.module_load(module_name)
             self._mc.module_enable(module_name)
@@ -466,42 +466,21 @@ class MAITrainer(BaseTrainer):
         batch.rewards_normalize()
         observations, actions, next_observations, rewards, powerss = batch.to_canonical()
         rewards = rewards.unsqueeze(1)
-        actor_losses, critic_losses = [], []
+        actor_losses = [], []
 
-        with torch.no_grad():
-            # Select power according to policy
-            next_powerss = (self._mai_net(next_observations)).clamp(-1, 1)
-
-            # Compute the next Q-values: min over all critics targets
-            next_q_values = self._target_critic(next_observations, next_powerss)
-            next_q_values, _ = torch.min(next_q_values, dim=1, keepdim=True)
-            target_q_values = rewards * self.gamma * next_q_values
-
-        # Get current Q-values estimates for each critic network
-        current_q_values = self._critic(observations, powerss)
-
-        # Compute critic loss
-        critic_loss = self._mse_loss(current_q_values, target_q_values)
-        assert isinstance(critic_loss, torch.Tensor)
-        critic_losses.append(critic_loss.item())
-
-        # Optimize the critics
-        self._critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self._critic_optimizer.step()
-
-        critic_forward = self._critic.forward
+        # critic_forward = self._critic.forward
         # assert isinstance(critic_forward, torch.Module)
         # assert not isinstance(critic_forward, torch.Tensor)
-        mai_loss = -critic_forward(observations, self._mai_net(observations)).mean()
-        actor_losses.append(mai_loss.item())
+        # mai_loss = -critic_forward(observations, self._mai_net(observations)).mean()
+        # actor_losses.append(mai_loss.item())
+        mai_loss = -rewards.mean()
 
         # Optimize the actor
         self._mai_optimizer.zero_grad()
         mai_loss.backward()
         self._mai_optimizer.step()
 
-        polyak_update(self._critic.parameters(), self._target_critic.parameters(), self.tau)
+        # polyak_update(self._critic.parameters(), self._target_critic.parameters(), self.tau)
         polyak_update(self._mai_net.parameters(), self._mai_net.parameters(), self.tau)
         # Copy running stats, see GH issue #996
         # polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
@@ -511,7 +490,6 @@ class MAITrainer(BaseTrainer):
             f"{self._epoch_num: >5}"[:5],
             f"{self._memory.sum_reward()}"[:9],
             f"{self._memory.avg_reward()}"[:9],
-            f"{critic_loss}"[:11],
             f"{mai_loss}"[:7],
             sep=' | '
         )
