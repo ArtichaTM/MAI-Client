@@ -411,7 +411,6 @@ class MAITrainer(BaseTrainer):
         assert self._gen
         assert hasattr(self, '_mai_net')
 
-        torch.autograd.set_detect_anomaly(True)
         print('Epoch | Reward sum | Reward avg | Critic loss | MAI loss')
         for module_name in self.params.modules:
             self._mc.module_load(module_name)

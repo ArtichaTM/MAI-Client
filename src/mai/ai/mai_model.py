@@ -14,13 +14,14 @@ class MAINet(nn.Module):
         from mai.capnp.data_classes import STATE_KEYS
         self.fc1 = nn.Linear(len(STATE_KEYS)-1, 256)
         self.fc2 = nn.Linear(256, modules_amount)
-        self.activation = nn.ReLU()
+        self.activation1 = nn.ReLU()
+        self.activation2 = nn.ReLU()
 
     def forward(self, x):
         x = self.fc1(x)
-        x = self.activation(x)
+        x = self.activation1(x)
         x = self.fc2(x)
-        x = self.activation(x)
+        x = self.activation2(x)
         return x
 
     def init_weights(self) -> None:

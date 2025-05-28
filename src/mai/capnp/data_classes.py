@@ -529,7 +529,6 @@ class ModulesOutputMapping(dict):
         weights = powers[key]
         if not weights:
             return 0
-        # assert key in self, f"{key}:\n{powers}\n{self}"
         if key not in self:
             return 0
         assert isinstance(weights, list)
